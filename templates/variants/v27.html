@@ -1,0 +1,12 @@
+{% extends "_base.html" %}
+{% block head %}
+{# REFLEX — the house design. Vivid fluorescent meeting deep reflex blue on cool
+   gray; blue carries every word, the orange is pure signal. No serif, no curve:
+   the photograph is a wide rounded panel, name plate tucked under its corner.
+   Space Grotesk over Inter Tight. All styling lives in static/reflex.css. #}
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter+Tight:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/aperture.css">
+<link rel="stylesheet" href="/static/reflex.css">
+{% endblock %}
+
+{% block body %}{% set ap_class = "reflex h-band shape-rect no-halo" %}{% include "_aperture.html" %}{% endblock %}

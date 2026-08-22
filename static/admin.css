@@ -1,0 +1,181 @@
+/* Back-office. Deliberately plain: this is a working tool, not a brochure.
+   Logo blue #005CA1 / yellow #F4AE00, same as the public pages. */
+*{box-sizing:border-box;margin:0}
+.adm{background:#F2F5F9;color:#12293D;font:15px/1.55 "Inter Tight",ui-sans-serif,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.admwrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.admbar{background:#fff;border-bottom:1px solid rgba(0,42,74,.14)}
+.admbar .admwrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+.admlogo{display:inline-flex;align-items:center;gap:12px;text-decoration:none;min-height:44px}
+.admlogo img{height:26px;width:auto;display:block}
+.admtag{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:#005CA1;border:1px solid rgba(0,92,161,.35);border-radius:6px;padding:3px 8px}
+.admnav{display:flex;gap:6px;margin-left:auto}
+.admnav a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:9px;
+  text-decoration:none;color:#3C5266;font-weight:600;font-size:14.5px}
+.admnav a[aria-current]{background:#005CA1;color:#fff}
+.admout{display:flex;align-items:center;gap:10px}
+.admwho{font-size:13px;color:#5A6E80}
+.admmain{padding-top:26px;padding-bottom:64px}
+
+h1{font-family:"Space Grotesk",sans-serif;font-size:26px;font-weight:600;letter-spacing:-.02em}
+h2{font-family:"Space Grotesk",sans-serif;font-size:16px;font-weight:600;letter-spacing:-.01em;
+  margin-bottom:14px;color:#12293D}
+.head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+
+.card{background:#fff;border:1px solid rgba(0,42,74,.12);border-radius:12px;padding:20px;margin-bottom:16px}
+.card.narrow{max-width:420px;margin:48px auto}
+label{display:block;font-size:12.5px;font-weight:600;margin:14px 0 5px;color:#2A4356}
+label .sub{font-weight:400;color:#6B7F90}
+input[type=text],input[type=password],input:not([type]),select,textarea{
+  width:100%;min-height:44px;border:1px solid rgba(0,42,74,.22);border-radius:9px;
+  padding:9px 12px;font:15px/1.45 inherit;background:#fff;color:#12293D}
+textarea{min-height:auto;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#005CA1;
+  box-shadow:0 0 0 3px rgba(0,92,161,.18)}
+button,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  padding:0 18px;border-radius:9px;border:1px solid rgba(0,42,74,.22);background:#fff;
+  color:#12293D;font:600 14.5px "Inter Tight",sans-serif;cursor:pointer;text-decoration:none}
+button:hover,.btn:hover{border-color:#005CA1}
+button.primary,.primary.btn{background:#005CA1;border-color:#005CA1;color:#fff}
+button.danger{border-color:rgba(178,38,30,.45);color:#B3261E}
+.actions{display:flex;gap:10px;margin:20px 0 8px}
+
+.row2,.row3{display:grid;gap:0 14px}
+@media(min-width:720px){.row2{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr 1fr 1fr}}
+.note{font-size:13px;color:#5A6E80;margin-top:10px;background:rgba(244,174,0,.12);
+  border-left:3px solid #F4AE00;border-radius:0 8px 8px 0;padding:10px 12px}
+.chk{display:flex;align-items:center;gap:10px;margin-top:16px;font-weight:500}
+.chk input{width:19px;height:19px;min-height:0;accent-color:#005CA1}
+
+/* Chosen web address. The domain is fixed, so it sits outside the field as a
+   prefix and the box holds only the part the admin controls. break-anywhere
+   because a long domain has no spaces to wrap at, and a 320px screen would
+   otherwise scroll sideways. */
+.addr{display:flex;align-items:center;flex-wrap:wrap;gap:2px 0}
+.addrbase{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  color:#3C5266;padding-right:6px;overflow-wrap:anywhere}
+.addr input{flex:1;min-width:180px}
+input[readonly]{background:#F2F5F9;color:#3C5266}
+input[readonly]:focus{border-color:rgba(0,42,74,.22);box-shadow:none}
+
+/* Preview-only sign-in. Styled as a caution, never as the primary action: it
+   must not read like the normal way in, because in production it is not there
+   at all. #8A6200 is the darkened amber — logo yellow itself is 1.94:1 and can
+   never carry text. */
+.devsignin{margin-top:20px;padding-top:16px;border-top:1px dashed rgba(0,42,74,.22)}
+.devsignin button{width:100%;min-height:56px;flex-direction:column;gap:2px;
+  border-color:#F4AE00;background:rgba(244,174,0,.12)}
+.devsignin .warn{font-size:11px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:#8A6200}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.filters input{flex:1;min-width:200px}
+.filters select{width:auto;min-width:150px}
+
+.grid{width:100%;border-collapse:collapse;background:#fff;border:1px solid rgba(0,42,74,.12);
+  border-radius:12px;overflow:hidden}
+.grid th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:#5A6E80;padding:12px 14px;background:#F7F9FC;border-bottom:1px solid rgba(0,42,74,.10)}
+.grid td{padding:12px 14px;border-bottom:1px solid rgba(0,42,74,.07);vertical-align:top}
+.grid tr:last-child td{border-bottom:0}
+.grid a{color:#005CA1}
+.grid.tight td{padding:8px 14px;font-size:13.5px}
+.sub{display:block;font-size:12.5px;color:#5A6E80}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  background:#F2F5F9;border-radius:5px;padding:2px 6px}
+
+.pill{display:inline-block;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase}
+.s-live{background:rgba(11,122,69,.14);color:#0B5C36}
+.s-draft{background:rgba(0,92,161,.12);color:#005CA1}
+.s-removed{background:rgba(178,38,30,.12);color:#B3261E}
+.s-noindex{background:rgba(244,174,0,.20);color:#7A5600;margin-left:6px}
+
+.statusbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.statusacts{display:flex;gap:8px;flex-wrap:wrap}
+.statusacts form{display:inline}
+.leadform{display:grid;gap:8px}
+@media(min-width:900px){.leadform{grid-template-columns:150px 120px 1fr auto;align-items:center}}
+.leadform select,.leadform input{min-height:40px}
+.leadform button{min-height:40px;padding:0 14px}
+
+.err{background:#FDECEA;border:1px solid #F3C9C5;color:#B3261E;border-radius:9px;
+  padding:11px 13px;font-weight:600;margin-bottom:14px}
+.ok{background:rgba(11,122,69,.10);border:1px solid rgba(11,122,69,.35);color:#0B5C36;
+  border-radius:9px;padding:11px 13px;font-weight:600;margin-bottom:14px}
+.empty{background:#fff;border:1px dashed rgba(0,42,74,.25);border-radius:12px;
+  padding:28px;text-align:center;color:#5A6E80}
+
+/* ---- split-pane editor: form left, live preview right --------------------- */
+.editor{display:grid;gap:22px;align-items:start}
+@media(min-width:1080px){
+  .editor{grid-template-columns:minmax(0,1fr) minmax(380px,460px)}
+}
+.editcol{min-width:0}
+
+.previewcol{min-width:0}
+@media(min-width:1080px){
+  /* the preview follows the editor down the page — clears the 68px admin bar */
+  .previewcol{position:sticky;top:18px}
+}
+.previewpanel{background:#fff;border:1px solid rgba(0,42,74,.12);border-radius:12px;
+  padding:14px;box-shadow:0 12px 30px rgba(0,42,74,.07)}
+.previewhead{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-bottom:12px}
+.segmented{display:inline-flex;background:#EEF2F7;border-radius:9px;padding:3px;gap:2px}
+.segmented button{min-height:34px;padding:0 12px;border:0;border-radius:7px;background:transparent;
+  color:#3C5266;font:600 13px "Inter Tight",sans-serif;cursor:pointer}
+.segmented button[aria-current]{background:#fff;color:#005CA1;box-shadow:0 1px 3px rgba(0,42,74,.16)}
+
+.preview-stage{background:#EDF1F6;border-radius:10px;padding:12px;
+  display:flex;justify-content:center;overflow:auto}
+/* the holder is the SCALED footprint; the iframe inside is rendered at a real
+   logical width and scaled by JS so Desktop shows the true desktop layout. */
+.frameholder{position:relative;overflow:hidden;border-radius:8px;
+  box-shadow:0 6px 20px rgba(0,42,74,.12);background:#fff}
+#preview-frame{border:0;background:#fff;transform-origin:top left;display:block}
+.previewnote{font-size:12.5px;color:#5A6E80;margin-top:10px;text-align:center}
+
+/* ---- photo upload widget -------------------------------------------------- */
+.uploadwrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.thumb{width:120px;height:120px;object-fit:cover;border-radius:10px;
+  border:1px solid rgba(0,42,74,.14);background:#EEF2F7}
+.uploadctl{flex:1;min-width:220px}
+/* the native file input is ugly and inconsistent; drive it through a styled label */
+#photo-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.filebtn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  padding:0 18px;border-radius:9px;border:1px solid #005CA1;background:#fff;color:#005CA1;
+  font:600 14.5px "Inter Tight",sans-serif;cursor:pointer;margin:0}
+.filebtn:hover{background:rgba(0,92,161,.06)}
+#photo-file:focus-visible + .filebtn,.filebtn:focus-within{outline:3px solid rgba(0,92,161,.4);outline-offset:2px}
+.uploadnote{font-size:13px;color:#5A6E80;margin-top:10px}
+.uploadnote.good{color:#0B5C36}
+.uploadnote.warn{color:#7A5600}
+.uploadnote.bad{color:#B3261E}
+
+.narrow{max-width:160px}
+
+/* --- review fixes (2026-08-22 adversarial pass) --------------------------- */
+/* long <code> paths could push the tables sideways on a phone */
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.grid td code{overflow-wrap:anywhere}
+/* the real file input is visually hidden, so the styled label must carry the
+   keyboard focus ring on its behalf */
+#photo-file:focus-visible + .filebtn{outline:3px solid rgba(0,92,161,.4);outline-offset:2px}
+/* compact controls still need a visible keyboard focus indicator */
+.segmented button:focus-visible,.leadform select:focus-visible,
+.leadform input:focus-visible{outline:2px solid #005CA1;outline-offset:1px}
+/* keep the pinned preview scrollable rather than taller than the viewport */
+@media(min-width:1080px){
+  .previewpanel{max-height:calc(100vh - 36px);overflow:auto}
+}
+
+/* --- explicit edit affordance in the pages list -------------------------- */
+.col-act{text-align:right;white-space:nowrap}
+.rowedit{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;
+  border:1px solid rgba(0,92,161,.4);border-radius:8px;color:#005CA1;
+  font:600 13.5px "Inter Tight",sans-serif;text-decoration:none}
+.rowedit:hover{background:rgba(0,92,161,.06);border-color:#005CA1}
+.grid tr:hover td{background:rgba(0,92,161,.03)}   /* whole row reads as clickable */
+.headtext{min-width:0}
+.headsub{font-size:13.5px;color:#5A6E80;margin-top:4px;font-weight:400}

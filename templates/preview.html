@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design gallery — Prayaan Business Pages</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1c2743;--navy-soft:#33436e;--navy-fg:#faf7f1;--gold:#e3b44f;
+        --bg:#f8f5ef;--card:#fff;--sec:#efebe2;--fg:#1c2743;--muted:#5c6575;--border:#e4dfd5;
+        --sans:"Instrument Sans",ui-sans-serif,system-ui,sans-serif;--serif:"Instrument Serif",Georgia,serif}
+  *{box-sizing:border-box;margin:0}
+  body{font-family:var(--sans);background:var(--sec);color:var(--fg);line-height:1.5}
+  :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  header{background:var(--navy);color:var(--navy-fg);padding:12px 20px;
+    display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  header b{font-family:var(--serif);font-size:19px;font-weight:400}
+  header span{font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.75}
+
+  .bar{background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px;
+    display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+  .row>.lbl{font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);width:88px;flex:none}
+  .row button{border:1px solid var(--border);background:var(--card);color:var(--fg);
+    border-radius:999px;padding:6px 13px;font:inherit;font-size:12.5px;cursor:pointer;
+    min-height:34px;transition:border-color .12s,background .12s}
+  .row button:hover{border-color:rgba(28,39,67,.4)}
+  .row button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--navy-fg)}
+  .row .sm{font-size:11.5px;padding:5px 11px}
+
+  .meta{display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:12px;color:var(--muted);
+    padding-top:2px}
+  .meta code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--sec);
+    padding:2px 7px;border-radius:4px;color:var(--fg)}
+  .meta a{color:var(--navy-soft);font-weight:600}
+
+  .stage{padding:18px;display:flex;justify-content:center}
+  .device{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;
+    box-shadow:0 8px 30px rgba(28,39,67,.10);width:100%;transition:max-width .18s ease}
+  iframe{display:block;width:100%;height:78vh;border:0;background:#fff}
+  @media(prefers-reduced-motion:reduce){.device{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <b>Design gallery</b>
+  <span>Internal review — not a customer page</span>
+</header>
+
+<div class="bar">
+  <div class="row" id="r-variant"><span class="lbl">Design</span></div>
+  <div class="row" id="r-page"><span class="lbl">Business</span></div>
+  <div class="row" id="r-width">
+    <span class="lbl">Width</span>
+    <button type="button" class="sm" data-w="375">Phone · 375</button>
+    <button type="button" class="sm" data-w="768">Tablet · 768</button>
+    <button type="button" class="sm" data-w="1100">Desktop · 1100</button>
+    <button type="button" class="sm" data-w="0">Full width</button>
+  </div>
+  <div class="meta">
+    <span id="m-name"></span>
+    <code id="m-url"></code>
+    <a id="m-open" href="#" target="_blank" rel="noopener">Open in a new tab ↗</a>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="device" id="device">
+    <iframe id="frame" title="Page preview" loading="lazy"></iframe>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var VARIANTS = {{ variants|tojson }};
+  var PAGES = {{ pages|tojson }};
+  var DEFAULT_V = {{ default_variant }};
+
+  var q = new URLSearchParams(location.search);
+  var state = {
+    v: parseInt(q.get("v"), 10) || DEFAULT_V,
+    p: q.get("p") || (PAGES[0] ? PAGES[0].path : ""),
+    w: q.get("w") === null ? 1100 : parseInt(q.get("w"), 10)
+  };
+  if (!VARIANTS.some(function(x){ return x.id === state.v; })) state.v = DEFAULT_V;
+  if (!PAGES.some(function(x){ return x.path === state.p; })) state.p = PAGES[0] ? PAGES[0].path : "";
+
+  function button(label, on, fn, small){
+    var b = document.createElement("button");
+    b.type = "button";
+    if (small) b.className = "sm";
+    b.textContent = label;
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  function render(){
+    var rv = document.getElementById("r-variant");
+    var rp = document.getElementById("r-page");
+    rv.querySelectorAll("button").forEach(function(b){ b.remove(); });
+    rp.querySelectorAll("button").forEach(function(b){ b.remove(); });
+
+    VARIANTS.forEach(function(v){
+      rv.appendChild(button(v.id + ". " + v.name, v.id === state.v, function(){
+        state.v = v.id; commit();
+      }));
+    });
+    PAGES.forEach(function(p){
+      var name = p.business_name || p.path;
+      rp.appendChild(button(name, p.path === state.p, function(){
+        state.p = p.path; commit();
+      }, true));
+    });
+    document.querySelectorAll("#r-width button").forEach(function(b){
+      b.setAttribute("aria-pressed", String(parseInt(b.dataset.w, 10) === state.w));
+    });
+
+    // chrome=0 hides the in-page switcher so the frame shows the real customer view
+    var src = state.p + "?v=" + state.v + "&chrome=0";
+    var frame = document.getElementById("frame");
+    if (frame.getAttribute("src") !== src) frame.setAttribute("src", src);
+
+    var dev = document.getElementById("device");
+    dev.style.maxWidth = state.w ? state.w + "px" : "100%";
+
+    var page = PAGES.filter(function(x){ return x.path === state.p; })[0] || {};
+    var vr = VARIANTS.filter(function(x){ return x.id === state.v; })[0] || {};
+    document.getElementById("m-name").textContent =
+      (page.business_name || "") + (page.locality ? " · " + page.locality : "") +
+      (vr.name ? "  —  " + vr.name : "");
+    document.getElementById("m-url").textContent = state.p + "?v=" + state.v;
+    document.getElementById("m-open").href = state.p + "?v=" + state.v;
+  }
+
+  function commit(){
+    // Keep the gallery deep-linkable so a chosen combination can be shared.
+    var s = new URLSearchParams({ v: state.v, p: state.p, w: state.w });
+    history.replaceState(null, "", "/preview?" + s.toString());
+    render();
+  }
+
+  document.querySelectorAll("#r-width button").forEach(function(b){
+    b.addEventListener("click", function(){ state.w = parseInt(b.dataset.w, 10); commit(); });
+  });
+
+  // Left/right arrows step through designs — fastest way to compare.
+  document.addEventListener("keydown", function(e){
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    var ids = VARIANTS.map(function(x){ return x.id; });
+    var i = ids.indexOf(state.v);
+    state.v = ids[(i + (e.key === "ArrowRight" ? 1 : ids.length - 1)) % ids.length];
+    commit();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends "admin/_shell.html" %}
+{% block title %}Business pages{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>Business pages</h1>
+  <a class="primary btn" href="/admin/pages/new">New page</a>
+</div>
+<form class="filters" method="get" action="/admin/pages">
+  <input name="q" type="text" value="{{ q }}" placeholder="Name, owner or path">
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+</form>
+{% if not pages %}
+<p class="empty">No pages yet. <a href="/admin/pages/new">Create the first one.</a></p>
+{% else %}
+<div class="tablewrap"><table class="grid">
+  <thead><tr><th>Business</th><th>Address</th><th>Status</th><th>Updated</th><th class="col-act">Edit</th></tr></thead>
+  <tbody>
+  {% for p in pages %}
+  <tr>
+    <td><a href="/admin/pages/{{ p.id }}"><b>{{ p.business_name }}</b></a>
+        {% if p.owner_name %}<span class="sub">{{ p.owner_name }}</span>{% endif %}</td>
+    <td><code>{{ p.path }}</code></td>
+    <td><span class="pill s-{{ p.status }}">{{ p.status }}</span>
+        {% if not p.indexed %}<span class="pill s-noindex">noindex</span>{% endif %}</td>
+    <td class="sub">{{ p.updated_at }}</td>
+    <td class="col-act">
+      <a class="rowedit" href="/admin/pages/{{ p.id }}">Edit</a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,183 @@
+/* ===========================================================================
+   SKELETON (v40) — the page as a SPECIFICATION.
+
+   Not a customer design. This layer takes the Reflex structure exactly as it
+   ships (aperture.css + reflex.css, loaded before this file) and swaps every
+   dynamic value for a literal <field_name> chip, so the page doubles as the
+   authoritative list of what an admin has to supply. Load order matters:
+
+       aperture.css   structure and tokens
+       reflex.css     the Prayaan palette
+       skeleton.css   placeholder chips, empty photo slots, field captions
+
+   COLOUR, and why only these three:
+     #005CA1  logo blue, 6.96:1 on white — carries every placeholder word.
+     #F4AE00  logo yellow at 15% alpha — the chip FILL. At full strength it is
+              1.94:1 on white, so it is never allowed near type.
+     #8A6200  the darkened amber, 5.5:1 — used for the dashed chip EDGE and
+              nowhere as body text on the tinted fill (blue measures better
+              there: 5.65:1 on chip-over-paper against amber's 4.46:1, which
+              would have failed AA by a hair).
+   Captions use --ap-ink2 (#4A5D6E), 6.05:1 on the paper ground.
+   =========================================================================== */
+
+.ap.skel{
+  --sk-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sk-ink:#005CA1;                    /* placeholder type */
+  --sk-edge:rgba(138,98,0,.55);        /* dashed chip edge, from #8A6200 */
+  --sk-fill:rgba(244,174,0,.15);       /* the faint logo-yellow fill */
+  --sk-box:rgba(0,92,161,.42);         /* dashed edge of an empty media slot */
+  --sk-hatch:rgba(0,92,161,.05);
+}
+
+/* ---- the placeholder chip -------------------------------------------------
+   Deliberately inherits nothing: it lands inside an h1, an all-caps eyebrow, a
+   uppercase tier label and a tabular phone slot, and has to read the same in
+   all of them. `overflow-wrap:anywhere` is what keeps a long name like
+   <figures[].value> from pushing a 320px viewport sideways. */
+.ap.skel .ph{
+  display:inline-block;
+  max-width:100%;
+  font-family:var(--sk-mono);
+  /* never smaller than 11.5px, however small the slot's own type is */
+  font-size:max(11.5px,.86em);
+  font-weight:500;
+  font-style:normal;
+  line-height:1.5;
+  letter-spacing:0;
+  text-transform:none;
+  font-variant-numeric:normal;
+  color:var(--sk-ink);
+  background:var(--sk-fill);
+  border:1px dashed var(--sk-edge);
+  border-radius:6px;
+  padding:2px 7px;
+  overflow-wrap:anywhere;
+  text-align:left;
+}
+
+/* ---- legend -------------------------------------------------------------- */
+.ap.skel .sk-legend{
+  background:var(--ap-card);
+  border:1px solid var(--ap-line);
+  border-left:4px solid var(--sk-ink);
+  border-radius:12px;
+  padding:16px 18px;
+  margin:0 0 30px;
+  max-width:74ch;
+}
+.ap.skel .sk-kicker{
+  font-family:var(--ap-sans);font-size:11.5px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--sk-ink);margin:0 0 9px;
+}
+.ap.skel .sk-legend p:not(.sk-kicker){
+  font-size:14px;line-height:1.7;color:var(--ap-ink2);margin:0;
+}
+.ap.skel .sk-legend p + p:not(.sk-kicker){margin-top:9px}
+
+/* ---- field caption under every section ------------------------------------
+   A ruled footnote, not a card: it must read as annotation ON the design, never
+   as another block OF it. */
+.ap.skel .sk-cap{
+  list-style:none;
+  margin:16px 0 0;
+  padding:11px 0 0;
+  border-top:1px dashed rgba(0,92,161,.30);
+  max-width:74ch;
+}
+.ap.skel .sk-cap li{
+  font-size:12.5px;line-height:1.65;color:var(--ap-ink2);
+  padding:3px 0;
+}
+.ap.skel .sk-cap code{
+  font-family:var(--sk-mono);font-size:12px;font-weight:600;color:var(--sk-ink);
+  overflow-wrap:anywhere;
+}
+.ap.skel .sk-cap .req,
+.ap.skel .sk-cap .opt{
+  display:inline-block;margin-right:7px;padding:2px 8px;border-radius:999px;
+  font-family:var(--ap-sans);font-size:10px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;line-height:1.6;white-space:nowrap;
+}
+.ap.skel .sk-cap .req{background:#005CA1;color:#FFFFFF}          /* 6.96:1 */
+.ap.skel .sk-cap .opt{background:rgba(0,92,161,.10);color:#005CA1;
+  border:1px solid rgba(0,92,161,.28)}                            /* 5.28:1 */
+
+/* ---- empty media slots ----------------------------------------------------
+   No image is ever requested — the cover and the avatar are dashed boxes. */
+.ap.skel .sk-shot{
+  display:grid;place-items:center;
+  aspect-ratio:2/1;
+  padding:12px;
+  border:2px dashed var(--sk-box);
+  border-radius:var(--ap-r-soft);
+  background-color:rgba(255,255,255,.62);
+  background-image:repeating-linear-gradient(135deg,
+    var(--sk-hatch) 0 10px, transparent 10px 22px);
+}
+.ap.skel .sk-ava{
+  position:relative;z-index:2;
+  width:96px;height:96px;border-radius:50%;
+  margin-top:-48px;
+  display:grid;place-items:center;padding:6px;
+  border:2px dashed var(--sk-box);
+  background-color:var(--ap-paper);
+  background-image:repeating-linear-gradient(135deg,
+    var(--sk-hatch) 0 8px, transparent 8px 18px);
+  box-shadow:0 0 0 5px var(--ap-paper),0 0 0 6px var(--ap-line);
+}
+.ap.skel .sk-ava .ph{font-size:10px;padding:1px 4px;text-align:center}
+
+/* ---- hero -----------------------------------------------------------------
+   The cover mode expects exactly three children in .idrow (avatar, identity,
+   badge column), so the Est. pill and the tier badge share one cell. */
+.ap.skel .idtxt .eyebrow,
+.ap.skel .idtxt .own{margin-top:0}
+.ap.skel .sk-badges{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px;
+}
+.ap.skel .sk-badges .pill,
+.ap.skel .sk-badges .tier{margin-top:0}
+@media(min-width:900px){
+  .ap.skel .sk-badges{margin-bottom:6px;justify-content:flex-end}
+}
+
+/* ---- contact: spans dressed as the real controls --------------------------
+   Nothing here is a link — there is no number to dial and no map to open — but
+   the slots keep the shipping geometry, including the >=44px target height, so
+   the spec shows the real thing. */
+.ap.skel .phones .slot{
+  min-width:0;display:inline-flex;align-items:center;justify-content:center;
+  gap:6px;min-height:46px;padding:0 8px;
+  border:1px solid var(--ap-line);border-radius:var(--ap-r-chip);
+  background:var(--ap-paper);color:var(--ap-ink);font-size:13.5px;
+}
+.ap.skel .phones .slot .ico{width:14px;height:14px;color:var(--ap-acc-ink);flex:none}
+@media(max-width:344px){.ap.skel .phones .slot .ico{display:none}}
+@media(min-width:640px){
+  .ap.skel .phones{display:flex;flex-wrap:wrap}
+  .ap.skel .phones .slot{justify-content:flex-start;padding:0 13px;font-size:14.5px;gap:8px}
+}
+/* the shipping rules set white-space:nowrap, which would defeat the chip's own
+   wrapping and push a narrow viewport sideways */
+.ap.skel .maplink,
+.ap.skel .phones .slot{white-space:normal}
+.ap.skel .maplink{min-height:44px;padding:6px 15px}
+.ap.skel .addr{align-items:flex-start;min-height:44px;padding:4px 0}
+.ap.skel .addr .ico{margin-top:4px}
+.ap.skel .sk-line{min-width:0}
+
+/* ---- figures --------------------------------------------------------------
+   The real .v is clamp(30px,6.4vw,42px) display type; a 17-character chip at
+   that size overflows its column, so the chip is capped and the caption says
+   what the live size is. */
+.ap.skel ul.figs .v .ph{font-size:clamp(13px,3.4vw,16px)}
+.ap.skel ul.figs .l .ph{font-size:11.5px}
+
+/* ---- prose / visiting ----------------------------------------------------- */
+.ap.skel .prose p .ph{font-size:13.5px}
+.ap.skel .visit dd .ph{font-size:13px}
+
+/* ---- colophon -------------------------------------------------------------- */
+.ap.skel .colo .ph{font-size:11.5px;padding:1px 5px}
+.ap.skel .colo{line-height:2.1}

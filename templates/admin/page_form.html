@@ -1,0 +1,223 @@
+{% extends "admin/_shell.html" %}
+{% block title %}{{ page.business_name if page else 'New page' }}{% endblock %}
+{% block body %}
+{% set f = page or form or {} %}
+
+<div class="editor">
+  <div class="editcol">
+
+    <div class="head">
+      <div class="headtext">
+        <h1>{{ page.business_name if page else 'New business page' }}</h1>
+        {% if page %}<p class="headsub">Editing an existing page — change any field and save. The web address stays fixed.</p>{% endif %}
+      </div>
+      {% if page %}<a class="btn" href="{{ page.path }}" target="_blank" rel="noopener">Open live &nearr;</a>{% endif %}
+    </div>
+    {% if request.query_params.get('saved') %}<p class="ok">Saved.</p>{% endif %}
+    {% if error %}<p class="err">{{ error }}</p>{% endif %}
+
+    {% if page %}
+    <div class="card statusbar">
+      <div>
+        <span class="pill s-{{ page.status }}">{{ page.status }}</span>
+        <code>{{ page.path }}</code>
+        <span class="sub">Address is permanent</span>
+      </div>
+      <div class="statusacts">
+        {% for label, target in [('Publish','live'), ('Unpublish','draft'), ('Remove','removed')] %}
+          {% if page.status != target %}
+          <form method="post" action="/admin/pages/{{ page.id }}/status">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="hidden" name="status" value="{{ target }}">
+            <button type="submit" class="{{ 'primary' if target=='live' else '' }}{{ ' danger' if target=='removed' else '' }}">{{ label }}</button>
+          </form>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <form id="page-form" method="post" action="{{ '/admin/pages/%s'|format(page.id) if page else '/admin/pages/new' }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+
+    <div class="card">
+      <h2>Identity</h2>
+      {% if not page %}
+      <div class="row3">
+        <div><label for="st">State code</label>
+          <input id="st" name="state_code" value="{{ f.get('state_code','TN') }}" maxlength="3" required placeholder="TN"></div>
+        <div><label for="br">Branch</label>
+          <input id="br" name="branch_slug" value="{{ f.get('branch_slug','') }}" required placeholder="vellore"></div>
+        <div class="note">These two fix the address and cannot be changed later.</div>
+      </div>
+      <label for="wa">Web address <span class="sub">optional — leave blank to build it from the business name</span></label>
+      <div class="addr">
+        <span class="addrbase">{{ base_url }}/</span>
+        <input id="wa" name="web_address" value="{{ f.get('web_address','') }}"
+               maxlength="200" spellcheck="false" placeholder="TN/vellore/velan-steel">
+      </div>
+      <p class="note">Type one, two or three parts — <code>velan-steel</code>,
+        <code>vellore/velan-steel</code> or <code>TN/vellore/velan-steel</code>.
+        <b>The address is permanent.</b> It cannot be edited afterwards and is never
+        handed to another business, so a link already sent on WhatsApp keeps opening
+        this page — which is why a taken or reserved address is refused rather than
+        quietly changed.</p>
+      {% else %}
+      <label for="wa">Web address <span class="sub">permanent — fixed when the page was created</span></label>
+      <input id="wa" value="{{ base_url }}{{ page.path }}" readonly aria-readonly="true" aria-describedby="wanote">
+      <p class="note" id="wanote">This cannot be changed. A link already printed on a
+        board or shared in a WhatsApp group must keep opening this business.</p>
+      {% endif %}
+      <label for="bn">Business name *</label>
+      <input id="bn" name="business_name" value="{{ f.get('business_name','') }}" required maxlength="120">
+      <div class="row2">
+        <div><label for="on">Owner name</label>
+          <input id="on" name="owner_name" value="{{ f.get('owner_name','') or '' }}" maxlength="80"></div>
+        <div><label for="cat">Category</label>
+          <input id="cat" name="category" value="{{ f.get('category','') or '' }}" maxlength="60"
+                 placeholder="Hardware &amp; Building Materials"></div>
+      </div>
+      <div class="row3">
+        <div><label for="loc">Locality</label>
+          <input id="loc" name="locality" value="{{ f.get('locality','') or '' }}" maxlength="60"></div>
+        <div><label for="dis">District</label>
+          <input id="dis" name="district" value="{{ f.get('district','') or '' }}" maxlength="60"></div>
+        <div><label for="sn">State name</label>
+          <input id="sn" name="state_name" value="{{ f.get('state_name','') or '' }}" maxlength="60"></div>
+      </div>
+      <p class="note">Never a street address. The page shows the locality only —
+        publishing a precise address alongside opening hours tells a stranger when
+        the premises are empty.</p>
+      <label for="ey">Established year</label>
+      <input id="ey" name="established_year" value="{{ f.get('established_year','') or '' }}" maxlength="4" class="narrow">
+    </div>
+
+    <div class="card">
+      <h2>Photo</h2>
+      <div class="uploadwrap">
+        <img id="photo-thumb" class="thumb" src="{{ f.get('photo_url','') or '' }}" alt=""
+             {% if not f.get('photo_url') %}hidden{% endif %}>
+        <div class="uploadctl">
+          {# input BEFORE label so the `#photo-file:focus-visible + .filebtn`
+             focus ring matches — the input itself is visually hidden. #}
+          <input id="photo-file" type="file" accept="image/png,image/jpeg,image/webp">
+          <label for="photo-file" class="filebtn">Choose a photo</label>
+          {# The URL the upload resolves to. Set by the uploader; the save reads
+             this, so page rendering is unchanged. Kept editable-by-JS only. #}
+          <input type="hidden" name="photo_url" value="{{ f.get('photo_url','') or '' }}">
+          <p class="uploadnote" id="photo-note">
+            {% if f.get('photo_url') %}Current photo shown. Choose a new one to replace it.
+            {% else %}JPEG, PNG or WebP, up to 6&nbsp;MB.{% endif %}</p>
+        </div>
+      </div>
+      <p class="note">The photo is stored in Prayaan's own image store and served
+        from there — the customer's file is never hot-linked from somewhere that
+        might vanish.</p>
+    </div>
+
+    <div class="card">
+      <h2>Contact</h2>
+      <label for="phn">Phone numbers <span class="sub">one per line, maximum two</span></label>
+      <textarea id="phn" name="phones" rows="2">{{ (f.get('phones') or [])|join('\n') }}</textarea>
+      <label for="mu">Google Maps link</label>
+      <input id="mu" name="map_url" value="{{ f.get('map_url','') or '' }}" maxlength="400">
+      <p class="note"><b>This pin must be the BUSINESS, not the owner's home.</b>
+        For many customers the two are the same address; a precise pin beside
+        published hours tells a stranger where someone is and when they are out.
+        Only Google Maps links are accepted — anything else is discarded.</p>
+    </div>
+
+    <div class="card">
+      <h2>Content</h2>
+      <label for="sum">Summary <span class="sub">one sentence, used for search results and the WhatsApp preview</span></label>
+      <textarea id="sum" name="summary" rows="2" maxlength="400">{{ f.get('summary','') or '' }}</textarea>
+      <label for="ab">About <span class="sub">one paragraph per line</span></label>
+      <textarea id="ab" name="about" rows="5">{{ (f.get('about') or [])|join('\n') }}</textarea>
+      <label for="off">What they do <span class="sub">one per line</span></label>
+      <textarea id="off" name="offerings" rows="4">{{ (f.get('offerings') or [])|join('\n') }}</textarea>
+      <label for="fig">In numbers <span class="sub">Label | Value, one per line</span></label>
+      <textarea id="fig" name="figures" rows="3">{% for x in (f.get('figures') or []) %}{{ x.label }} | {{ x.value }}
+{% endfor %}</textarea>
+      <p class="note">Shown as the owner's own claims — the page says
+        "Figures shared by {{ f.get('owner_name') or 'the owner' }}". Prayaan publishes them, it does not certify them.</p>
+      <div class="row2">
+        <div><label for="hr">Hours</label>
+          <input id="hr" name="hours" value="{{ f.get('hours','') or '' }}" maxlength="80"></div>
+        <div><label for="lg">Languages <span class="sub">one per line</span></label>
+          <textarea id="lg" name="languages" rows="2">{{ (f.get('languages') or [])|join('\n') }}</textarea></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recognition &amp; visibility</h2>
+      <div class="row2">
+        <div><label for="tr">Tier</label>
+          <select id="tr" name="tier">
+            <option value="">None</option>
+            {% for t in ['gold','silver','bronze'] %}
+            <option value="{{ t }}" {% if f.get('tier')==t %}selected{% endif %}>{{ t|capitalize }}</option>
+            {% endfor %}
+          </select></div>
+        <div><label for="ts">Standing shown</label>
+          <select id="ts" name="tier_status">
+            <option value="">None</option>
+            {% for st in ['Active','Inactive','Lapsed'] %}
+            <option value="{{ st }}" {% if f.get('tier_status')==st %}selected{% endif %}>{{ st }}</option>
+            {% endfor %}
+          </select></div>
+      </div>
+      <p class="note"><b>Tier is referrals and activity only.</b> Never repayment
+        history, bureau scores or risk grades. The badge will not render without a
+        standing, so leaving it blank hides the tier.</p>
+      <label class="chk"><input type="checkbox" name="indexed" {% if f.get('indexed', True) %}checked{% endif %}>
+        Allow search engines to index this page</label>
+    </div>
+
+    <div class="actions">
+      <button class="primary" type="submit">{{ 'Save changes' if page else 'Create as draft' }}</button>
+      <a class="btn" href="/admin/pages">Cancel</a>
+    </div>
+    </form>
+
+    {% if events %}
+    <div class="card">
+      <h2>History</h2>
+      <table class="grid tight">
+        <tbody>
+        {% for e in events %}
+        <tr><td class="sub">{{ e.at }}</td><td><b>{{ e.event }}</b></td>
+            <td class="sub">{{ e.by or '—' }}</td>
+            <td class="sub">{{ (e.changes or {}).keys()|join(', ') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+  </div>{# /editcol #}
+
+  <aside class="previewcol">
+    <div class="previewpanel">
+      <div class="previewhead">
+        <div class="segmented" role="group" aria-label="Design">
+          <button type="button" data-variant="27" aria-current="true">Reflex</button>
+          <button type="button" data-variant="31">Cover</button>
+        </div>
+        <div class="segmented" role="group" aria-label="Width">
+          <button type="button" data-device="390" aria-current="true">Phone</button>
+          <button type="button" data-device="0">Desktop</button>
+        </div>
+      </div>
+      <div class="preview-stage" id="preview-stage" data-w="390">
+        <div class="frameholder" id="frameholder">
+          {# Rendered at a real logical width and scaled to fit, so "Desktop"
+             shows the actual desktop layout rather than a squeezed mobile one. #}
+          <iframe id="preview-frame" title="Live preview of the customer page"></iframe>
+        </div>
+      </div>
+      <p class="previewnote">Live preview — exactly what a customer sees. Updates as you type.</p>
+    </div>
+  </aside>
+
+</div>{# /editor #}
+{% endblock %}

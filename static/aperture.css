@@ -1,0 +1,464 @@
+/* ===========================================================================
+   APERTURE — the shared system behind every Aperture variation.
+
+   The circle as a lens you look through: the photograph is masked into a disc,
+   concentric hairline arcs radiate out of it and run off the viewport edge, and
+   the name plate crosses the disc's edge.
+
+   Every variation is a THIN file that overrides the tokens below, picks a hero
+   layout modifier and loads its own typefaces. Structure lives here and nowhere
+   else, so a fix lands once instead of six times.
+
+   Contract for a variation file:
+     .ap.<name>  -> redefine tokens only
+     layout      -> add ONE of  h-right (default) | h-left | h-center | h-band
+     photo shape -> add crop-arch | crop-rect  (default is a disc)
+     arcs        -> add no-halo to drop the halo behind the photo
+   =========================================================================== */
+
+.ap{
+  /* --- ground ------------------------------------------------------------ */
+  --ap-paper:#F4F6FA;                  /* page ground */
+  --ap-wash:none;                      /* optional radial-gradient atmosphere */
+  --ap-card:#ffffff;                   /* plate / chips / figures / visiting */
+  --ap-line:rgba(28,39,67,.09);        /* hairlines and card borders */
+
+  /* --- ink ---------------------------------------------------------------
+     Both must clear AA on --ap-card AND on --ap-paper: the plate sits on the
+     card but the lede and prose sit straight on the paper. */
+  --ap-ink:#1c2743;                    /* headings, values, emphasis */
+  --ap-ink2:#5c6575;                   /* body copy, labels, captions */
+
+  /* --- accent ------------------------------------------------------------
+     -acc is a FILL (rules, strokes, rings) and is never allowed to carry type;
+     -acc-ink is the darkened sibling that is. Keeping these separate is what
+     stopped gold-on-white shipping at 1.93:1. */
+  --ap-acc:#e3b44f;
+  --ap-acc-ink:#8a6410;
+  --ap-acc-soft:rgba(227,180,79,.16);
+  --ap-acc-ring:rgba(227,180,79,.55);
+
+  /* --- arcs -------------------------------------------------------------- */
+  --ap-ring:rgba(28,39,67,.15);
+  --ap-ring-faint:rgba(28,39,67,.08);
+  --ap-ring-acc:rgba(227,180,79,.85);
+
+  /* --- shape ------------------------------------------------------------- */
+  --ap-crop:50%;                       /* photo mask */
+  --ap-aspect:1/1;
+  --ap-r-card:24px;
+  --ap-r-soft:20px;
+  --ap-r-chip:999px;
+  --ap-shadow:28,39,67;                /* rgb triple, alpha applied per use */
+  --ap-shadow-a:.14;
+
+  /* --- action ------------------------------------------------------------ */
+  --ap-cta-bg:#1c2743;
+  --ap-cta-fg:#ffffff;
+
+  /* --- type -------------------------------------------------------------- */
+  --ap-disp:ui-serif,Georgia,"Times New Roman",serif;
+  --ap-sans:ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --ap-h1:clamp(30px,7.2vw,52px);
+  --ap-h1-ls:-.015em;
+  --ap-h1-wt:400;
+  --ap-lede-wt:300;
+
+  position:relative;
+  /* Crops the arcs at the page edge. `clip` rather than `hidden` is load-bearing:
+     the arc clusters are parked off-canvas (right:-230px, bottom:-170px), so with
+     `hidden` this element becomes a SCROLL CONTAINER with ~170px of hidden scroll
+     range — and an in-page anchor scrolls the nearest scrollable ancestor. The
+     hero CTA and the skip link both scrolled .ap by 170px and never moved the
+     page. `clip` clips identically but creates no scroll container.
+     `hidden` stays first as the fallback for browsers without `clip`. */
+  overflow:hidden;
+  overflow:clip;
+  background-color:var(--ap-paper);
+  background-image:var(--ap-wash);
+  background-repeat:no-repeat;
+  font-family:var(--ap-sans);
+  color:var(--ap-ink2);
+  padding:30px 0 66px;
+}
+@media(min-width:900px){.ap{padding:52px 0 84px}}
+.ap .wrap{position:relative;z-index:1}
+
+/* Shared building blocks from site.css, re-expressed in Aperture tokens so a
+   dark or coloured variation only has to restate the tokens. */
+.ap .eyebrow{color:var(--ap-acc-ink)}
+.ap .attrib{color:var(--ap-ink2)}
+.ap .pill{border-color:var(--ap-acc);background:var(--ap-acc-soft);color:var(--ap-ink)}
+.ap .metarow dt{color:var(--ap-ink2)}
+.ap .metarow dd{color:var(--ap-ink)}
+
+/* ---- the arcs ------------------------------------------------------------ */
+.ap .arcs{fill:none;stroke:var(--ap-ring);stroke-width:1;pointer-events:none}
+.ap .arcs circle,.ap .arcs path{vector-effect:non-scaling-stroke}
+.ap .arcs .g{stroke:var(--ap-ring-acc)}
+.ap .arcs .d{stroke-dasharray:2 8}
+.ap .arcs .f{stroke:var(--ap-ring-faint)}
+/* two clusters anchored off-canvas so the composition feels larger than the page */
+.ap > .arcs.edge{position:absolute;width:560px;aspect-ratio:1;z-index:0}
+.ap > .arcs.tr{right:-230px;top:-190px}
+.ap > .arcs.bl{left:-250px;bottom:-170px}
+
+/* a shallow sweep used as a section divider */
+.ap .sweep{display:block;width:100%;height:38px;fill:none;stroke:var(--ap-ring);
+  stroke-width:1;margin:52px 0 0}
+@media(min-width:900px){.ap .sweep{height:52px;margin-top:66px}}
+
+/* ---- hero ---------------------------------------------------------------- */
+.ap .lens{position:relative}
+.ap .eye{position:relative;width:min(280px,68vw);margin:0 auto}
+.ap .eye .halo{position:absolute;left:50%;top:50%;width:300%;aspect-ratio:1;
+  transform:translate(-50%,-50%);z-index:0}
+.ap.no-halo .eye .halo{display:none}
+/* height:auto keeps the width/height attributes from beating aspect-ratio */
+.ap .disc{position:relative;z-index:1;width:100%;height:auto;aspect-ratio:var(--ap-aspect);
+  object-fit:cover;border-radius:var(--ap-crop);
+  box-shadow:0 0 0 9px var(--ap-paper),0 0 0 10px var(--ap-line),
+             0 22px 50px rgba(var(--ap-shadow),.18)}
+.ap .disc.blank{display:grid;place-items:center;background:var(--ap-acc-soft);
+  color:var(--ap-ink);box-shadow:0 0 0 9px var(--ap-paper),0 0 0 10px var(--ap-line)}
+.ap .disc.blank .ico{width:38%;height:38%;stroke-width:1.1}
+
+.ap .plate{position:relative;z-index:2;background:var(--ap-card);
+  border:1px solid var(--ap-line);border-radius:var(--ap-r-card);padding:22px 20px;
+  box-shadow:0 20px 48px rgba(var(--ap-shadow),var(--ap-shadow-a))}
+.ap .lens.pic .plate{margin:-54px 6px 0}
+/* The business name must never break mid-word. Sizing off the CONTAINER rather
+   than the viewport is what fixes it: the plate is far narrower than the page on
+   desktop, so a vw-sized h1 overflowed and the browser chopped the word. */
+.ap .plate h1{font-family:var(--ap-disp);font-weight:var(--ap-h1-wt);
+  font-size:var(--ap-h1);line-height:1.04;letter-spacing:var(--ap-h1-ls);
+  color:var(--ap-ink);margin-top:10px;overflow-wrap:normal;hyphens:none}
+@supports (font-size:1cqw){
+  .ap .plate{container-type:inline-size}
+  .ap .plate h1{font-size:clamp(28px,9.4cqw,52px)}
+}
+.ap .plate .own{margin-top:12px;font-size:14.5px;line-height:1.55;color:var(--ap-ink2)}
+.ap .plate .pill{margin-top:17px;font-family:var(--ap-sans);letter-spacing:.1em}
+
+/* no photo: a quiet centred aperture, nothing overlapping */
+.ap .lens.nopic{max-width:700px;margin-inline:auto;text-align:center}
+.ap .lens.nopic .eye{width:min(210px,50vw)}
+.ap .lens.nopic .plate{margin-top:26px}
+.ap .lens.nopic .acts{align-items:center}
+.ap .lens.nopic .contact{justify-content:center}
+
+/* ---- hero actions: how to reach the shop ---------------------------------
+   The loan CTA moved to the brand bar, so this block is now only the business's
+   own phone numbers and map link, below a hairline. Every item is its own 44px
+   target — two tel: links sharing a line is a mis-dial on a phone. */
+.ap .acts{margin-top:18px;padding-top:16px;border-top:1px solid var(--ap-line);
+  display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+
+/* The contact block is the visiting-card half: two phones on one row, then the
+   address and the map link on the next. */
+.ap .contact{display:flex;flex-direction:column;gap:10px;width:100%}
+
+/* GRID, not flex, on a phone. With white-space:nowrap each number has a
+   min-content floor around 170px, so flex-basis simply refused to put two on a
+   row at 320-414 — the widths that matter most. grid-auto-flow:column forces N
+   equal columns regardless of content width, and handles a single number (one
+   full-width column) without a dangling empty cell. Type and padding come down
+   so the number still fits its half without ever being truncated: a clipped
+   phone number is a mis-dial. */
+.ap .phones{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px}
+.ap .phones a{min-width:0;display:inline-flex;align-items:center;justify-content:center;
+  gap:6px;min-height:46px;padding:0 8px;border:1px solid var(--ap-line);
+  border-radius:var(--ap-r-chip);background:var(--ap-paper);
+  color:var(--ap-ink);text-decoration:none;font-size:13.5px;font-weight:500;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+  transition:border-color .15s,background .15s}
+.ap .phones a .ico{width:14px;height:14px;color:var(--ap-acc-ink);flex:none}
+.ap .phones a:hover{border-color:var(--ap-acc)}
+@media(max-width:344px){
+  /* the smallest handsets cannot hold icon + number in half a card; the number
+     wins, since it is the thing being tapped */
+  .ap .phones a .ico{display:none}
+}
+@media(min-width:640px){
+  /* on a wide plate, stretching two numbers across half the card each looks
+     accidental — let them size to their content */
+  .ap .phones{display:flex;flex-wrap:wrap}
+  .ap .phones a{justify-content:flex-start;padding:0 13px;font-size:14.5px;gap:8px}
+  .ap .phones a .ico{width:15px;height:15px;display:inline-block}
+}
+
+.ap .where{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px}
+.ap .addr{display:inline-flex;align-items:center;gap:8px;min-height:40px;
+  font-size:14px;line-height:1.4;color:var(--ap-ink2)}
+.ap .addr .ico{width:15px;height:15px;color:var(--ap-acc-ink);flex:none}
+.ap .maplink{display:inline-flex;align-items:center;gap:8px;min-height:44px;
+  padding:0 15px;border:1px solid var(--ap-line);border-radius:var(--ap-r-chip);
+  background:var(--ap-paper);color:var(--ap-ink);font-size:13.5px;font-weight:500;
+  text-decoration:none;white-space:nowrap;
+  transition:border-color .15s,background .15s}
+.ap .maplink .ico{width:15px;height:15px;color:var(--ap-acc-ink);flex:none}
+.ap .maplink:hover{border-color:var(--ap-acc)}
+
+/* ---- hero layouts -------------------------------------------------------- */
+@media(min-width:900px){
+  /* h-right (default): disc parked right of centre, plate crossing its left edge */
+  .ap .lens.pic{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,1fr);
+    align-items:center;margin-bottom:26px}
+  .ap .lens.pic .eye{grid-area:1/2;width:100%;max-width:460px;justify-self:end;margin:0}
+  .ap .lens.pic .plate{grid-area:1/1;justify-self:start;align-self:center;
+    width:calc(100% + 112px);margin:0;padding:32px 36px;transform:translateY(22px)}
+
+  /* h-left: the same composition mirrored. The plate is wider than its column and
+     justified to the end, so the overflow lands on the disc. */
+  .ap.h-left .lens.pic{grid-template-columns:minmax(0,1fr) minmax(0,1.06fr)}
+  .ap.h-left .lens.pic .eye{grid-area:1/1;justify-self:start}
+  .ap.h-left .lens.pic .plate{grid-area:1/2;justify-self:end}
+}
+
+/* h-center: one big disc on the axis, plate hung beneath it. Same on every width. */
+.ap.h-center .lens.pic{display:block;max-width:760px;margin:0 auto 8px;text-align:center}
+.ap.h-center .lens.pic .eye{width:min(300px,70vw);max-width:none;margin:0 auto;
+  grid-area:auto;justify-self:auto}
+.ap.h-center .lens.pic .plate{width:auto;max-width:640px;margin:-56px auto 0;
+  transform:none;grid-area:auto;justify-self:auto}
+.ap.h-center .acts{align-items:center}
+.ap.h-center .contact{justify-content:center}
+.ap.h-center .pill{margin-inline:auto}
+@media(min-width:900px){
+  .ap.h-center .lens.pic .eye{width:340px}
+  .ap.h-center .lens.pic .plate{padding:30px 34px;margin-top:-62px}
+}
+
+/* h-band: the photo as a wide panel, plate tucked under its left corner. Reads
+   editorial rather than portrait — pair it with shape-rect.
+   NOT centred inside its own narrower cap: that put the photo's left edge ~58px
+   inboard of the lede and every section below it, so the page had two competing
+   left margins. The band fills the content column and shares one edge with
+   everything else. */
+.ap.h-band .lens.pic{display:block;max-width:none;margin:0 0 8px}
+.ap.h-band .lens.pic .eye{width:100%;max-width:none;margin:0;grid-area:auto;justify-self:auto}
+.ap.h-band .lens.pic .plate{width:auto;max-width:660px;margin:-46px 0 0;transform:none;
+  grid-area:auto;justify-self:auto}
+@media(min-width:900px){
+  .ap.h-band .lens.pic .plate{margin:-64px 0 0 0;padding:30px 34px}
+}
+
+/* ---- photo shapes --------------------------------------------------------
+   Straight out of the die-cut vocabulary a printed visiting card actually uses:
+   circle, oval, half-circle side (arch), leaf, single rounded corner, rounded
+   rectangle. All are border-radius, so the ring the photo wears (a box-shadow
+   spread) follows the silhouette for free — no mask, no clip-path, no second
+   element to keep in sync. */
+.ap.shape-disc {--ap-crop:50%;                                          --ap-aspect:1/1}
+.ap.shape-oval {--ap-crop:50%;                                          --ap-aspect:1/1.2}
+.ap.shape-arch {--ap-crop:47% 47% var(--ap-r-soft) var(--ap-r-soft);    --ap-aspect:1/1.14}
+/* leaf: two opposite corners swept, two nearly square — the shape reads as a
+   petal and is the most distinctive silhouette in the printed set */
+.ap.shape-leaf {--ap-crop:14px 52% 14px 52%;                            --ap-aspect:1/1.04}
+/* single rounded corner: one big sweep, the rest crisp. The classic die-cut. */
+.ap.shape-notch{--ap-crop:78px 12px 12px 12px;                          --ap-aspect:4/3}
+.ap.shape-rect {--ap-crop:26px;                                         --ap-aspect:16/10}
+
+/* ---- subtle geometry -----------------------------------------------------
+   One aria-hidden layer behind the content, driven entirely by tokens. Printed
+   cards get their texture from the stock — matte grain, letterpress tooth. On a
+   screen the equivalent is a very low-contrast repeating field: a dot grid, a
+   hatch, a ruled grid. Kept at single-digit alpha on purpose. If it is legible
+   as a pattern it is too strong. */
+.ap .geo{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--ap-geo,none);
+  background-size:var(--ap-geo-size,auto);
+  background-position:var(--ap-geo-pos,0 0);
+  /* fade it out down the page so the enquiry card never sits on texture */
+  -webkit-mask-image:linear-gradient(#000 0,#000 42%,transparent 82%);
+          mask-image:linear-gradient(#000 0,#000 42%,transparent 82%)}
+
+/* A few small geometric marks — a square on its corner, a ring, a quarter arc.
+   Three, not thirty: they are punctuation for the composition, not a pattern. */
+.ap .mark{position:absolute;z-index:0;pointer-events:none;fill:none;
+  stroke:var(--ap-mark,var(--ap-ring));stroke-width:1.5;
+  vector-effect:non-scaling-stroke}
+.ap .mark.fill{fill:var(--ap-mark-fill,var(--ap-acc));stroke:none}
+.ap .mark.m1{width:26px;height:26px;left:6%;top:16%;transform:rotate(45deg)}
+.ap .mark.m2{width:11px;height:11px;right:9%;top:9%}
+.ap .mark.m3{width:44px;height:44px;left:11%;bottom:26%}
+@media(max-width:899px){
+  /* on a phone the composition is already tight — keep only the smallest mark */
+  .ap .mark.m1,.ap .mark.m3{display:none}
+  .ap .mark.m2{right:6%;top:5%}
+}
+
+/* ---- lede ---------------------------------------------------------------- */
+.ap .lede{font-family:var(--ap-disp);font-weight:var(--ap-lede-wt);
+  font-size:clamp(20px,4.8vw,29px);line-height:1.45;color:var(--ap-ink);
+  text-align:center;max-width:640px;margin:46px auto 0}
+@media(min-width:900px){.ap .lede{margin-top:70px}}
+
+/* ---- section scaffolding ------------------------------------------------- */
+.ap .blk{margin-top:48px}
+@media(min-width:900px){.ap .blk{margin-top:60px}}
+.ap .lab{font-family:var(--ap-sans);font-size:11.5px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ap-acc-ink)}
+.ap .blk.mid{text-align:center}
+.ap .rail{display:grid;gap:14px}
+@media(min-width:900px){
+  .ap .rail{grid-template-columns:180px minmax(0,1fr);gap:40px;align-items:start}
+}
+
+/* offerings: chips bowed along a soft arc on desktop, plain stack on mobile */
+.ap ul.chips{list-style:none;padding:0;margin:18px 0 0;display:flex;flex-direction:column;gap:9px}
+.ap ul.chips li{display:flex;align-items:center;gap:10px;min-height:44px;
+  padding:10px 16px;border-radius:var(--ap-r-chip);background:var(--ap-card);
+  border:1px solid var(--ap-line);box-shadow:0 5px 16px rgba(var(--ap-shadow),.05);
+  font-size:14.5px;line-height:1.4;text-align:left;color:var(--ap-ink)}
+.ap ul.chips .ico{color:var(--ap-acc-ink)}
+@media(min-width:760px){
+  .ap ul.chips{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;
+    gap:12px;max-width:880px;margin:22px auto 0;padding-bottom:28px}
+  .ap ul.chips li{flex:0 0 auto}
+  /* symmetric offsets: outer chips ride lower, so any number of them bows */
+  .ap ul.chips li:nth-child(3),.ap ul.chips li:nth-last-child(3){transform:translateY(3px)}
+  .ap ul.chips li:nth-child(2),.ap ul.chips li:nth-last-child(2){transform:translateY(11px)}
+  .ap ul.chips li:nth-child(1),.ap ul.chips li:nth-last-child(1){transform:translateY(24px)}
+}
+
+/* ---- figures: one ruled data panel ---------------------------------------
+   Was: separate square tiles, each wearing a fat tinted halo, nudged onto a
+   shallow arc. That geometry was drawn for CIRCLES — on squares the stagger just
+   reads as misalignment, the halo goes muddy against a cool ground, and a fixed
+   1:1 tile forces "YEARS IN / BUSINESS" to wrap while orphaning the third figure
+   on its own row.
+
+   Now: a single card divided by hairlines, one column per figure. Columns are
+   equal-width and left-aligned, so the numbers sit on a shared baseline grid and
+   any count from two upwards divides cleanly. Reads as a spec panel, which is
+   what these actually are. */
+.ap ul.figs{list-style:none;padding:0;margin:24px auto 0;max-width:860px;
+  display:grid;grid-template-columns:1fr;
+  background:var(--ap-card);border:1px solid var(--ap-line);
+  border-radius:var(--ap-r-soft);overflow:hidden;overflow:clip;
+  box-shadow:0 12px 34px rgba(var(--ap-shadow),.08)}
+.ap ul.figs li{display:flex;flex-direction:column;align-items:flex-start;gap:9px;
+  padding:20px 22px;text-align:left;border-top:1px solid var(--ap-line)}
+.ap ul.figs li:first-child{border-top:0}
+/* a short accent tick above each number — the only colour in the panel */
+.ap ul.figs li::before{content:"";width:22px;height:3px;border-radius:2px;
+  background:var(--ap-acc);flex:none}
+.ap ul.figs .v{font-family:var(--ap-disp);font-weight:var(--ap-h1-wt);
+  font-size:clamp(30px,6.4vw,42px);line-height:1;letter-spacing:-.03em;
+  color:var(--ap-ink);font-variant-numeric:tabular-nums}
+.ap ul.figs .l{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ap-ink2);line-height:1.4}
+@media(min-width:640px){
+  /* auto-flow column: N figures become N equal columns without hard-coding N */
+  .ap ul.figs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:1fr}
+  .ap ul.figs li{border-top:0;border-left:1px solid var(--ap-line);padding:26px 26px 24px}
+  .ap ul.figs li:first-child{border-left:0}
+}
+.ap .cap{display:block;text-align:center;margin-top:14px}
+
+/* about */
+.ap .prose{max-width:64ch}
+.ap .prose p{font-size:15.5px;line-height:1.85;color:var(--ap-ink2)}
+.ap .prose p + p{margin-top:14px}
+
+/* visiting */
+.ap .visit{background:var(--ap-card);border:1px solid var(--ap-line);
+  border-radius:var(--ap-r-soft);padding:20px;
+  box-shadow:0 8px 24px rgba(var(--ap-shadow),.06)}
+.ap .visit dd{font-size:14.5px}
+
+/* ---- enquiry -------------------------------------------------------------
+   This card is the page's second hero: everything above it is the customer's
+   business, and this is the only thing Prayaan is actually asking for. It is
+   dressed to match — full display type, a lit accent bar, a real shadow, and the
+   same moving-light treatment as the brand-bar button.
+
+   Structure and shape only. Every COLOUR is set by the hardening block in
+   site.css from --enq-* tokens; a variation retunes those tokens and nothing
+   else, so the consent line can never be styled into invisibility. */
+.ap .enqwrap{position:relative;max-width:none;margin:66px 0 0;scroll-margin-top:96px}
+@media(min-width:900px){.ap .enqwrap{margin-top:86px}}
+
+/* a halo behind the card, so it reads as a destination rather than a footer */
+.ap .enqwrap::before{content:"";position:absolute;z-index:0;left:50%;top:-8%;
+  width:112%;padding-bottom:112%;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(circle,var(--ap-acc-soft),transparent 62%);
+  pointer-events:none}
+.ap .enqwrap .enq{position:relative;z-index:1}
+
+.ap .enq{border:1px solid var(--enq-bd);border-top:0;border-radius:var(--ap-r-card);
+  box-shadow:0 34px 74px rgba(var(--ap-shadow),.22),0 4px 12px rgba(var(--ap-shadow),.08);
+  padding:30px 26px 26px;overflow:hidden;overflow:clip}
+@media(min-width:640px){.ap .enq{padding:34px 32px 30px}}
+
+/* ---- the ask, as a two-column panel --------------------------------------
+   A 560px card floating in the middle of a 1100px column broke the left rail and
+   read as a footer widget. At full width the section can carry the weight it
+   deserves: the pitch and the reward on the left, the fields on the right, one
+   left edge shared with the hero and every block between.
+
+   :has(form) scopes this to the live form — after submission the card holds only
+   the thank-you and would leave an empty second column.
+   The accent bar is position:absolute, so it stays out of the grid flow. */
+@media(min-width:860px){
+  .ap .enq:has(form){display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,430px);
+    column-gap:56px;align-items:start;padding:44px 44px 40px}
+  .ap .enq:has(form) > h2  {grid-column:1;grid-row:1;
+    font-size:clamp(30px,3.4vw,40px);max-width:15ch}
+  .ap .enq:has(form) > .sub{grid-column:1;grid-row:2;font-size:15px;max-width:44ch}
+  .ap .enq:has(form) > .reward{grid-column:1;grid-row:3;margin-top:22px;max-width:46ch}
+  .ap .enq:has(form) > form{grid-column:2;grid-row:1/span 4}
+  .ap .enq:has(form) > .ref{grid-column:1;grid-row:4;margin-top:20px;
+    border-top:1px solid var(--enq-bd);padding-top:14px;max-width:46ch}
+  /* first field sits level with the heading rather than dropping a line */
+  .ap .enq:has(form) > form > label:first-of-type{margin-top:0}
+}
+/* the accent bar, drawn inside the radius rather than as a square border-top */
+.ap .enq::before{content:"";position:absolute;inset:0 0 auto;height:4px;z-index:2;
+  background:linear-gradient(100deg,var(--ap-acc),var(--enq-acc) 45%,var(--ap-acc))}
+
+.ap .enq h2{font-family:var(--ap-disp);font-weight:var(--ap-h1-wt);
+  font-size:clamp(25px,5.6vw,32px);line-height:1.12;letter-spacing:var(--ap-h1-ls)}
+.ap .enq .sub{font-size:14px;margin-top:9px}
+/* :not(.chk) is load-bearing — the age confirmation is also a <label>, but it is
+   a legal SENTENCE, not a field name. Setting it in caps hurts readability and
+   quietly restyles compliance copy. Field labels only. */
+.ap .enq label:not(.chk){font-size:11.5px;letter-spacing:.09em;text-transform:uppercase}
+.ap .enq input[type=text],.ap .enq input[type=tel]{border-radius:12px;min-height:50px;
+  padding:0 14px;transition:border-color .15s,box-shadow .15s}
+.ap .enq input[type=text]:focus,.ap .enq input[type=tel]:focus{outline:none;
+  border-color:var(--ap-acc);box-shadow:0 0 0 3px var(--ap-acc-ring)}
+.ap .enq .chk,.ap .enq .err,.ap .enq .reward{border-radius:12px}
+
+/* Same two-motion treatment as the brand-bar CTA: a drifting gradient plus a
+   sheen that crosses on a different cycle. Both stops come from tokens, so each
+   design lights its own colour. */
+.ap .enq button{position:relative;overflow:hidden;isolation:isolate;
+  border-radius:999px;font-family:var(--ap-sans);font-size:15.5px;letter-spacing:.02em;
+  min-height:54px;margin-top:18px;
+  background-image:linear-gradient(100deg,var(--enq-btn-lo) 0%,var(--enq-btn-hi) 20%,
+                                          var(--enq-btn-lo) 42%,var(--enq-btn-hi) 64%,
+                                          var(--enq-btn-lo) 100%);
+  background-size:260% 100%;
+  box-shadow:0 10px 26px rgba(var(--ap-shadow),.26);
+  transition:transform .18s ease,box-shadow .18s ease}
+/* z-index:-1 puts the sheen above the button's own background but below its
+   label — negative-z children paint after the element's background and before
+   inline content. Alpha is held at .18: the submit button carries small text, so
+   the lightened patch under the label has to stay above 4.5:1, and the mid-tone
+   buttons (terracotta, berry) break well before the .30 the brand-bar CTA uses. */
+.ap .enq button::after{content:"";position:absolute;top:-40%;bottom:-40%;left:0;width:30%;
+  z-index:-1;background:linear-gradient(100deg,transparent,rgba(255,255,255,.18) 45%,transparent);
+  transform:translateX(-260%) skewX(-16deg)}
+.ap .enq button:hover{transform:translateY(-2px);
+  box-shadow:0 18px 36px rgba(var(--ap-shadow),.32)}
+.ap .enq button:active{transform:translateY(0)}
+@media (prefers-reduced-motion:no-preference){
+  .ap .enq button{animation:hcta-flow 7s linear infinite}
+  .ap .enq button::after{animation:hcta-sheen 3.6s ease-in-out infinite;animation-delay:1.4s}
+}
+.ap .enq .ref{font-size:11.5px}
+
+.ap .colo{margin-top:32px;text-align:center;font-size:11.5px;color:var(--ap-ink2)}

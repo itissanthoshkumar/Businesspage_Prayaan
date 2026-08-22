@@ -1,0 +1,181 @@
+{# ===========================================================================
+   APERTURE — shared body markup for every Aperture variation.
+
+   A variation file sets `ap_class` (palette name + layout/crop modifiers), loads
+   its typefaces, overrides tokens in a <style> block, then includes this. The
+   markup exists once so the hero CTA, the contact strip and the compliance
+   include cannot drift apart between designs.
+
+   Expects: ap_class — e.g. "noir h-center", appended to the .ap root.
+   =========================================================================== #}
+{% set place = [page.locality, page.district]|select|list %}
+<div class="ap {{ ap_class }}">
+
+  {# Texture and punctuation, in that order. Both are decoration and both are
+     hidden from assistive tech; a variation turns them on by setting --ap-geo
+     and --ap-mark, and gets nothing if it does not. #}
+  <div class="geo" aria-hidden="true"></div>
+  <svg class="mark m1" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18"/></svg>
+  <svg class="mark m2 fill" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11"/></svg>
+  <svg class="mark m3" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M2 46A44 44 0 0146 2"/></svg>
+
+  <svg class="arcs edge tr" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+    <circle cx="200" cy="200" r="72"/><circle cx="200" cy="200" r="104" class="g"/>
+    <circle cx="200" cy="200" r="140" class="d"/><circle cx="200" cy="200" r="186" class="f"/>
+  </svg>
+  <svg class="arcs edge bl" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+    <circle cx="200" cy="200" r="60" class="g"/><circle cx="200" cy="200" r="96"/>
+    <circle cx="200" cy="200" r="136" class="d"/><circle cx="200" cy="200" r="192" class="f"/>
+  </svg>
+
+  <div class="wrap">
+
+    {# Hero. `hero_mode` (set by the variant file) selects the composition; both
+       carry the same content — category, name, owner, Est. pill, contact set.
+       'cover' (v31) is the profile anatomy: wide cover, avatar breaking its
+       edge. The default (v27) is the wide-panel band with the plate tucked
+       under its corner, and the fallback when a page has no photograph.
+       Nine other modes were built and rejected across two rounds (ink, glass,
+       poster, band, bento, ticket, sign + the pre-Reflex set) — see the DuckDB
+       context before resurrecting any of them. #}
+    {% set shot_alt = page.business_name
+       ~ (', ' ~ page.category if page.category else '')
+       ~ (' in ' ~ page.locality if page.locality else '') %}
+
+    {% if hero_mode == 'cover' and page.photo_url %}
+    {# The classic profile anatomy every phone user already knows: wide cover,
+       avatar breaking its bottom edge, identity, then the contact card. #}
+    <section class="lens hm">
+      <div class="stage">
+        <img class="shot" src="{{ page.photo_url }}" width="1200" height="600" alt="{{ shot_alt }}">
+      </div>
+      <div class="idrow">
+        <img class="ava" src="{{ page.photo_url }}" width="176" height="176" alt="" aria-hidden="true">
+        <div class="idtxt">
+          {% if page.category %}<p class="eyebrow">{{ page.category }}</p>{% endif %}
+          <h1>{{ page.business_name }}</h1>
+          {% if page.owner_name %}<p class="own">{{ page.owner_name }}</p>{% endif %}
+        </div>
+        {% if page.established_year %}
+        <span class="pill">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+          Est. {{ page.established_year }}
+        </span>
+        {% endif %}
+        {% include "_tier.html" %}
+      </div>
+      <div class="plate slim">
+        {% include "_contact.html" %}
+      </div>
+    </section>
+
+    {% else %}
+    <section class="lens {% if page.photo_url %}pic{% else %}nopic{% endif %}">
+      <div class="eye">
+        <svg class="arcs halo" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+          <circle cx="200" cy="200" r="72" class="g"/>
+          <circle cx="200" cy="200" r="88"/>
+          <circle cx="200" cy="200" r="112" class="d"/>
+          <circle cx="200" cy="200" r="146"/>
+          <circle cx="200" cy="200" r="198" class="f"/>
+        </svg>
+        {% if page.photo_url %}
+          <img class="disc" src="{{ page.photo_url }}" width="1200" height="1200"
+               alt="{{ page.business_name }}{% if page.category %}, {{ page.category }}{% endif %}{% if page.locality %} in {{ page.locality }}{% endif %}">
+        {% else %}
+          <span class="disc blank" aria-hidden="true">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M13.9 8.2l5.2 9M9.9 8.2h10.4M7.9 11.7l5.2-9M9.9 15.2L4.7 6.2M13.9 15.2H3.5M15.9 11.7l-5.2 9"/></svg>
+          </span>
+        {% endif %}
+      </div>
+
+      <div class="plate">
+        {% if page.category %}<p class="eyebrow">{{ page.category }}</p>{% endif %}
+        <h1>{{ page.business_name }}</h1>
+        {# Owner only. The address used to trail this line as "S. Santhosh ·
+           Katpadi, Vellore, Tamil Nadu"; it now sits in the contact block below
+           with a pin and the map link, so the card reads the way a visiting card
+           does — identity first, then how to reach them. #}
+        {% if page.owner_name %}<p class="own">{{ page.owner_name }}</p>{% endif %}
+        {% if page.established_year %}
+        <span class="pill">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+          Est. {{ page.established_year }}
+        </span>
+        {% endif %}
+        {% include "_tier.html" %}
+        {% include "_contact.html" %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if page.summary %}<p class="lede reveal">{{ page.summary }}</p>{% endif %}
+
+    {% if page.offerings %}
+    <svg class="sweep" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 56C320 4 880 4 1200 56"/></svg>
+    <section class="blk mid reveal">
+      <h2 class="lab">What they do</h2>
+      <ul class="chips">
+        {% for item in page.offerings %}
+        <li>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/></svg>
+          <span>{{ item }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if page.figures %}
+    <section class="blk mid reveal">
+      <h2 class="lab">In numbers</h2>
+      <ul class="figs">
+        {% for f in page.figures %}
+        <li><span class="v">{{ f.value }}</span><span class="l">{{ f.label }}</span></li>
+        {% endfor %}
+      </ul>
+      <p class="attrib cap">Figures shared by {{ page.owner_name or 'the business owner' }}.</p>
+    </section>
+    {% endif %}
+
+    {% if page.about %}
+    <svg class="sweep" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 56C320 4 880 4 1200 56"/></svg>
+    <section class="blk rail reveal">
+      <h2 class="lab">About the business</h2>
+      <div class="prose">
+        {% for para in page.about %}<p>{{ para }}</p>{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if page.hours or page.languages %}
+    <section class="blk rail reveal">
+      <h2 class="lab">Visiting</h2>
+      <div class="visit">
+        <dl class="metarow">
+          {% if page.hours %}
+          <div>
+            <dt><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Hours</dt>
+            <dd>{{ page.hours }}</dd>
+          </div>
+          {% endif %}
+          {% if page.languages %}
+          <div>
+            <dt><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h12M9 3v3M11 6c0 5-3.5 9-8 9M6 10c1.6 3 4 5 7 6"/><path d="M13 21l4.5-11L22 21M15 17h5"/></svg>Spoken</dt>
+            <dd>{{ page.languages|join(', ') }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </section>
+    {% endif %}
+
+    {% set round = true %}
+    <div class="enqwrap reveal">
+      {% include "_enquiry.html" %}
+    </div>
+
+    <p class="colo">Published by Prayaan Business Pages at {{ page.path }}</p>
+
+  </div>
+</div>

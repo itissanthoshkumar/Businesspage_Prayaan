@@ -1,0 +1,275 @@
+{% extends "_base.html" %}
+
+{# ===========================================================================
+   SKELETON · REFLEX (v41) — the page as a SPECIFICATION, not a design.
+
+   The companion to v40 (Skeleton · Cover). Same idea, the OTHER house hero:
+   this restates the default Reflex composition — the wide photo PANEL with the
+   name plate tucked under its bottom-left corner (ap reflex h-band shape-rect
+   no-halo) — which is what a customer sees at ?v=27. v40 documents the ?v=31
+   Cover hero (cover photo + overlapping avatar). Everything below the hero is
+   identical between the two, and shared verbatim from v40's tail.
+
+   Every dynamic value is a literal <field_name> chip; nothing reads from `page`,
+   so the file renders byte-identically for every business. Structure uses the
+   shipping class names (.lens/.eye/.plate/.acts/.chips/.figs/.prose/.visit) so
+   it inherits real typography from aperture.css + reflex.css and cannot drift
+   into a prettier layout than the one it claims to describe. The enquiry block
+   is the shared _enquiry.html, shadowed with placeholder strings.
+
+   Registry note: review tool. Never DEFAULT_VARIANT; excluded from PUBLIC_VARIANTS.
+   =========================================================================== #}
+
+{% macro ph(name) %}<span class="ph">&lt;{{ name }}&gt;</span>{% endmacro %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter+Tight:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/aperture.css">
+<link rel="stylesheet" href="/static/reflex.css">
+<link rel="stylesheet" href="/static/skeleton.css">
+{% endblock %}
+
+{% block body %}
+<div class="ap reflex h-band shape-rect no-halo skel">
+  <div class="geo" aria-hidden="true"></div>
+
+  <div class="wrap">
+
+    <div class="sk-legend">
+      <p class="sk-kicker">Skeleton — page specification</p>
+      <p>This is the Reflex page — the wide photo panel with the name plate tucked
+        under its bottom-left corner — with every value replaced by the field that
+        fills it. A chip like {{ ph('business_name') }} marks a slot, in the position
+        and at roughly the size the real value will occupy. Nothing here is read
+        from the database, so this page looks the same whichever business you open
+        it against. (The Cover-hero spec is at <code>?v=40</code>.)</p>
+      <p>Three fields are required — <code>business_name</code>, <code>state</code>
+        and <code>branch</code>. Everything else is optional, and on a live page a
+        section whose fields are all empty is not rendered at all: no heading, no
+        empty card, no gap.</p>
+    </div>
+
+    <!-- ============================ HERO ============================ -->
+    <section class="lens pic">
+
+      <div class="eye">
+        <div class="sk-shot">{{ ph('photo_url') }}</div>
+      </div>
+
+      <div class="plate">
+        <p class="eyebrow">{{ ph('category') }}</p>
+        <h1>{{ ph('business_name') }}</h1>
+        <p class="own">{{ ph('owner_name') }}</p>
+
+        <div class="sk-badges">
+          <span class="pill">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+            Est. {{ ph('established_year') }}
+          </span>
+          <span class="tier tier-gold">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5L7 22l5-2.5L17 22l-1.5-7.5"/></svg>
+            <b>{{ ph('tier') }}</b>
+            <span class="why">{{ ph('tier_status') }}</span>
+          </span>
+        </div>
+
+        <div class="acts">
+          <div class="contact">
+            <div class="phones">
+              <span class="slot">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.2a2 2 0 012.1-.5c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>
+                {{ ph('phones[1]') }}
+              </span>
+              <span class="slot">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.2a2 2 0 012.1-.5c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>
+                {{ ph('phones[2]') }}
+              </span>
+            </div>
+            <div class="where">
+              <span class="addr">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span class="sk-line">{{ ph('locality') }}, {{ ph('district') }}, {{ ph('state_name') }}</span>
+              </span>
+              <span class="maplink">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8.5 8.5"/><path d="M18 14.5V19a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 014 19V8a1.5 1.5 0 011.5-1.5H10"/></svg>
+                <span class="sk-line">View on Google Maps &rarr; {{ ph('map_url') }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <ul class="sk-cap">
+      <li><span class="opt">optional</span><code>photo_url</code> — the wide hero
+        panel, cropped 16:10 (and to a taller ratio on a phone). With no photo the
+        live page falls back to the centred disc hero instead of this one.</li>
+      <li><span class="opt">optional</span><code>category</code> — the small caps
+        line above the name. One short phrase, e.g. a trade.</li>
+      <li><span class="req">required</span><code>business_name</code> — the page's
+        only <code>h1</code>. Also the browser title, the WhatsApp link-preview
+        title and the footer disclaimer.</li>
+      <li><span class="opt">optional</span><code>owner_name</code> — one line under
+        the name. Also fills the "lends to owners like…" line in the enquiry card
+        and the attribution under In numbers.</li>
+      <li><span class="opt">optional</span><code>established_year</code> — renders
+        as the <code>Est.</code> pill. Omitted, no pill.</li>
+      <li><span class="opt">optional</span><code>tier</code> +
+        <code>tier_status</code> — recognition badge; both halves are needed.
+        <code>tier</code> is <code>gold</code>/<code>silver</code>/<code>bronze</code>
+        and picks the metal; <code>tier_status</code> is the qualifying line, and a
+        tier with no status never renders.</li>
+      <li><span class="opt">optional</span><code>phones</code> — a list; only the
+        first two render, each its own 46px dial target.</li>
+      <li><span class="opt">optional</span><code>locality</code>,
+        <code>district</code>, <code>state_name</code> — joined with commas into
+        one address line. Blanks are dropped, not left as stray commas.</li>
+      <li><span class="opt">optional</span><code>map_url</code> — becomes the
+        "View on Google Maps" button. The URL itself is never shown on a live page.</li>
+    </ul>
+
+    <!-- ============================ SUMMARY ============================ -->
+    <p class="lede">{{ ph('summary') }}</p>
+
+    <ul class="sk-cap">
+      <li><span class="opt">optional</span><code>summary</code> — one sentence, set
+        large in the display face. Doubles as the meta description and the
+        link-preview subtitle, so it is the line most people read before they ever
+        open the page. Aim for one line, two at most.</li>
+    </ul>
+
+    <!-- ============================ OFFERINGS ============================ -->
+    <svg class="sweep" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 56C320 4 880 4 1200 56"/></svg>
+    <section class="blk mid">
+      <h2 class="lab">What they do</h2>
+      <ul class="chips">
+        <li>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/></svg>
+          <span>{{ ph('offerings[1]') }}</span>
+        </li>
+        <li>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/></svg>
+          <span>{{ ph('offerings[2]') }}</span>
+        </li>
+        <li>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/></svg>
+          <span>{{ ph('offerings[n]') }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <ul class="sk-cap">
+      <li><span class="opt">optional</span><code>offerings</code> — a list. One chip
+        per entry, in the order given; the three above are illustrative, not a
+        limit. Short noun phrases read best, since each chip is a single line on a
+        phone. Empty list, no section.</li>
+    </ul>
+
+    <!-- ============================ FIGURES ============================ -->
+    <section class="blk mid">
+      <h2 class="lab">In numbers</h2>
+      <ul class="figs">
+        <li><span class="v">{{ ph('figures[1].value') }}</span><span class="l">{{ ph('figures[1].label') }}</span></li>
+        <li><span class="v">{{ ph('figures[2].value') }}</span><span class="l">{{ ph('figures[2].label') }}</span></li>
+        <li><span class="v">{{ ph('figures[n].value') }}</span><span class="l">{{ ph('figures[n].label') }}</span></li>
+      </ul>
+      <p class="attrib cap">Figures shared by {{ ph('owner_name') }}.</p>
+    </section>
+
+    <ul class="sk-cap">
+      <li><span class="opt">optional</span><code>figures</code> — a list of
+        <code>{value, label}</code> pairs, one column each. <code>value</code> is
+        set in display type at up to 42px, so it must stay short: "12", "40+",
+        "2 shops". The chips above are capped smaller only so the field names fit.</li>
+      <li><span class="opt">optional</span><code>figures[].label</code> — the small
+        caps line under the number. Two or three words.</li>
+      <li>The attribution line is fixed copy and names <code>owner_name</code>,
+        falling back to "the business owner". These are the business's own numbers;
+        nothing Prayaan measures belongs here.</li>
+    </ul>
+
+    <!-- ============================ ABOUT ============================ -->
+    <svg class="sweep" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 56C320 4 880 4 1200 56"/></svg>
+    <section class="blk rail">
+      <h2 class="lab">About the business</h2>
+      <div class="prose">
+        <p>{{ ph('about[1]') }}</p>
+        <p>{{ ph('about[2]') }}</p>
+      </div>
+    </section>
+
+    <ul class="sk-cap">
+      <li><span class="opt">optional</span><code>about</code> — a list of paragraphs;
+        each entry becomes one <code>&lt;p&gt;</code>, measure capped at 64
+        characters. Two or three is the usual shape. One long blob is still one
+        paragraph — the split has to be made in the admin form.</li>
+    </ul>
+
+    <!-- ============================ VISITING ============================ -->
+    <section class="blk rail">
+      <h2 class="lab">Visiting</h2>
+      <div class="visit">
+        <dl class="metarow">
+          <div>
+            <dt><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Hours</dt>
+            <dd>{{ ph('hours') }}</dd>
+          </div>
+          <div>
+            <dt><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h12M9 3v3M11 6c0 5-3.5 9-8 9M6 10c1.6 3 4 5 7 6"/><path d="M13 21l4.5-11L22 21M15 17h5"/></svg>Spoken</dt>
+            <dd>{{ ph('languages[]') }}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <ul class="sk-cap">
+      <li><span class="opt">optional</span><code>hours</code> — free text, one line.
+        Written as the shop would say it.</li>
+      <li><span class="opt">optional</span><code>languages</code> — a list, joined
+        with commas into a single "Spoken" line.</li>
+      <li>The whole section is skipped when both are empty.</li>
+    </ul>
+
+    <!-- ============================ ENQUIRY ============================
+         The one block that is NOT restated here. _enquiry.html is included
+         verbatim so the compliance-reviewed copy, consent line and field set
+         cannot diverge in a spec page; `with` shadows the record with
+         placeholder strings for the run of the include only, so the canonical
+         markup renders without exposing a real business.                    -->
+    {% with page = {'business_name': '<business_name>',
+                    'owner_name': '<owner_name>',
+                    'path': '<page path>'}, round = true %}
+    <div class="enqwrap">
+      {% include "_enquiry.html" %}
+    </div>
+    {% endwith %}
+
+    <ul class="sk-cap">
+      <li>Nothing in this card is authored by the admin. The heading, the consent
+        line, the reward wording and the three fields — <code>Your name</code>,
+        <code>Mobile number</code>, <code>Pincode</code> — are fixed on every page
+        and every design, and the referral reward is stated as conditional on
+        disbursal, never on applying.</li>
+      <li>The two names that vary are <code>business_name</code> and
+        <code>owner_name</code>, in the sub-line and the "Referred by" footer.</li>
+      <li>Attribution is taken from the request path, not from a form field, so a
+        lead cannot be credited to the wrong business by editing the markup.</li>
+    </ul>
+
+    <p class="colo">Published by Prayaan Business Pages at
+      /{{ ph('state') }}/{{ ph('branch') }}/{{ ph('slug') }}</p>
+
+    <ul class="sk-cap">
+      <li><span class="req">required</span><code>state</code> — the two-letter code
+        in the URL, upper case.</li>
+      <li><span class="req">required</span><code>branch</code> — the branch segment,
+        lower case.</li>
+      <li><span class="opt">optional</span><code>slug</code> — derived from
+        <code>business_name</code> when left blank. Once a page is live the slug is
+        the shared link, so changing it breaks every WhatsApp forward already out
+        there.</li>
+    </ul>
+
+  </div>
+</div>
+{% endblock %}

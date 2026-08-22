@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Secrets & local config — never commit
+.env
+.env.*
+*.secret
+
+# Runtime data — the JSON file-store and uploaded customer photos are DATA, not
+# code. They live in /tmp by default; excluded here in case a deployment points
+# PBN_DATA_DIR / the uploads dir inside the tree.
+/tmp-data/
+pbn-data/
+static/img/uploads/
+
+# OS / editor
+.DS_Store
+*.swp
+*.part

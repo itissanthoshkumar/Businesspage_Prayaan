@@ -1,0 +1,92 @@
+{# Public business directory (/browse).
+
+   Gated on PUBLIC_DIRECTORY — on while testing, off in production by default.
+   noindex on purpose: even while public-for-testing, a search engine must not
+   cache the entire customer roster as one page. Individual pages stay indexed. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Business directory — Prayaan Business Pages</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter+Tight:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brandrow">
+      <div class="brandid">
+        <a class="lockup" href="/" aria-label="Prayaan Capital — Business Page">
+          <picture>
+            <source srcset="/static/img/prayaan-logo-full.webp" type="image/webp">
+            <img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30">
+          </picture>
+          <span class="lockdiv" aria-hidden="true"></span>
+          <span class="locktxt">Business Page</span>
+        </a>
+        <span class="regd">RBI-registered NBFC</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="dir">
+  <div class="wrap">
+    <p class="eyebrow">Business directory</p>
+    <h1>{{ count }} business{{ '' if count == 1 else 'es' }} on Prayaan Business Pages</h1>
+    <p class="dirlede">Every live customer page. This list is for internal review
+      and is hidden before launch.</p>
+
+    {% if not pages %}
+    <p class="dirempty">No live pages yet. Publish one from the back-office and it
+      appears here.</p>
+    {% else %}
+    <ul class="dirgrid">
+      {% for p in pages %}
+      <li class="dircard">
+        <a href="{{ p.path }}">
+          <span class="dirthumb">
+            {% if p.photo_url %}
+              <img src="{{ p.photo_url }}" alt="" loading="lazy" width="400" height="240">
+            {% else %}
+              <span class="dirmono" aria-hidden="true">{{ (p.business_name or '?')[0]|upper }}</span>
+            {% endif %}
+            {% if p.tier in ('gold','silver','bronze') and p.tier_status %}
+              <span class="dirtier t-{{ p.tier }}">{{ p.tier|capitalize }}</span>
+            {% endif %}
+          </span>
+          <span class="dirbody">
+            {% if p.category %}<span class="dircat">{{ p.category }}</span>{% endif %}
+            <span class="dirname">{{ p.business_name }}</span>
+            {% set place = [p.locality, p.district]|select|list %}
+            {% if place %}<span class="dirloc">{{ place|join(', ') }}</span>{% endif %}
+            <span class="dirpath">{{ p.path }}</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>Prayaan Capital Private Limited</strong> — RBI-registered NBFC</p>
+    <p><strong>Prayaan never asks for any fee before loan processing.</strong></p>
+    <div class="lnks">
+      <a href="/grievance">Grievance &amp; GRO</a>
+      <a href="/privacy">Privacy notice</a>
+      <a href="/referral-terms">Referral terms</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

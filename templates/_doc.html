@@ -1,0 +1,66 @@
+{# Shell for the standing pages: privacy, grievance, referral terms, report.
+
+   These are the destinations every customer page links to. Until now all four
+   404'd — including /report, which is the takedown route, and takedown-on-request
+   is the entire basis on which pages are published without prior consent.
+
+   NOTE ON PLACEHOLDERS: anywhere this content needs a fact only Prayaan can
+   supply — the GRO's name and number, the grievance escalation path, the
+   retention window, the reward amount — it says so in a TO CONFIRM block rather
+   than inventing one. A grievance page carrying a made-up officer's name is a
+   fabricated regulatory record, which is worse than an obviously unfinished one.
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %} — Prayaan Capital</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter+Tight:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brandrow">
+      <div class="brandid">
+        <a class="lockup" href="/" aria-label="Prayaan Capital — Business Page">
+          <picture>
+            <source srcset="/static/img/prayaan-logo-full.webp" type="image/webp">
+            <img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30">
+          </picture>
+          <span class="lockdiv" aria-hidden="true"></span>
+          <span class="locktxt">Business Page</span>
+        </a>
+        <span class="regd">RBI-registered NBFC</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="doc">
+  <div class="wrap">
+    <h1>{% block heading %}{% endblock %}</h1>
+    {% block body %}{% endblock %}
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>Prayaan Capital Private Limited</strong> — RBI-registered NBFC</p>
+    <p><strong>Prayaan never asks for any fee before loan processing.</strong></p>
+    <div class="lnks">
+      <a href="/grievance">Grievance &amp; GRO</a>
+      <a href="/privacy">Privacy notice</a>
+      <a href="/referral-terms">Referral terms</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

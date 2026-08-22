@@ -1,0 +1,37 @@
+{% extends "_doc.html" %}
+{% block title %}Report or remove a page{% endblock %}
+{% block heading %}Report a page, or ask for it to be removed{% endblock %}
+{% block body %}
+{% if path %}<p class="docref">This is about: <code>{{ path }}</code></p>{% endif %}
+
+<p class="lead">If a page carries your business and you want it taken down, we
+  will remove it. You do not have to give a reason, and you do not have to be the
+  person who asked for it.</p>
+
+<h2>What happens</h2>
+<ol>
+  <li>Tell us which page, using the link or the business name.</li>
+  <li>We take the page offline. The address then behaves exactly like an address
+    that never existed.</li>
+  <li>We ask search engines to drop the cached copy. That part is not instant and
+    is not entirely in our hands.</li>
+</ol>
+
+<h2>Other things you can ask for</h2>
+<ul>
+  <li>A correction — a wrong phone number, a wrong locality, an out-of-date photo.</li>
+  <li>Removal of one detail rather than the whole page.</li>
+  <li>A copy of what we hold about you, or deletion of it. See the
+    <a href="/privacy">privacy notice</a>.</li>
+</ul>
+
+<h2>How to reach us</h2>
+<p class="todo"><b>TO CONFIRM before launch.</b> This page must carry the
+  takedown channel — a phone number, an email address, or a form — and the
+  committed turnaround. It is left blank rather than filled with a plausible
+  guess: a takedown route that does not reach anyone is worse than none, because
+  it looks like one.</p>
+<p>In the meantime, contact Prayaan Capital through
+  <a href="https://www.prayaancapital.com">prayaancapital.com</a>, or the branch
+  you deal with.</p>
+{% endblock %}

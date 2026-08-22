@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>{{ page.business_name }}{% if page.branch_name %} — {{ page.branch_name }}{% endif %}</title>
+<meta name="description" content="{{ page.business_name }}{% if page.category %} · {{ page.category }}{% endif %}{% if page.branch_name %} · {{ page.branch_name }}{% endif %}">
+<link rel="canonical" href="{{ canonical }}">
+{% if not indexed %}<meta name="robots" content="noindex,nofollow">{% endif %}
+
+{# Per-page OG tags are the whole reason this service is server-rendered: a
+   client-side SPA would hand WhatsApp's crawler the same generic card for every
+   customer, and the product's entire distribution is WhatsApp sharing. #}
+<meta property="og:type" content="profile">
+<meta property="og:site_name" content="Prayaan Business Pages">
+<meta property="og:title" content="{{ page.business_name }}">
+<meta property="og:description" content="{% if page.owner_name %}{{ page.owner_name }} · {% endif %}{{ page.category or 'Business' }}{% if page.branch_name %} · {{ page.branch_name }}{% endif %}">
+<meta property="og:url" content="{{ canonical }}">
+{% if page.photo_url %}<meta property="og:image" content="{{ page.photo_url }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ page.business_name }}">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+</head>
+<body>
+
+<a class="skip" href="#enquire">Skip to loan enquiry</a>
+
+<header class="topbar">
+  <span class="brand">Prayaan Capital</span>
+  <span class="brandnote">RBI-registered NBFC</span>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ customer's own content ============ -->
+  <article class="biz">
+    <div class="bizhead">
+      {% if page.photo_url %}
+        <img class="photo" src="{{ page.photo_url }}" alt="{{ page.business_name }}" width="112" height="112">
+      {% else %}
+        <div class="photo mono" aria-hidden="true">{{ page.business_name[:1] | upper }}</div>
+      {% endif %}
+      <div>
+        <h1>{{ page.business_name }}</h1>
+        {% if page.owner_name %}<p class="owner">{{ page.owner_name }}</p>{% endif %}
+        <p class="meta">
+          {% if page.category %}<span class="chip">{{ page.category }}</span>{% endif %}
+          {% if page.branch_name %}<span class="chip ghost">{{ page.branch_name }}</span>{% endif %}
+        </p>
+      </div>
+    </div>
+
+    {% if page.highlights %}
+    <ul class="stats">
+      {% for h in page.highlights %}
+        <li><b>{{ h.value }}</b><span>{{ h.label }}</span></li>
+      {% endfor %}
+    </ul>
+    {# Attributed, not asserted: these are the owner's own figures. Prayaan must
+       not appear to certify facts about a third party's business. #}
+    <p class="attrib">Figures shared by {{ page.owner_name or 'the business owner' }}.</p>
+    {% endif %}
+
+    {% if page.about %}
+    <section class="about">
+      <h2>About the business</h2>
+      {% for para in page.about %}<p>{{ para }}</p>{% endfor %}
+    </section>
+    {% endif %}
+  </article>
+
+  <!-- ============ Prayaan loan enquiry ============ -->
+  <aside class="lead" id="enquire">
+    <div class="leadcard">
+      {% if submitted %}
+        <div class="done" role="status">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+          <h2>Thank you</h2>
+          <p>Our customer support team will call you within one working day.</p>
+        </div>
+      {% else %}
+        <h2>Want a business loan for your own shop?</h2>
+        <p class="sub">Prayaan Capital lends against property to business owners like {{ page.owner_name or page.business_name }}. Leave your number and our team will call you.</p>
+
+        {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+
+        <form method="post" action="{{ page.path }}" novalidate>
+          <input type="hidden" name="t" value="{{ now }}">
+          {# Honeypot — hidden from people, irresistible to bots. #}
+          <div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+          <label for="name">Your name</label>
+          <input id="name" name="name" type="text" autocomplete="name" value="{{ form.name or '' }}" required>
+
+          <label for="mobile">Mobile number</label>
+          <input id="mobile" name="mobile" type="tel" inputmode="numeric" maxlength="10"
+                 autocomplete="tel-national" placeholder="10-digit number" value="{{ form.mobile or '' }}" required>
+
+          <label for="pincode">Pincode <span class="opt">(optional)</span></label>
+          <input id="pincode" name="pincode" type="text" inputmode="numeric" maxlength="6"
+                 autocomplete="postal-code" placeholder="6-digit" value="{{ form.pincode or '' }}">
+
+          <label class="check">
+            <input type="checkbox" name="age_ok" value="on">
+            <span>I confirm I am 18 years or older</span>
+          </label>
+
+          <p class="consent">I agree to be contacted by Prayaan Capital about my loan enquiry.
+            <a href="/privacy">Privacy notice</a></p>
+
+          <button type="submit">Request a callback</button>
+        </form>
+      {% endif %}
+
+      <p class="ref">Referred by {{ page.business_name }}</p>
+    </div>
+  </aside>
+</main>
+
+<footer class="foot">
+  <p><strong>Prayaan Capital Private Limited</strong> — RBI-registered NBFC</p>
+  <p>This page is published for {{ page.business_name }}. Content is provided by the business owner; Prayaan Capital is not responsible for products or services offered.</p>
+  <p><strong>Prayaan never asks for any fee before loan processing.</strong></p>
+  <p>Loans are subject to credit assessment and property valuation. Interest rates, fees and charges are shared in writing before you sign.</p>
+  <nav class="links">
+    <a href="/grievance">Grievance &amp; GRO</a>
+    <a href="/privacy">Privacy notice</a>
+    <a href="/report?p={{ page.path }}">Report this page</a>
+  </nav>
+</footer>
+
+</body>
+</html>

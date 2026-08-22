@@ -1,0 +1,43 @@
+{# Admin shell. No JavaScript anywhere — the service ships script-src 'none' and
+   this keeps that true without a per-route exception. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>{% block title %}{% endblock %} — Prayaan Business Pages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter+Tight:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/admin.css">
+</head>
+<body class="adm">
+<header class="admbar">
+  <div class="admwrap">
+    <a class="admlogo" href="/admin/pages">
+      <picture>
+        <source srcset="/static/img/prayaan-logo-full.webp" type="image/webp">
+        <img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30">
+      </picture>
+      <span class="admtag">Back-office</span>
+    </a>
+    {% if session %}
+    <nav class="admnav">
+      <a href="/admin/pages" {% if nav=='pages' %}aria-current="page"{% endif %}>Pages</a>
+      <a href="/admin/leads" {% if nav=='leads' %}aria-current="page"{% endif %}>Leads</a>
+    </nav>
+    <form method="post" action="/admin/logout" class="admout">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <span class="admwho">{{ session.u }}</span>
+      <button type="submit">Sign out</button>
+    </form>
+    {% endif %}
+  </div>
+</header>
+<main class="admwrap admmain">
+  {% block body %}{% endblock %}
+</main>
+<script src="/static/admin.js"></script>
+</body>
+</html>

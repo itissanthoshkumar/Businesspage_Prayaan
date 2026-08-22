@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>{{ page.business_name }}{% if page.district %} — {{ page.district }}{% endif %}</title>
+<meta name="description" content="{{ page.summary or (page.business_name ~ ' · ' ~ (page.category or 'Business')) }}">
+<link rel="canonical" href="{{ canonical }}">
+{% if not indexed %}<meta name="robots" content="noindex,nofollow">{% endif %}
+
+{# Per-page link-preview tags are why this service is server-rendered: a client-side
+   app hands WhatsApp's crawler the same generic card for every customer, and this
+   product is distributed almost entirely by WhatsApp sharing. #}
+<meta property="og:type" content="profile">
+<meta property="og:site_name" content="Prayaan Business Pages">
+<meta property="og:title" content="{{ page.business_name }}">
+<meta property="og:description" content="{{ page.summary or ((page.owner_name ~ ' · ' if page.owner_name else '') ~ (page.category or 'Business')) }}">
+<meta property="og:url" content="{{ canonical }}">
+{% if page.photo_url %}<meta property="og:image" content="{{ abs_photo }}">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="800">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ page.business_name }}">
+
+{# schema.org/LocalBusiness. A data block, not executable code — the page still
+   runs zero JavaScript, and the CSP says script-src 'none'.
+   `|tojson` is load-bearing: it is the ONLY safe way to put customer-supplied
+   text inside a <script> element. Jinja's tojson escapes <, >, & and ' as \u
+   sequences precisely so a business name containing "</script>" cannot break
+   out of the block. Plain autoescaping would HTML-escape the JSON and produce
+   invalid structured data instead. #}
+{% if jsonld %}<script type="application/ld+json">{{ jsonld|tojson }}</script>{% endif %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<a class="skip" href="#enquire">Skip to loan enquiry</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brandrow">
+      {# Official lockup from the marketing site: the real mark + wordmark, then a
+         divider and the network name — so the page is visibly Prayaan's. #}
+      {# Lockup and the RBI label are one brand block, so the label can sit UNDER
+         the logo on a phone while still riding the right-hand edge on desktop. #}
+      <div class="brandid">
+        <a class="lockup" href="https://www.prayaancapital.com" aria-label="Prayaan Capital — Business Page">
+          <picture>
+            <source srcset="/static/img/prayaan-logo-full.webp" type="image/webp">
+            <img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30">
+          </picture>
+          <span class="lockdiv" aria-hidden="true"></span>
+          <span class="locktxt">Business Page</span>
+        </a>
+        <span class="regd">RBI-registered NBFC</span>
+      </div>
+      <div class="brandend">
+        {# The page's one job. It lives in the brand bar so it is Prayaan's ask,
+           not the customer's, and the bar is sticky so it stays reachable from
+           anywhere on the page. #}
+        <a class="hcta" href="#enquire">
+          <span class="lbl">Need a loan?</span>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+        </a>
+      </div>
+    </div>
+    {% if show_switcher %}
+    {# Only worth showing while there is something to switch between. Reflex is
+       the final design, so this row stays hidden unless another is registered. #}
+    {% if variants|length > 1 %}
+    <nav class="vswitch" aria-label="Design version">
+      <span class="lbl">Design</span>
+      {% for v in variants %}
+        <a href="{{ page.path }}?v={{ v.id }}{% if device %}&w={{ device }}{% endif %}"{% if v.id == variant %} aria-current="page"{% endif %}>{{ v.name }}</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+    <nav class="vswitch dswitch" aria-label="Preview width">
+      <span class="lbl">Width</span>
+      {% for w, label in devices %}
+        <a href="{{ page.path }}?v={{ variant }}{% if w %}&w={{ w }}{% endif %}"{% if w == (device or 0) %} aria-current="page"{% endif %}>{{ label }}{% if w %} · {{ w }}{% endif %}</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+  </div>
+</header>
+
+<main>
+{% block body %}{% endblock %}
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>Prayaan Capital Private Limited</strong> — RBI-registered NBFC</p>
+    <p>This page is published for {{ page.business_name }}. The content is provided by the business owner; Prayaan Capital does not certify it and is not responsible for products or services offered.</p>
+    <p><strong>Prayaan never asks for any fee before loan processing.</strong></p>
+    <p>Loans are subject to credit assessment and property valuation. Interest rates, fees and charges are shared in writing before you sign.</p>
+    <div class="lnks">
+      <a href="/grievance">Grievance &amp; GRO</a>
+      <a href="/privacy">Privacy notice</a>
+      <a href="/report?p={{ page.path }}">Report this page</a>
+    </div>
+  </div>
+</footer>
+
+{# Thumb-zone CTA for phones. Same destination as the header button, which
+   stands down below 768px so there is only ever one loan CTA per viewport. #}
+<div class="stickycta">
+  <a href="#enquire">
+    Apply Now
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+  </a>
+</div>
+
+</body>
+</html>

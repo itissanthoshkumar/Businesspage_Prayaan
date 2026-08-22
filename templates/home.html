@@ -1,0 +1,112 @@
+{# Landing page at /.
+
+   The root used to return the same "page is not available" screen as a mistyped
+   URL, because the service only ever served per-customer paths. Anyone who
+   trimmed a shared link back to the domain — a normal thing to do — hit a dead
+   end on an RBI-registered lender's own address.
+
+   There is deliberately NO list of businesses here. Publishing a directory would
+   hand anyone a roster of Prayaan's customers in a single request, which is the
+   very thing the identical 404 on every unknown path exists to prevent. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prayaan Business Pages</title>
+<meta name="description" content="Every Prayaan Capital customer gets a page for their business — the shop, what they do, and how to reach them.">
+<link rel="canonical" href="{{ base_url }}/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter+Tight:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brandrow">
+      <div class="brandid">
+        <a class="lockup" href="https://www.prayaancapital.com" aria-label="Prayaan Capital — Business Page">
+          <picture>
+            <source srcset="/static/img/prayaan-logo-full.webp" type="image/webp">
+            <img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30">
+          </picture>
+          <span class="lockdiv" aria-hidden="true"></span>
+          <span class="locktxt">Business Page</span>
+        </a>
+        <span class="regd">RBI-registered NBFC</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="home">
+  <div class="wrap">
+    <p class="eyebrow">Prayaan Business Pages</p>
+    <h1>Every Prayaan customer gets a page for their&nbsp;business.</h1>
+    <p class="hlede">A page of their own — the shop, what they do, how to reach
+      them — at a link they can share with anyone.</p>
+
+    <div class="hcards">
+      <div class="hcard">
+        <span class="n">1</span>
+        <h2>A page for the business</h2>
+        <p>The photograph, what they sell, how long they have been going, and
+          their phone numbers — one tap to call.</p>
+      </div>
+      <div class="hcard">
+        <span class="n">2</span>
+        <h2>Shared by the owner</h2>
+        <p>A short link that opens properly on WhatsApp, showing the shop's own
+          name and picture in the preview.</p>
+      </div>
+      <div class="hcard">
+        <span class="n">3</span>
+        <h2>A way in for their circle</h2>
+        <p>Anyone who sees it can ask Prayaan about a loan against property. Our
+          team calls back — there is no application on the page.</p>
+      </div>
+    </div>
+
+    <div class="hact">
+      <a class="hbtn" href="https://www.prayaancapital.com">Talk to Prayaan Capital</a>
+      {% if public_directory %}
+      <a class="hbtn ghost" href="/browse">Browse businesses</a>
+      {% endif %}
+      <p class="hnote">
+        {% if public_directory %}Browsing all live pages is for testing and is hidden before launch.
+        {% else %}Looking for a particular business? Open the link its owner sent you — pages are not listed here.{% endif %}</p>
+    </div>
+
+    {% if show_switcher %}
+    {# REVIEW ONLY — never rendered in production (PBN_SHOW_SWITCHER=false).
+       The gallery lists every live business, which is precisely the directory
+       the public root withholds. #}
+    <div class="revbar">
+      <span class="revtag">Internal</span>
+      <p>Review tools are on for this build.</p>
+      <div class="revlinks">
+        <a href="/preview">Open the design gallery &rarr;</a>
+        {% if sample %}<a href="{{ sample }}">See a live page &rarr;</a>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>Prayaan Capital Private Limited</strong> — RBI-registered NBFC</p>
+    <p><strong>Prayaan never asks for any fee before loan processing.</strong></p>
+    <p>Loans are subject to credit assessment and property valuation. Interest rates, fees and charges are shared in writing before you sign.</p>
+    <div class="lnks">
+      <a href="/grievance">Grievance &amp; GRO</a>
+      <a href="/privacy">Privacy notice</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

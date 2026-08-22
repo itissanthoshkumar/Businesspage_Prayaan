@@ -1,0 +1,140 @@
+/* ===========================================================================
+   REFLEX — the house design, in its two versions: v27 (wide-panel hero, plate
+   tucked under the photo's corner) and v31 "Reflex Cover" (cover photo +
+   overlapping avatar). Shared palette and everything below the fold; only the
+   hero differs. Load AFTER aperture.css.
+   =========================================================================== */
+
+.ap.reflex{
+  /* PRAYAAN LOGO COLOURS, sampled from static/img/prayaan-logo-full.png:
+     blue #005CA1 (the dominant mark colour) and yellow #F4AE00 (the ring).
+     Nothing else is introduced — the whole page is those two over neutrals.
+
+     The yellow measures 1.94:1 on white, so like every accent before it, it is
+     a FILL and never a word. --ap-acc-ink is the darkened amber that carries
+     type at 5.5:1, derived from the same hue. Blue clears 6.96:1 on white and
+     so is safe as both fill and text. */
+  --pb-blue:#005CA1;                    /* exact logo blue  */
+  --pb-blue-deep:#00447A;               /* premium deepening for gradients */
+  --pb-yellow:#F4AE00;                  /* exact logo yellow */
+  --pb-yellow-ink:#8A6200;              /* 5.5:1 — the only yellow allowed as type */
+
+  /* a cool near-white with the faintest blue cast, so white cards lift off it */
+  --ap-paper:#EDF1F6;
+  --ap-wash:radial-gradient(58vw 40vw at 97% -8%, rgba(0,92,161,.12), transparent 62%),
+            radial-gradient(52vw 38vw at 3% 52%, rgba(244,174,0,.09), transparent 64%);
+  --ap-card:#FFFFFF;
+  --ap-line:rgba(0,42,74,.12);
+
+  --ap-ink:#0B2135;                     /* deep navy-blue ink, not black */
+  --ap-ink2:#4A5D6E;                    /* 6.4:1 on card */
+
+  --ap-acc:#F4AE00;                     /* yellow — fills, rings, ticks only */
+  --ap-acc-ink:#005CA1;                 /* blue carries the type, 6.96:1 */
+  --ap-acc-soft:rgba(244,174,0,.16);
+  --ap-acc-ring:rgba(244,174,0,.45);
+
+  --ap-ring:rgba(0,92,161,.16);
+  --ap-ring-faint:rgba(0,92,161,.07);
+  --ap-ring-acc:rgba(244,174,0,.75);
+
+  --ap-geo:linear-gradient(rgba(0,92,161,.055) 1px, transparent 1px),
+           linear-gradient(90deg, rgba(0,92,161,.055) 1px, transparent 1px);
+  --ap-geo-size:44px 44px;
+  --ap-mark:rgba(0,92,161,.32);
+  --ap-mark-fill:#F4AE00;
+
+  --ap-shadow:0,42,74;
+  --ap-shadow-a:.12;
+
+  --ap-r-card:14px;
+  --ap-r-soft:14px;
+  --ap-r-chip:10px;
+
+  --ap-cta-bg:#005CA1;
+  --ap-cta-fg:#FFFFFF;
+
+  --ap-disp:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --ap-sans:"Inter Tight",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --ap-h1-wt:500;
+  --ap-h1-ls:-.032em;
+  --ap-lede-wt:400;
+}
+.ap.reflex .disc{box-shadow:0 1px 0 0 var(--ap-line),0 26px 56px rgba(0,42,74,.18)}
+.ap.reflex .lab{letter-spacing:.16em}
+/* EDITORIAL LEFT RAIL — the design's defining move: the hero, the lede, the
+   chips, the numbers panel and the enquiry section all start on one vertical
+   line. Before this, each block centred itself inside its own max-width and the
+   page had four competing left margins. */
+.ap.reflex .lede{text-align:left;max-width:52ch;margin-inline:0}
+.ap.reflex .blk.mid{text-align:left}
+.ap.reflex ul.chips{max-width:none;margin-inline:0;justify-content:flex-start;
+  padding-bottom:0}
+.ap.reflex ul.figs{max-width:none;margin-inline:0}
+.ap.reflex .cap{text-align:left}
+/* the chips were bowed onto an arc to sit under a disc; on a grid they just
+   look misaligned */
+.ap.reflex ul.chips li{transform:none}
+/* .rail parks the section label in a 180px gutter — one page, two header
+   treatments. Stack the label above instead, like every other section. */
+.ap.reflex .rail{grid-template-columns:1fr;gap:14px}
+.ap.reflex .maplink{border-radius:10px}
+/* Orange lights the accent bar; blue carries every word, including the button
+   and the reward icon (fluorescent orange as type is nowhere near legible). */
+.ap.reflex .enq{
+  --enq-bd:rgba(0,42,74,.13);
+  --enq-acc:#F4AE00;
+  --enq-fg:#0B2135;      --enq-head:#0B2135;   --enq-mut:#4A5D6E;
+  --enq-field-bd:rgba(0,42,74,.18);
+  --enq-btn-bg:#005CA1;  --enq-btn-fg:#FFFFFF;
+  --enq-btn-lo:#00426F;  --enq-btn-hi:#005CA1;
+  --enq-link:#005CA1;
+  --enq-reward-bg:rgba(244,174,0,.14);
+  --enq-reward-bd:rgba(244,174,0,.50);
+  --enq-reward-ico:#8A6200;
+}
+.ap.reflex .enq button{border-radius:12px}
+.ap.reflex .enq input[type=text],.ap.reflex .enq input[type=tel],
+.ap.reflex .enq .chk,.ap.reflex .enq .reward{border-radius:10px}
+.ap.reflex .phones a{font-variant-numeric:tabular-nums}
+
+/* ===========================================================================
+   HERO MODE 'cover' (v31) — the survivor of two exploration rounds; nine other
+   modes (ink, glass, poster, band, bento, ticket, sign + earlier) were built,
+   rejected and removed. Markup in _aperture.html behind `hero_mode`.
+   =========================================================================== */
+
+/* shared scaffolding for the modes */
+.ap .hm .stage{position:relative;border-radius:var(--ap-r-soft);
+  overflow:hidden;overflow:clip;
+  box-shadow:0 1px 0 0 var(--ap-line),0 26px 56px rgba(16,20,37,.18)}
+.ap .hm .shot{width:100%;height:auto;object-fit:cover;display:block}
+/* a plate that carries ONLY the contact block needs no identity spacing */
+.ap .hm .plate.slim .acts{border-top:0;margin-top:0;padding-top:0}
+.ap .hm .plate.slim{margin-top:14px;padding:18px 20px}
+
+/* ---- hm-cover: the profile anatomy everyone's phone has taught them --------
+   Wide cover, avatar breaking its bottom edge, identity, contact card. The
+   avatar is the same photograph fitted square — a second crop, not a zoom, so
+   it can never land on the wrong face. */
+.ap.hm-cover .shot{aspect-ratio:2/1}
+.ap.hm-cover .idrow{position:relative;padding:0 6px}
+.ap.hm-cover .ava{width:96px;height:96px;border-radius:50%;object-fit:cover;
+  margin-top:-48px;position:relative;z-index:2;
+  box-shadow:0 0 0 5px var(--ap-paper),0 0 0 6px var(--ap-line),
+             0 12px 28px rgba(16,20,37,.22)}
+.ap.hm-cover .idtxt{margin-top:12px}
+.ap.hm-cover .idtxt h1{font-family:var(--ap-disp);font-weight:var(--ap-h1-wt);
+  letter-spacing:var(--ap-h1-ls);line-height:1.02;color:var(--ap-ink);
+  font-size:clamp(30px,7.6vw,54px);margin-top:8px;overflow-wrap:normal;hyphens:none}
+.ap.hm-cover .idtxt .own{margin-top:8px;font-size:14.5px;color:var(--ap-ink2)}
+.ap.hm-cover .idrow .pill{margin-top:14px}
+@media(min-width:900px){
+  .ap.hm-cover .shot{aspect-ratio:21/8}
+  .ap.hm-cover .ava{width:132px;height:132px;margin-top:-66px}
+  .ap.hm-cover .idrow{display:grid;grid-template-columns:auto 1fr auto;
+    gap:0 22px;align-items:end;padding:0}
+  .ap.hm-cover .idtxt{margin-top:16px}
+  .ap.hm-cover .idrow .pill{margin-bottom:6px}
+}
+

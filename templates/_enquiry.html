@@ -1,0 +1,59 @@
+{# Shared loan-enquiry form. Every variant includes this — the copy, the consent
+   line and the field set are compliance-reviewed and must not diverge per design.
+   The form posts to the page's own URL, so referral attribution comes from the
+   request path and cannot be forged by a crafted field. #}
+<section class="enq{{ ' round' if round else '' }}" id="enquire">
+  {%- set reward -%}
+    {# Referral reward. Deliberately conditional on DISBURSAL, never on applying or
+       on approval — a reward promised for an enquiry would be an inducement, and
+       one promised on approval implies an outcome nobody can offer up front. The
+       terms link is the substance; the line alone is not the offer. #}
+    <p class="reward">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+      <span>If a loan is <strong>disbursed</strong>, you and {{ page.business_name }} both earn a referral reward.
+        <a href="/referral-terms">Referral terms</a></span>
+    </p>
+  {%- endset -%}
+  {% if submitted %}
+    <div class="done" role="status">
+      <div class="tick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg></div>
+      <h2>Thank you</h2>
+      <p class="sub">Our customer support team will call you within one working day.</p>
+    </div>
+    {{ reward }}
+  {% else %}
+    <h2>Want a business loan of your own?</h2>
+    <p class="sub">Prayaan Capital lends against property to business owners like {{ page.owner_name or page.business_name }}. Leave your number and our team will call you.</p>
+
+    {{ reward }}
+
+    {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+
+    <form method="post" action="{{ form_action or (page.path ~ ('?v=' ~ variant if variant else '')) }}" novalidate>
+      <input type="hidden" name="t" value="{{ now }}">
+      <div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+      <label for="f-name">Your name</label>
+      <input id="f-name" name="name" type="text" autocomplete="name" value="{{ form.name or '' }}" required>
+
+      <label for="f-mobile">Mobile number</label>
+      <input id="f-mobile" name="mobile" type="tel" inputmode="numeric" maxlength="10"
+             autocomplete="tel-national" placeholder="10-digit number" value="{{ form.mobile or '' }}" required>
+
+      <label for="f-pin">Pincode <span class="opt">(optional)</span></label>
+      <input id="f-pin" name="pincode" type="text" inputmode="numeric" maxlength="6"
+             autocomplete="postal-code" placeholder="6-digit" value="{{ form.pincode or '' }}">
+
+      <label class="chk">
+        <input type="checkbox" name="age_ok" value="on">
+        <span>I confirm I am 18 years or older</span>
+      </label>
+
+      <p class="consent">I agree to be contacted by Prayaan Capital about my loan enquiry.
+        <a href="/privacy">Privacy notice</a></p>
+
+      <button type="submit">Request a callback</button>
+    </form>
+  {% endif %}
+  <p class="ref">Referred by {{ page.business_name }}</p>
+</section>

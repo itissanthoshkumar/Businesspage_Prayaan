@@ -1,0 +1,30 @@
+{% extends "admin/_shell.html" %}
+{% block title %}Sign in{% endblock %}
+{% block body %}
+<div class="card narrow">
+  <h1>Sign in</h1>
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
+  <form method="post" action="/admin/login">
+    <label for="u">Username</label>
+    <input id="u" name="username" type="text" autocomplete="username" required autofocus>
+    <label for="p">Password</label>
+    <input id="p" name="password" type="password" autocomplete="current-password" required>
+    <button class="primary" type="submit">Sign in</button>
+  </form>
+  {% if dev_login %}
+  {# Review builds only (PBN_SHOW_SWITCHER). This block vanishing is NOT the
+     control — /admin/dev-login checks the same flag and 404s in production, so
+     a cached copy of this page buys nothing. #}
+  <div class="devsignin">
+    <form method="post" action="/admin/dev-login">
+      <button type="submit">Sign in as Admin
+        <span class="warn">Preview only — no password</span>
+      </button>
+    </form>
+    <p class="note">A shortcut for reviewing this build. It does not exist in
+      production, and everything it creates is signed <code>preview-admin</code>
+      in the history so it is never mistaken for real work.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

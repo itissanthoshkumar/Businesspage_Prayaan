@@ -1,0 +1,38 @@
+{# Recognition tier — Gold / Silver / Bronze.
+
+   THE RULE, enforced here and not negotiable in a template: a badge renders only
+   when `tier_reason` is present. A bare "Gold" tells a visitor this business was
+   ranked, without saying against what — and the obvious guess, for a page
+   published by a lender, is that it reflects how well they repay. That would be
+   publishing credit information about a named person, and it would expose the one
+   thing this page is careful never to state: that the customer borrows from
+   Prayaan at all.
+
+   THE BASIS IS REFERRALS AND ACTIVITY — how many people this customer introduced
+   to Prayaan, and whether they are still active in the programme. Nothing else.
+   Not years in business, not shops served, not turnover: those are the business's
+   own numbers and belong in the "In numbers" panel, not in a Prayaan-awarded tier.
+   And explicitly never repayment history, bureau scores, exposure or internal risk
+   grades — publishing any of those would disclose credit information about a named
+   person.
+
+   The COUNT is not published — "31 referrals" told a stranger how much business
+   this customer sends a lender, which is nobody else's business. What shows is
+   the standing only: Gold / Silver / Bronze and whether they are Active. The
+   count stays internal and drives the tier.
+
+   A status string is still REQUIRED. A badge reading only "Gold", with nothing
+   qualifying it, is the case this guard exists to prevent.
+
+   Expects: page.tier in (gold|silver|bronze) and page.tier_status.
+#}
+{% if page.tier in ('gold', 'silver', 'bronze') and page.tier_status %}
+<span class="tier tier-{{ page.tier }}">
+  <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="9" r="6"/>
+    <path d="M8.5 14.5L7 22l5-2.5L17 22l-1.5-7.5"/>
+  </svg>
+  <b>{{ page.tier|capitalize }}</b>
+  <span class="why">{{ page.tier_status }}</span>
+</span>
+{% endif %}
