@@ -1,0 +1,45 @@
+# Two jobs: the HTTP end-to-end suites against the preview build (filestore),
+# and the storage contract against a REAL MongoDB — the half no local run
+# exercises. A push that breaks either does not merge.
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: start preview
+        run: |
+          python run_preview.py &
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:8797/healthz && break
+            sleep 1
+          done
+      - run: python tools/test_admin.py
+      - run: python tools/test_p0.py
+      - run: python tools/test_p1.py
+
+  mongo-parity:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python tools/test_store_mongo.py
+        env:
+          MONGO_URI: mongodb://localhost:27017
+          PBN_MONGO_DB: pbn_ci
