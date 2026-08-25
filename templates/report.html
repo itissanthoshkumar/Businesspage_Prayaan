@@ -2,6 +2,17 @@
 {% block title %}Report or remove a page{% endblock %}
 {% block heading %}Report a page, or ask for it to be removed{% endblock %}
 {% block body %}
+
+{% if submitted %}
+<div class="docdone" role="status">
+  <h2>Received</h2>
+  <p>Your report is in front of our team now. If it asks for a takedown, the
+    page comes off first and questions come later — you do not owe us a reason.
+    If you left a phone number or email, we will tell you when it is done.</p>
+  <p><a href="/">Back to the home page</a></p>
+</div>
+{% else %}
+
 {% if path %}<p class="docref">This is about: <code>{{ path }}</code></p>{% endif %}
 
 <p class="lead">If a page carries your business and you want it taken down, we
@@ -17,21 +28,54 @@
     is not entirely in our hands.</li>
 </ol>
 
+<h2>Send a report</h2>
+<form method="post" action="/report" class="docform">
+  <input type="hidden" name="t" value="{{ now }}">
+  <div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+  <label for="r-page">Page link or business name</label>
+  <input id="r-page" name="page" type="text" maxlength="200"
+         value="{{ form.page or path }}" placeholder="{{ base_url }}/TN/…  or the business name">
+
+  <fieldset class="radios">
+    <legend>What should happen?</legend>
+    <label class="chk"><input type="radio" name="rtype" value="remove"
+      {% if form.rtype not in ('correct', 'other') %}checked{% endif %}>
+      <span>Take the page down</span></label>
+    <label class="chk"><input type="radio" name="rtype" value="correct"
+      {% if form.rtype == 'correct' %}checked{% endif %}>
+      <span>Correct something on it</span></label>
+    <label class="chk"><input type="radio" name="rtype" value="other"
+      {% if form.rtype == 'other' %}checked{% endif %}>
+      <span>Something else</span></label>
+  </fieldset>
+
+  <label for="r-details">Tell us what and why</label>
+  <textarea id="r-details" name="details" rows="4" maxlength="1000" minlength="10" required>{{ form.details or '' }}</textarea>
+
+  <label for="r-contact">Phone or email <span class="opt">(optional — used only to tell you it is done)</span></label>
+  <input id="r-contact" name="contact" type="text" maxlength="200" value="{{ form.contact or '' }}">
+
+  {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit">Send report</button>
+</form>
+
 <h2>Other things you can ask for</h2>
 <ul>
-  <li>A correction — a wrong phone number, a wrong locality, an out-of-date photo.</li>
   <li>Removal of one detail rather than the whole page.</li>
   <li>A copy of what we hold about you, or deletion of it. See the
     <a href="/privacy">privacy notice</a>.</li>
 </ul>
 
-<h2>How to reach us</h2>
-<p class="todo"><b>TO CONFIRM before launch.</b> This page must carry the
-  takedown channel — a phone number, an email address, or a form — and the
-  committed turnaround. It is left blank rather than filled with a plausible
-  guess: a takedown route that does not reach anyone is worse than none, because
-  it looks like one.</p>
-<p>In the meantime, contact Prayaan Capital through
-  <a href="https://www.prayaancapital.com">prayaancapital.com</a>, or the branch
-  you deal with.</p>
+<h2>Other ways to reach us</h2>
+<p>If you prefer not to use the form: email
+  <a href="mailto:customercare@prayaancapital.com">customercare@prayaancapital.com</a>,
+  call +91&#8209;6380589898, or contact the branch you deal with. Unresolved
+  complaints go to the Grievance Redressal Officer — see
+  <a href="/grievance">grievance redressal</a>.</p>
+<p class="todo"><b>TO CONFIRM before launch.</b> The committed takedown
+  turnaround time, so this page can promise "off within N working days" instead
+  of implying it.</p>
+
+{% endif %}
 {% endblock %}

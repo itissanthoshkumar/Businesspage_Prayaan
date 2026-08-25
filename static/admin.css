@@ -179,3 +179,110 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
 .grid tr:hover td{background:rgba(0,92,161,.03)}   /* whole row reads as clickable */
 .headtext{min-width:0}
 .headsub{font-size:13.5px;color:#5A6E80;margin-top:4px;font-weight:400}
+
+/* ===========================================================================
+   Form UX pass — phone input-group, validation, sticky save bar, busy dot.
+   =========================================================================== */
+
+/* phone: a +91 prefix addon + a 10-digit field, two of them */
+.phonegrid{display:grid;gap:10px;grid-template-columns:1fr}
+@media(min-width:520px){.phonegrid{grid-template-columns:1fr 1fr}}
+.phonein{display:flex;align-items:stretch;border:1px solid rgba(0,42,74,.22);
+  border-radius:9px;overflow:hidden;background:#fff;transition:border-color .15s,box-shadow .15s}
+.phonein:focus-within{border-color:#005CA1;box-shadow:0 0 0 3px rgba(0,92,161,.18)}
+.phonein .cc{display:flex;align-items:center;padding:0 12px;background:#EEF2F7;
+  color:#3C5266;font:600 14.5px "Inter Tight",sans-serif;border-right:1px solid rgba(0,42,74,.14);
+  font-variant-numeric:tabular-nums}
+.phonein input{border:0;border-radius:0;box-shadow:none;min-height:46px;flex:1;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.phonein input:focus{box-shadow:none;outline:none}
+.phonein:has(input.invalid){border-color:#B3261E;box-shadow:0 0 0 3px rgba(179,38,30,.15)}
+
+/* generic invalid state + inline field error */
+input.invalid,select.invalid,textarea.invalid{border-color:#B3261E !important;
+  box-shadow:0 0 0 3px rgba(179,38,30,.15)}
+.fielderr{color:#B3261E;font-size:13px;font-weight:600;margin-top:8px}
+
+/* sticky save bar — save from anywhere, no scroll to the bottom */
+.savebar{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;
+  justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:18px;
+  padding:14px 16px;border-radius:12px;border:1px solid rgba(0,42,74,.12);
+  background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 -6px 20px rgba(0,42,74,.08)}
+.savehint{font-size:13.5px;color:#5A6E80;margin:0}
+.savehint.bad{color:#B3261E;font-weight:600}
+.saveacts{display:flex;gap:10px;align-items:center}
+/* the old inline actions row is superseded by the sticky bar */
+.actions{display:none}
+
+/* preview busy dot — a quiet pulse instead of the whole preview flashing */
+.busydot{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:#c3ccd6;margin-right:8px;vertical-align:middle;transition:background .2s}
+.busydot.on{background:#005CA1}
+@media (prefers-reduced-motion:no-preference){
+  .busydot.on{animation:busypulse .9s ease-in-out infinite}
+  @keyframes busypulse{0%,100%{opacity:.4}50%{opacity:1}}
+}
+
+/* premium polish: clearer required marker + card heading rhythm */
+label{color:#2A4356}
+.card h2{padding-bottom:10px;border-bottom:1px solid rgba(0,42,74,.08)}
+
+/* --- composed web address (create form) ----------------------------------- */
+.addr{display:flex;align-items:center;flex-wrap:wrap;gap:0;
+  border:1px solid rgba(0,42,74,.22);border-radius:9px;background:#fff;
+  padding:0 0 0 12px;min-height:46px;transition:border-color .15s,box-shadow .15s}
+.addr:focus-within{border-color:#005CA1;box-shadow:0 0 0 3px rgba(0,92,161,.18)}
+.addrbase{color:#8A97A6;font:500 13.5px ui-monospace,SFMono-Regular,Menlo,monospace}
+.addrseg{color:#12293D;font:600 13.5px ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:#EEF2F7;border-radius:6px;padding:3px 8px;margin:0 2px}
+.addrsep{color:#8A97A6;font:500 13.5px ui-monospace,SFMono-Regular,Menlo,monospace}
+.addr #slug-input{border:0;box-shadow:none;min-height:44px;flex:1;min-width:140px;
+  font:600 13.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:#005CA1;
+  padding:0 12px 0 6px}
+.addr #slug-input:focus{outline:none;box-shadow:none}
+
+/* state code + derived name echo */
+.statein{position:relative;display:flex;align-items:center}
+.statein input{text-transform:uppercase;max-width:110px}
+.statename{margin-left:12px;font:500 13.5px "Inter Tight",sans-serif;color:#5A6E80;
+  white-space:nowrap}
+
+/* publish-with-consent control: first publish asks how the customer agreed */
+.statusacts{flex-wrap:wrap}
+.pubform{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pubform select,.pubform input{min-height:38px}
+.pubform input{min-width:260px;flex:1}
+
+/* chip editors: What they do / In numbers / Languages */
+.chipedit{margin-top:2px}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.chiprow:empty{margin:0}
+.chipitem{display:inline-flex;align-items:center;gap:8px;padding:7px 8px 7px 14px;
+  background:#EDF3F9;border:1px solid #C9D6E2;border-radius:999px;
+  font:500 13.5px "Inter Tight",sans-serif;color:#0B2135}
+.chipitem button{display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border:0;border-radius:50%;cursor:pointer;padding:0;
+  background:#D7E2EC;color:#33475C;font-size:14px;line-height:1}
+.chipitem button:hover{background:#B9CCDD;color:#0B2135}
+.chipadd{display:flex;gap:8px;align-items:stretch}
+.chipadd input{flex:1;min-width:0}
+.chipadd .figval{flex:0 0 130px}
+.chipadd .addbtn{flex:none;min-height:42px;padding:0 20px;cursor:pointer;
+  border:1.5px solid #005CA1;border-radius:10px;background:#fff;color:#005CA1;
+  font:600 14px "Inter Tight",sans-serif}
+.chipadd .addbtn:hover{background:rgba(0,92,161,.06)}
+.chipadd .addbtn:disabled{opacity:.45;cursor:default;background:#fff}
+
+/* lead aging + share-channel chips; one-time temp password banner */
+.agewarn{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:99px;
+  background:#FBEFEF;border:1px solid #E4B8B8;color:#8C2F2F;
+  font:600 11px "Inter Tight",sans-serif;white-space:nowrap}
+.viachip{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:99px;
+  background:#E7F0E7;border:1px solid #BFD8BA;color:#2F5D31;
+  font:600 11px "Inter Tight",sans-serif}
+.tmppw{margin:0 0 16px;padding:12px 14px;border-radius:10px;
+  background:#FFF7E6;border:1px solid #E8D28F;font:400 14px "Inter Tight",sans-serif}
+.tmppw code{font-size:15px;font-weight:700;letter-spacing:.03em}
+a.admwho{text-decoration:none}
+a.admwho:hover{text-decoration:underline}

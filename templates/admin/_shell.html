@@ -7,9 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>{% block title %}{% endblock %} — Prayaan Business Pages</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Inter+Tight:wght@300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/fonts/fonts.css">
 <link rel="stylesheet" href="/static/admin.css">
 </head>
 <body class="adm">
@@ -26,10 +24,15 @@
     <nav class="admnav">
       <a href="/admin/pages" {% if nav=='pages' %}aria-current="page"{% endif %}>Pages</a>
       <a href="/admin/leads" {% if nav=='leads' %}aria-current="page"{% endif %}>Leads</a>
+      <a href="/admin/reports" {% if nav=='reports' %}aria-current="page"{% endif %}>Reports</a>
+      {% if session.r == 'admin' %}
+      <a href="/admin/users" {% if nav=='users' %}aria-current="page"{% endif %}>Users</a>
+      {% endif %}
     </nav>
     <form method="post" action="/admin/logout" class="admout">
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <span class="admwho">{{ session.u }}</span>
+      {# The username links to the own-password screen. #}
+      <a class="admwho" href="/admin/password" title="Change your password">{{ session.u }}</a>
       <button type="submit">Sign out</button>
     </form>
     {% endif %}

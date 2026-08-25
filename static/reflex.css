@@ -78,7 +78,7 @@
 /* .rail parks the section label in a 180px gutter — one page, two header
    treatments. Stack the label above instead, like every other section. */
 .ap.reflex .rail{grid-template-columns:1fr;gap:14px}
-.ap.reflex .maplink{border-radius:10px}
+.ap.reflex .maplink{border-radius:999px}
 /* Orange lights the accent bar; blue carries every word, including the button
    and the reward icon (fluorescent orange as type is nowhere near legible). */
 .ap.reflex .enq{

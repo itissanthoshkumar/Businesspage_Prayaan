@@ -6,9 +6,10 @@ gets its own connection with narrowly scoped credentials:
   PBN_MONGO_URI_RO  — may read business_pages only
   PBN_MONGO_URI_RW  — may insert into site_leads and bump counters, nothing else
 
-Falling back to a single MONGO_URI is supported for local development only; in
-production the two must differ, and the service refuses to start if the write
-user can read the lead book (see main.py's boot check).
+Falling back to a single MONGO_URI is supported for local development only. In
+production boot_checks() below — run at startup by main.py — refuses to start
+when the URIs are shared, the database name collides with Sherlock's, or the
+write user can read the lead book.
 """
 import hashlib
 import os
@@ -17,7 +18,10 @@ from datetime import datetime, timedelta, timezone
 # Project convention: everything is stored and compared in IST. No UTC anywhere.
 IST = timezone(timedelta(hours=5, minutes=30))
 
-MONGO_DB = os.getenv("PBN_MONGO_DB", os.getenv("MONGO_DB", "dpd_early_warning"))
+# PBN's OWN database. Deliberately no fallback to the shared MONGO_DB env or
+# Sherlock's database name: on a box that carries Sherlock's environment, a
+# fallback would silently merge PBN's pages and leads into Sherlock's data.
+MONGO_DB = os.getenv("PBN_MONGO_DB", "pbn")
 URI_RO = os.getenv("PBN_MONGO_URI_RO") or os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
 URI_RW = os.getenv("PBN_MONGO_URI_RW") or URI_RO
 
@@ -94,11 +98,17 @@ def _seq(name):
 def reserve_lead_slot(cap, scope="global", day=None) -> bool:
     """Atomically reserve one submission under a daily cap. A check-then-insert
     would be a spam amplifier under concurrency, so this is a single round-trip
-    conditional increment — the same pattern Sherlock uses for vendor call caps."""
+    conditional increment — the same pattern Sherlock uses for vendor call caps.
+
+    expireAt + the TTL index from ensure_indexes() reap the day's keys two days
+    on, so quota rows do not accumulate one-per-IP-per-day forever."""
     from pymongo import ReturnDocument
     day = day or datetime.now(IST).strftime("%Y-%m-%d")
     key = "lead_quota:{}:{}".format(scope, day)
-    db_rw().counters.update_one({"_id": key}, {"$setOnInsert": {"v": 0}}, upsert=True)
+    db_rw().counters.update_one(
+        {"_id": key},
+        {"$setOnInsert": {"v": 0, "expireAt": datetime.now(IST) + timedelta(days=2)}},
+        upsert=True)
     doc = db_rw().counters.find_one_and_update(
         {"_id": key, "v": {"$lt": int(cap)}}, {"$inc": {"v": 1}},
         return_document=ReturnDocument.AFTER)
@@ -120,12 +130,17 @@ def hash_ip(ip, salt=None) -> str:
     return _hmac.new(secret.encode(), msg, hashlib.sha256).hexdigest()[:32]
 
 
-def insert_lead(name, mobile, pincode, source_path, consent_version, ip_hash):
+def insert_lead(name, mobile, pincode, source_path, consent_version, ip_hash,
+                via=None):
     """Insert an inbound loan lead.
 
     source_path comes from the request URL, never from a form field — otherwise a
     scripted post could attribute leads to any customer it chose and poison the
-    referral numbers. The page lookup uses the read-only connection."""
+    referral numbers. The page lookup uses the read-only connection.
+
+    via: which share channel brought the visitor ('wa' = the page's WhatsApp
+    share link, 'qr' = a printed code). Whitelisted upstream; this is the only
+    attribution beyond the page itself, so keep it."""
     page, _ = page_by_path(source_path) if source_path else (None, None)
     lid = _seq("site_leads")
     row = {
@@ -136,6 +151,7 @@ def insert_lead(name, mobile, pincode, source_path, consent_version, ip_hash):
         "source_path": norm_path(source_path) if source_path else None,
         "source_page_id": (page or {}).get("id"),
         "referrer_business_name": (page or {}).get("business_name"),
+        "via": via,
         "status": "NEW",
         "assigned_branch": None, "routed_at": None,
         "cs_notes": None, "called_by": None, "called_at": None,
@@ -282,6 +298,7 @@ def create_page(data, by, state_code, branch_slug, name_slug=None):
     quietly opening at an address nobody asked for.
 
     Raises ValueError; it is the caller's job to put that on the form."""
+    explicit = bool(name_slug)
     if name_slug:
         name_slug = unique_name_slug(name_slug, state_code, branch_slug, explicit=True)
     else:
@@ -302,7 +319,23 @@ def create_page(data, by, state_code, branch_slug, name_slug=None):
     for k in PAGE_EDITABLE:
         if k in data:
             row[k] = data[k]
-    db_admin().business_pages.insert_one(row)
+    # The unique index on path (ensure_indexes) is the real gate against two
+    # admins racing the same address; unique_name_slug is only the fast path.
+    # On a collision the derived slug is re-drawn; a typed one is refused —
+    # its whole point is that THIS exact link is going somewhere.
+    for _ in range(3):
+        try:
+            db_admin().business_pages.insert_one(row)
+            break
+        except Exception as exc:                        # noqa: BLE001
+            if type(exc).__name__ != "DuplicateKeyError":
+                raise
+            row.pop("_id", None)
+            if explicit:
+                raise ValueError("{} already belongs to another page.".format(row["path"]))
+            name_slug = unique_name_slug(data.get("business_name"), state_code, branch_slug)
+            row["name_slug"] = name_slug
+            row["path"] = build_path(state_code, branch_slug, name_slug)
     _page_event(pid, "CREATED", by, {"path": [None, row["path"]]})
     row.pop("_id", None)
     return row
@@ -325,12 +358,19 @@ def update_page(page_id, data, by):
     return db_admin().business_pages.find_one({"id": int(page_id)}, {"_id": 0})
 
 
-def set_page_status(page_id, status, by, note=None):
+def set_page_status(page_id, status, by, note=None,
+                    consent_method=None, consent_ref=None):
     """publish / remove / restore.
 
     The PATH IS NEVER TOUCHED here. A removed page keeps its address so the same
     link can be restored to the same business, and so the address is never handed
-    to anyone else."""
+    to anyone else.
+
+    First publish records consent EVIDENCE, not just an assertion: the admin
+    layer requires a method (how the customer agreed) and a reference (where
+    the proof lives — form location, message date, who took it verbally) and
+    they are stored verbatim. In a dispute, "an admin clicked publish" and
+    "signed form of 12 Aug, kept at Vellore branch" are different answers."""
     if status not in PAGE_STATUSES:
         raise ValueError("bad status")
     before = db_admin().business_pages.find_one({"id": int(page_id)}, {"_id": 0})
@@ -339,7 +379,8 @@ def set_page_status(page_id, status, by, note=None):
     patch = {"status": status, "updated_at": _now()}
     if status == PAGE_LIVE and not before.get("consent"):
         patch["consent"] = {"recorded_by": by, "at": _now(),
-                            "method": "offline", "note": note}
+                            "method": consent_method or "unrecorded",
+                            "ref": consent_ref or None, "note": note}
     db_admin().business_pages.update_one({"id": int(page_id)}, {"$set": patch})
     event = {"live": "PUBLISHED", "removed": "REMOVED", "draft": "UNPUBLISHED"}[status]
     if status == PAGE_LIVE and before.get("status") == PAGE_REMOVED:
@@ -423,18 +464,176 @@ def log_lead_export(count, by):
 
 
 # ---- users ----------------------------------------------------------------
+USER_ROLES = ("admin", "staff")
+
+
 def user_by_name(username):
     return db_admin().pbn_users.find_one({"username": str(username or "").lower()}, {"_id": 0})
 
 
-def create_user(username, password_hash, role="admin", by=None):
+def user_by_id(user_id):
+    return db_admin().pbn_users.find_one({"id": int(user_id)}, {"_id": 0})
+
+
+def create_user(username, password_hash, role="admin", by=None, must_change=False):
     row = {"id": _seq_admin("pbn_users"), "username": str(username).lower(),
            "password": password_hash, "role": role, "active": True,
+           # sv (session version) travels into every cookie at login and is
+           # re-checked per request; bumping it revokes all existing sessions.
+           "sv": 1, "must_change": bool(must_change),
            "created_at": _now(), "created_by": by}
     db_admin().pbn_users.insert_one(row)
     row.pop("_id", None)
     return row
 
 
+def update_user(user_id, by=None, bump_sv=False, **fields):
+    """Patch role/active/password/must_change. bump_sv=True kills every live
+    session for the user (suspension, password change, role change)."""
+    allowed = {k: v for k, v in fields.items()
+               if k in ("role", "active", "password", "must_change")}
+    before = db_admin().pbn_users.find_one({"id": int(user_id)}, {"_id": 0})
+    if not before:
+        return None
+    if bump_sv:
+        allowed["sv"] = int(before.get("sv", 1)) + 1
+    if allowed:
+        db_admin().pbn_users.update_one({"id": int(user_id)}, {"$set": allowed})
+    return db_admin().pbn_users.find_one({"id": int(user_id)}, {"_id": 0})
+
+
 def list_users():
     return list(db_admin().pbn_users.find({}, {"_id": 0, "password": 0}).sort("id", 1))
+
+
+# ---- page views (attribution) ----------------------------------------------
+def count_view(page_id, day=None):
+    """One daily counter per page — enough to tell a customer 'your page was
+    seen N times' and to see whether sharing works at all. No cookies, no UA,
+    no per-visitor anything: it is a tally, not tracking."""
+    day = day or datetime.now(IST).strftime("%Y-%m-%d")
+    key = "pv:{}:{}".format(int(page_id), day)
+    db_rw().counters.update_one(
+        {"_id": key},
+        {"$inc": {"v": 1},
+         "$setOnInsert": {"expireAt": datetime.now(IST) + timedelta(days=60)}},
+        upsert=True)
+
+
+def views_for(page_id, days=14) -> int:
+    keys = ["pv:{}:{}".format(int(page_id),
+            (datetime.now(IST) - timedelta(days=d)).strftime("%Y-%m-%d"))
+            for d in range(int(days))]
+    total = 0
+    for row in db_admin().counters.find({"_id": {"$in": keys}}, {"v": 1}):
+        total += int(row.get("v", 0))
+    return total
+
+
+def ensure_indexes():
+    """Idempotent; run at startup on Mongo deployments. The unique path index
+    is a data-integrity guarantee the application loop can only approximate;
+    the TTL index reaps daily quota/view counters via their expireAt."""
+    from pymongo import ASCENDING
+    db = db_admin()
+    db.business_pages.create_index([("id", ASCENDING)], unique=True)
+    db.business_pages.create_index([("path", ASCENDING)], unique=True)
+    db.business_pages.create_index([("aliases", ASCENDING)])
+    db.site_leads.create_index([("id", ASCENDING)], unique=True)
+    db.pbn_users.create_index([("username", ASCENDING)], unique=True)
+    db.page_reports.create_index([("id", ASCENDING)], unique=True)
+    db.business_page_events.create_index([("page_id", ASCENDING)])
+    db.lead_events.create_index([("lead_id", ASCENDING)])
+    db.counters.create_index("expireAt", expireAfterSeconds=0)
+
+
+# ---- page reports (public takedown / correction intake) --------------------
+# Takedown-on-request is the legal basis for publishing without prior consent,
+# so /report must actually reach someone. Rows are inserted by the PUBLIC
+# process (the RW credential needs insert on page_reports) and worked in the
+# back-office.
+REPORT_STATUSES = ("OPEN", "DONE")
+REPORT_TYPES = ("remove", "correct", "other")
+
+
+def insert_report(page_path, request_type, details, contact, ip_hash):
+    """page_path is normalised for matching but kept even when nothing matches —
+    a reporter may describe a page that was already taken down, or paste a
+    mangled link. The report is the signal; resolution happens in the admin."""
+    rid = _seq("page_reports")
+    row = {
+        "id": rid, "at": _now(),
+        "page_path": norm_path(page_path) if str(page_path or "").strip().startswith("/") else (str(page_path or "").strip()[:200] or None),
+        "request_type": request_type if request_type in REPORT_TYPES else "other",
+        "details": str(details or "").strip()[:1000],
+        "contact": str(contact or "").strip()[:200] or None,
+        "status": "OPEN",
+        "handled_by": None, "handled_at": None, "handled_note": None,
+        "ip_hash": ip_hash,
+    }
+    db_rw().page_reports.insert_one(row)
+    row.pop("_id", None)
+    return row
+
+
+def list_reports(status=None, limit=500):
+    query = {"status": status} if status else {}
+    return list(db_admin().page_reports.find(query, {"_id": 0})
+                .sort("id", -1).limit(int(limit)))
+
+
+def open_report_count():
+    return db_admin().page_reports.count_documents({"status": "OPEN"})
+
+
+def update_report(report_id, status, by, note=None):
+    if status not in REPORT_STATUSES:
+        raise ValueError("bad status")
+    patch = {"status": status}
+    if status == "DONE":
+        patch["handled_by"] = by
+        patch["handled_at"] = _now()
+    if note is not None and str(note).strip():
+        patch["handled_note"] = str(note).strip()[:500]
+    db_admin().page_reports.update_one({"id": int(report_id)}, {"$set": patch})
+    return db_admin().page_reports.find_one({"id": int(report_id)}, {"_id": 0})
+
+
+# ---- boot checks ------------------------------------------------------------
+SHERLOCK_DB = "dpd_early_warning"
+
+
+def boot_checks():
+    """Run at startup by main.py for production Mongo deployments (preview
+    builds and the file store skip it). Refuses to start rather than run in a
+    shape that silently loses a security property; the message names the exact
+    env var to fix. A Mongo that is down raises its own error here — a service
+    that cannot reach its store should not come up either."""
+    problems = []
+    if MONGO_DB == SHERLOCK_DB:
+        problems.append(
+            "PBN_MONGO_DB is '{}' — Sherlock's database. PBN must use its own; "
+            "set PBN_MONGO_DB (e.g. 'pbn').".format(SHERLOCK_DB))
+    if not (os.getenv("PBN_MONGO_URI_RO") and os.getenv("PBN_MONGO_URI_RW")
+            and os.getenv("PBN_MONGO_URI_ADMIN")):
+        problems.append(
+            "PBN_MONGO_URI_RO / _RW / _ADMIN must all be set explicitly in "
+            "production — the single-URI fallback is for local development only.")
+    elif len({URI_RO, URI_RW, URI_ADMIN}) != 3:
+        problems.append(
+            "PBN_MONGO_URI_RO / _RW / _ADMIN must be three DIFFERENT users — "
+            "the point is that the anonymous request path cannot read customer "
+            "records, and a shared user erases that property silently.")
+    else:
+        # The write user must NOT be able to read the lead book. An
+        # OperationFailure here is the GOOD outcome.
+        try:
+            db_rw().site_leads.find_one({}, {"_id": 1})
+            problems.append(
+                "The PBN_MONGO_URI_RW user CAN READ site_leads. It must be "
+                "insert-only on leads/reports/counters; fix its role in Atlas.")
+        except Exception as exc:                        # noqa: BLE001
+            if type(exc).__name__ != "OperationFailure":
+                raise                                   # Mongo unreachable etc.
+    if problems:
+        raise RuntimeError("PBN refuses to start:\n  - " + "\n  - ".join(problems))

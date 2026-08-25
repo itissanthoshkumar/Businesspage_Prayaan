@@ -62,6 +62,7 @@ _FILENAMES = {
     "events": "events.json",
     "users": "users.json",
     "counters": "counters.json",
+    "reports": "reports.json",
 }
 
 # store.hash_ip is captured BEFORE install() replaces it, so the delegation
@@ -75,6 +76,7 @@ _LEADS = []
 _PAGE_EVENTS = []
 _LEAD_EVENTS = []
 _USERS = []
+_REPORTS = []
 _COUNTERS = {}
 _BY_PATH = {}
 _BY_ALIAS = {}
@@ -290,6 +292,8 @@ def _payload(name):
         return {"v": FORMAT_VERSION, "rows": _USERS}
     if name == "counters":
         return {"v": FORMAT_VERSION, "counters": _COUNTERS}
+    if name == "reports":
+        return {"v": FORMAT_VERSION, "rows": _REPORTS}
     raise KeyError(name)
 
 
@@ -358,9 +362,12 @@ def _seed_admin_user():
 def _prune_quota(today):
     """Daily lead-quota keys would otherwise accumulate one row per IP per day
     forever. Today's survive, so a restart does not hand a flooder a fresh
-    allowance."""
+    allowance. Page-view counters keep a 60-day window (the admin shows 14)."""
+    cutoff = (datetime.now(IST) - timedelta(days=60)).strftime("%Y-%m-%d")
     stale = [k for k in _COUNTERS
              if k.startswith("lead_quota:") and k.rsplit(":", 1)[-1] != today]
+    stale += [k for k in _COUNTERS
+              if k.startswith("pv:") and k.rsplit(":", 1)[-1] < cutoff]
     for key in stale:
         _COUNTERS.pop(key, None)
     return bool(stale)
@@ -376,7 +383,7 @@ def init(data_dir=None):
         had_pages = os.path.exists(_path_for("pages"))
         had_users = os.path.exists(_path_for("users"))
 
-        for bucket in (_PAGES, _LEADS, _PAGE_EVENTS, _LEAD_EVENTS, _USERS):
+        for bucket in (_PAGES, _LEADS, _PAGE_EVENTS, _LEAD_EVENTS, _USERS, _REPORTS):
             del bucket[:]
         _COUNTERS.clear()
 
@@ -387,6 +394,7 @@ def init(data_dir=None):
         _PAGE_EVENTS.extend(events.get("page_events", []))
         _LEAD_EVENTS.extend(events.get("lead_events", []))
         _USERS.extend(_read_file("users", {}).get("rows", []))
+        _REPORTS.extend(_read_file("reports", {}).get("rows", []))
 
         dirty = set()
         if not had_pages:
@@ -469,7 +477,8 @@ def hash_ip(ip, salt=None) -> str:
     return _hash_ip_impl(ip, salt)
 
 
-def insert_lead(name, mobile, pincode, source_path, consent_version, ip_hash):
+def insert_lead(name, mobile, pincode, source_path, consent_version, ip_hash,
+                via=None):
     page, _ = page_by_path(source_path) if source_path else (None, None)
     with _LOCK:
         lid = _next_id("site_leads")
@@ -481,6 +490,7 @@ def insert_lead(name, mobile, pincode, source_path, consent_version, ip_hash):
             "source_path": store.norm_path(source_path) if source_path else None,
             "source_page_id": (page or {}).get("id"),
             "referrer_business_name": (page or {}).get("business_name"),
+            "via": via,
             "status": "NEW",
             "assigned_branch": None, "routed_at": None,
             "cs_notes": None, "called_by": None, "called_at": None,
@@ -531,9 +541,26 @@ def _find_page(page_id):
     return next((r for r in _PAGES if int(r.get("id")) == pid), None)
 
 
-def create_page(data, by, state_code, branch_slug):
+def create_page(data, by, state_code, branch_slug, name_slug=None):
+    """name_slug, when given, is a slug the admin CHOSE — it is honoured exactly
+    or refused (ValueError), never silently adjusted to a free one. Parity with
+    store.create_page; without it every create that sends a slug would fail on
+    this backend."""
     with _LOCK:
-        name_slug = _unique_name_slug(data.get("business_name"), state_code, branch_slug)
+        if name_slug:
+            wanted = store.slugify(name_slug)
+            if not wanted:
+                raise ValueError("That web address is empty once cleaned up.")
+            if wanted in store.RESERVED_SLUGS:
+                raise ValueError("'{}' is a reserved address".format(wanted))
+            path = store.build_path(state_code, branch_slug, wanted)
+            if path in _BY_PATH or path in _BY_ALIAS:
+                raise ValueError("The address {} is already taken by another "
+                                 "page.".format(path))
+            name_slug = wanted
+        else:
+            name_slug = _unique_name_slug(data.get("business_name"), state_code, branch_slug)
+
         pid = _next_id("business_pages")
         now = _now()
         row = {
@@ -577,8 +604,10 @@ def update_page(page_id, data, by):
         return _clone(row)
 
 
-def set_page_status(page_id, status, by, note=None):
-    """publish / remove / restore. THE PATH IS NEVER TOUCHED."""
+def set_page_status(page_id, status, by, note=None,
+                    consent_method=None, consent_ref=None):
+    """publish / remove / restore. THE PATH IS NEVER TOUCHED. First publish
+    records consent evidence (method + reference) exactly like store.py."""
     if status not in store.PAGE_STATUSES:
         raise ValueError("bad status")
     with _LOCK:
@@ -590,7 +619,8 @@ def set_page_status(page_id, status, by, note=None):
         row["updated_at"] = _now()
         if status == store.PAGE_LIVE and not row.get("consent"):
             row["consent"] = {"recorded_by": by, "at": _now(),
-                              "method": "offline", "note": note}
+                              "method": consent_method or "unrecorded",
+                              "ref": consent_ref or None, "note": note}
         event = {"live": "PUBLISHED", "removed": "REMOVED", "draft": "UNPUBLISHED"}[status]
         if status == store.PAGE_LIVE and was == store.PAGE_REMOVED:
             event = "RESTORED"
@@ -700,13 +730,35 @@ def user_by_name(username):
         return _clone(next((u for u in _USERS if u.get("username") == name), None))
 
 
-def create_user(username, password_hash, role="admin", by=None):
+def user_by_id(user_id):
+    uid = int(user_id)
+    with _LOCK:
+        return _clone(next((u for u in _USERS if int(u.get("id")) == uid), None))
+
+
+def create_user(username, password_hash, role="admin", by=None, must_change=False):
     with _LOCK:
         row = {"id": _next_id("pbn_users"), "username": str(username).lower(),
                "password": password_hash, "role": role, "active": True,
+               "sv": 1, "must_change": bool(must_change),
                "created_at": _now(), "created_by": by}
         _USERS.append(row)
         _save("users", "counters")
+        return _clone(row)
+
+
+def update_user(user_id, by=None, bump_sv=False, **fields):
+    allowed = {k: v for k, v in fields.items()
+               if k in ("role", "active", "password", "must_change")}
+    with _LOCK:
+        uid = int(user_id)
+        row = next((u for u in _USERS if int(u.get("id")) == uid), None)
+        if not row:
+            return None
+        if bump_sv:
+            allowed["sv"] = int(row.get("sv", 1)) + 1
+        row.update(allowed)
+        _save("users")
         return _clone(row)
 
 
@@ -716,14 +768,83 @@ def list_users():
         return [{k: v for k, v in _clone(u).items() if k != "password"} for u in rows]
 
 
+# ---- page views (attribution) ----------------------------------------------
+def count_view(page_id, day=None):
+    key = "pv:{}:{}".format(int(page_id), day or _today())
+    with _LOCK:
+        _COUNTERS[key] = int(_COUNTERS.get(key, 0)) + 1
+        _save("counters")
+
+
+def views_for(page_id, days=14) -> int:
+    with _LOCK:
+        total = 0
+        for d in range(int(days)):
+            day = (datetime.now(IST) - timedelta(days=d)).strftime("%Y-%m-%d")
+            total += int(_COUNTERS.get("pv:{}:{}".format(int(page_id), day), 0))
+        return total
+
+
+# ---- page reports (takedown / correction intake) ---------------------------
+def insert_report(page_path, request_type, details, contact, ip_hash):
+    with _LOCK:
+        rid = _next_id("page_reports")
+        cleaned = str(page_path or "").strip()
+        row = {
+            "id": rid, "at": _now(),
+            "page_path": store.norm_path(cleaned) if cleaned.startswith("/") else (cleaned[:200] or None),
+            "request_type": request_type if request_type in store.REPORT_TYPES else "other",
+            "details": str(details or "").strip()[:1000],
+            "contact": str(contact or "").strip()[:200] or None,
+            "status": "OPEN",
+            "handled_by": None, "handled_at": None, "handled_note": None,
+            "ip_hash": ip_hash,
+        }
+        _REPORTS.append(row)
+        _save("reports", "counters")
+        return _clone(row)
+
+
+def list_reports(status=None, limit=500):
+    with _LOCK:
+        rows = [r for r in _REPORTS if not status or r.get("status") == status]
+        rows.sort(key=lambda r: int(r.get("id") or 0), reverse=True)
+        return _clone(rows[:int(limit)])
+
+
+def open_report_count():
+    with _LOCK:
+        return len([r for r in _REPORTS if r.get("status") == "OPEN"])
+
+
+def update_report(report_id, status, by, note=None):
+    if status not in store.REPORT_STATUSES:
+        raise ValueError("bad status")
+    with _LOCK:
+        rid = int(report_id)
+        row = next((r for r in _REPORTS if int(r.get("id")) == rid), None)
+        if not row:
+            return None
+        row["status"] = status
+        if status == "DONE":
+            row["handled_by"] = by
+            row["handled_at"] = _now()
+        if note is not None and str(note).strip():
+            row["handled_note"] = str(note).strip()[:500]
+        _save("reports")
+        return _clone(row)
+
+
 # ---------------------------------------------------------------------------
 # installation
 # ---------------------------------------------------------------------------
 INSTALLS = (
     "page_by_path", "live_pages", "create_page", "update_page", "set_page_status",
     "page_by_id", "list_pages", "page_events", "insert_lead", "list_leads",
-    "lead_by_id", "update_lead", "log_lead_export", "user_by_name", "create_user",
-    "list_users", "reserve_lead_slot", "hash_ip",
+    "lead_by_id", "update_lead", "log_lead_export", "user_by_name", "user_by_id",
+    "create_user", "update_user", "list_users", "reserve_lead_slot", "hash_ip",
+    "insert_report", "list_reports", "open_report_count", "update_report",
+    "count_view", "views_for",
 )
 
 

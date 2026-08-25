@@ -1,0 +1,6 @@
+# TLS is automatic (Let's Encrypt) once the DNS A-record for this hostname
+# points at the VM. Change the hostname here and PBN_BASE_URL in .env together.
+business.prayaancapital.com {
+	encode gzip
+	reverse_proxy app:8797
+}

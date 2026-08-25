@@ -48,6 +48,11 @@
     <section class="lens hm">
       <div class="stage">
         <img class="shot" src="{{ page.photo_url }}" width="1200" height="600" alt="{{ shot_alt }}">
+        {# The tier rides the photograph itself — a stamp on the image, the way
+           a mark of recognition sits on a certificate, not another chip in the
+           pill row. Same glittering badge, solid white under the metal so it
+           stays legible on any photo. #}
+        {% include "_tier.html" %}
       </div>
       <div class="idrow">
         <img class="ava" src="{{ page.photo_url }}" width="176" height="176" alt="" aria-hidden="true">
@@ -62,7 +67,6 @@
           Est. {{ page.established_year }}
         </span>
         {% endif %}
-        {% include "_tier.html" %}
       </div>
       <div class="plate slim">
         {% include "_contact.html" %}
@@ -82,6 +86,8 @@
         {% if page.photo_url %}
           <img class="disc" src="{{ page.photo_url }}" width="1200" height="1200"
                alt="{{ page.business_name }}{% if page.category %}, {{ page.category }}{% endif %}{% if page.locality %} in {{ page.locality }}{% endif %}">
+          {# Tier stamped on the photograph, same as the cover hero. #}
+          {% include "_tier.html" %}
         {% else %}
           <span class="disc blank" aria-hidden="true">
             <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M13.9 8.2l5.2 9M9.9 8.2h10.4M7.9 11.7l5.2-9M9.9 15.2L4.7 6.2M13.9 15.2H3.5M15.9 11.7l-5.2 9"/></svg>
@@ -96,16 +102,41 @@
            Katpadi, Vellore, Tamil Nadu"; it now sits in the contact block below
            with a pin and the map link, so the card reads the way a visiting card
            does — identity first, then how to reach them. #}
-        {% if page.owner_name %}<p class="own">{{ page.owner_name }}</p>{% endif %}
-        {% if page.established_year %}
-        <span class="pill">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></svg>
-          Est. {{ page.established_year }}
-        </span>
-        {% endif %}
-        {% include "_tier.html" %}
+        {# Owner and Est. side by side — one identity row, not a stack. #}
+        <div class="ownrow">
+          {% if page.owner_name %}<p class="own">{{ page.owner_name }}</p>{% endif %}
+          {% if page.established_year %}
+          <span class="pill">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+            Est. {{ page.established_year }}
+          </span>
+          {% endif %}
+        </div>
+        {# No photo -> nowhere to stamp it, so the badge falls back to the
+           pill row it used to live in. #}
+        {% if not page.photo_url %}{% include "_tier.html" %}{% endif %}
         {% include "_contact.html" %}
       </div>
+    </section>
+    {% endif %}
+
+    {# Loan-offer card, pinned under the hero. HIDDEN unless PBN_SHOW_OFFER
+       (user's call, 2026-08-24 — "hide for now", not delete).
+       COPY RULES when it returns: every figure comes from prayaancapital.com
+       (₹5L–₹30L, 10-year tenures, doorstep service) — never an invented cap or
+       an unpublished SLA. And never tier-conditional: "Gold members get faster
+       decisions" would publicly tie the badge to credit treatment, which the
+       tier rules exist to prevent. #}
+    {% if show_offer %}
+    <section class="offer reveal" aria-labelledby="offer-h">
+      <p class="offer-eyebrow">Business loans</p>
+      <h2 id="offer-h">Loans from &#8377;5&nbsp;lakh to &#8377;30&nbsp;lakh</h2>
+      <p class="offer-sub">For working capital, expansion or machinery —
+        secured against property you own, with doorstep service and faster
+        decisions on complete documents.</p>
+      <a class="offer-cta" href="#enquire">Check my eligibility
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+      </a>
     </section>
     {% endif %}
 
@@ -113,7 +144,8 @@
 
     {% if page.offerings %}
     <svg class="sweep" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 56C320 4 880 4 1200 56"/></svg>
-    <section class="blk mid reveal">
+    {# sec-* ids: the admin live preview scrolls to the section being edited #}
+    <section class="blk mid reveal" id="sec-offerings">
       <h2 class="lab">What they do</h2>
       <ul class="chips">
         {% for item in page.offerings %}
@@ -127,7 +159,7 @@
     {% endif %}
 
     {% if page.figures %}
-    <section class="blk mid reveal">
+    <section class="blk mid reveal" id="sec-figures">
       <h2 class="lab">In numbers</h2>
       <ul class="figs">
         {% for f in page.figures %}
@@ -140,7 +172,7 @@
 
     {% if page.about %}
     <svg class="sweep" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 56C320 4 880 4 1200 56"/></svg>
-    <section class="blk rail reveal">
+    <section class="blk rail reveal" id="sec-about">
       <h2 class="lab">About the business</h2>
       <div class="prose">
         {% for para in page.about %}<p>{{ para }}</p>{% endfor %}
@@ -149,8 +181,9 @@
     {% endif %}
 
     {% if page.hours or page.languages %}
-    <section class="blk rail reveal">
-      <h2 class="lab">Visiting</h2>
+    <section class="blk rail reveal" id="sec-visiting">
+      {# ux-copy: "Timings" is the word this audience uses for shop hours. #}
+      <h2 class="lab">Timings &amp; languages</h2>
       <div class="visit">
         <dl class="metarow">
           {% if page.hours %}
@@ -174,6 +207,29 @@
     <div class="enqwrap reveal">
       {% include "_enquiry.html" %}
     </div>
+
+    {# Who is the lender behind the form above. Every fact here is from
+       prayaancapital.com (checked 2026-08-23) — nothing invented, and nothing
+       about the page's own business: this section is about Prayaan only. #}
+    <svg class="sweep" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 56C320 4 880 4 1200 56"/></svg>
+    <section class="blk rail reveal" id="about-prayaan">
+      <h2 class="lab">About Prayaan Capital</h2>
+      <div class="prose">
+        <p>Prayaan Capital is a Chennai-based, RBI-registered NBFC, founded in
+          2018 to lend to the businesses that form the backbone of our economy —
+          the manufacturers, traders and shopkeepers of India's MSME sector.
+          More than 1,000 families have been funded so far.</p>
+        <p>Its secured business loans run from ₹5&nbsp;lakh to ₹30&nbsp;lakh
+          against property the borrower already owns, with tenures up to
+          10&nbsp;years and doorstep service — the field team comes to your shop
+          or home for documents and valuation. Every credit decision has a
+          person behind it, and no fee is ever asked before loan processing.</p>
+      </div>
+      <p class="attrib cap">Prayaan Capital Private Limited — non-deposit-taking
+        NBFC&#8209;ICC, RBI Certificate of Registration dated 6 June 2019 ·
+        CIN U65900TN2018PTC126232 ·
+        <a href="https://www.prayaancapital.com">prayaancapital.com</a></p>
+    </section>
 
     <p class="colo">Published by Prayaan Business Pages at {{ page.path }}</p>
 

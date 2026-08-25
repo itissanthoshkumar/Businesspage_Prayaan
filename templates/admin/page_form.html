@@ -11,7 +11,9 @@
         <h1>{{ page.business_name if page else 'New business page' }}</h1>
         {% if page %}<p class="headsub">Editing an existing page — change any field and save. The web address stays fixed.</p>{% endif %}
       </div>
-      {% if page %}<a class="btn" href="{{ page.path }}" target="_blank" rel="noopener">Open live &nearr;</a>{% endif %}
+      {# Only when actually live: for a draft this link lands on the public
+         404 ("page is not available"), which reads as an error, not a state. #}
+      {% if page and page.status == 'live' %}<a class="btn" href="{{ page.path }}" target="_blank" rel="noopener">Open live &nearr;</a>{% endif %}
     </div>
     {% if request.query_params.get('saved') %}<p class="ok">Saved.</p>{% endif %}
     {% if error %}<p class="err">{{ error }}</p>{% endif %}
@@ -22,14 +24,47 @@
         <span class="pill s-{{ page.status }}">{{ page.status }}</span>
         <code>{{ page.path }}</code>
         <span class="sub">Address is permanent</span>
+        {% if page.status == 'live' and views is defined %}
+        <span class="sub">{{ views }} views in 14 days</span>
+        {% endif %}
+        {% if page.status != 'live' %}
+        <span class="sub"><b>Not public yet</b> — the link shows “page not
+          available” to visitors until you publish{{ ' it again' if page.status == 'removed' else '' }} here.</span>
+        {% endif %}
+        {% if page.consent %}
+        <span class="sub">Consent: {{ page.consent.method }}{% if page.consent.ref %} — {{ page.consent.ref }}{% endif %}
+          ({{ page.consent.recorded_by }}, {{ page.consent.at }})</span>
+        {% endif %}
       </div>
       <div class="statusacts">
-        {% for label, target in [('Publish','live'), ('Unpublish','draft'), ('Remove','removed')] %}
+        {% if page.status != 'live' and maker_checker and session.r != 'admin' %}
+        <span class="sub">Ready? An admin reviews and publishes this page.</span>
+        {% elif page.status != 'live' %}
+        <form method="post" action="/admin/pages/{{ page.id }}/status" class="pubform">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="status" value="live">
+          {% if not page.consent %}
+          {# First publish requires consent EVIDENCE — how the customer agreed
+             and where the proof lives. The server refuses without both. #}
+          <select name="consent_method" required aria-label="How the customer's consent was given">
+            <option value="">Consent given by…</option>
+            <option value="written">Signed consent form</option>
+            <option value="whatsapp">WhatsApp confirmation</option>
+            <option value="verbal">Verbal, noted down</option>
+          </select>
+          <input name="consent_ref" required maxlength="200"
+                 placeholder="Proof — form location / message date / who took it &amp; when"
+                 aria-label="Consent reference">
+          {% endif %}
+          <button type="submit" class="primary">Publish</button>
+        </form>
+        {% endif %}
+        {% for label, target in [('Unpublish','draft'), ('Remove','removed')] %}
           {% if page.status != target %}
           <form method="post" action="/admin/pages/{{ page.id }}/status">
             <input type="hidden" name="csrf" value="{{ csrf }}">
             <input type="hidden" name="status" value="{{ target }}">
-            <button type="submit" class="{{ 'primary' if target=='live' else '' }}{{ ' danger' if target=='removed' else '' }}">{{ label }}</button>
+            <button type="submit" class="{{ 'danger' if target=='removed' else '' }}">{{ label }}</button>
           </form>
           {% endif %}
         {% endfor %}
@@ -39,37 +74,52 @@
 
     <form id="page-form" method="post" action="{{ '/admin/pages/%s'|format(page.id) if page else '/admin/pages/new' }}">
     <input type="hidden" name="csrf" value="{{ csrf }}">
+    {# Sentinel: updates write the FULL field set, so the server refuses any
+       POST that did not come from this complete form (a partial scripted post
+       would silently blank every field it omitted). #}
+    <input type="hidden" name="form_complete" value="1">
 
     <div class="card">
       <h2>Identity</h2>
       {% if not page %}
-      <div class="row3">
+      <label for="bn0">Business name *</label>
+      <input id="bn0" name="business_name" value="{{ f.get('business_name','') }}" required maxlength="120"
+             placeholder="Velan Steel Traders">
+      <div class="row2">
         <div><label for="st">State code</label>
-          <input id="st" name="state_code" value="{{ f.get('state_code','TN') }}" maxlength="3" required placeholder="TN"></div>
+          <div class="statein">
+            <input id="st" name="state_code" value="{{ f.get('state_code','TN') }}" maxlength="3" required placeholder="TN">
+            <span class="statename" id="state-name-echo" aria-hidden="true"></span>
+          </div></div>
         <div><label for="br">Branch</label>
           <input id="br" name="branch_slug" value="{{ f.get('branch_slug','') }}" required placeholder="vellore"></div>
-        <div class="note">These two fix the address and cannot be changed later.</div>
       </div>
-      <label for="wa">Web address <span class="sub">optional — leave blank to build it from the business name</span></label>
+      {# The address COMPOSES ITSELF: state/branch echo live, and the last part
+         auto-fills from the business name (editable). The hidden web_address is
+         sent only when the last part was hand-edited, so an untouched auto slug
+         keeps the server's collision-suffix behaviour (-2, -3 ...). #}
+      <label>Web address <span class="sub">fills itself — edit the last part if you want a different link</span></label>
       <div class="addr">
         <span class="addrbase">{{ base_url }}/</span>
-        <input id="wa" name="web_address" value="{{ f.get('web_address','') }}"
-               maxlength="200" spellcheck="false" placeholder="TN/vellore/velan-steel">
+        <span class="addrseg" id="addr-state">TN</span><span class="addrsep">/</span>
+        <span class="addrseg" id="addr-branch">branch</span><span class="addrsep">/</span>
+        <input id="slug-input" spellcheck="false" autocomplete="off"
+               placeholder="from business name" aria-label="Last part of the web address">
       </div>
-      <p class="note">Type one, two or three parts — <code>velan-steel</code>,
-        <code>vellore/velan-steel</code> or <code>TN/vellore/velan-steel</code>.
-        <b>The address is permanent.</b> It cannot be edited afterwards and is never
-        handed to another business, so a link already sent on WhatsApp keeps opening
-        this page — which is why a taken or reserved address is refused rather than
-        quietly changed.</p>
+      <input type="hidden" name="web_address" id="wa-hidden" value="{{ f.get('web_address','') }}">
+      <p class="note"><b>The address is permanent once created</b> — a link shared
+        on WhatsApp must keep opening this business, so it can never be edited or
+        given to anyone else later.</p>
       {% else %}
       <label for="wa">Web address <span class="sub">permanent — fixed when the page was created</span></label>
       <input id="wa" value="{{ base_url }}{{ page.path }}" readonly aria-readonly="true" aria-describedby="wanote">
       <p class="note" id="wanote">This cannot be changed. A link already printed on a
         board or shared in a WhatsApp group must keep opening this business.</p>
       {% endif %}
+      {% if page %}
       <label for="bn">Business name *</label>
       <input id="bn" name="business_name" value="{{ f.get('business_name','') }}" required maxlength="120">
+      {% endif %}
       <div class="row2">
         <div><label for="on">Owner name</label>
           <input id="on" name="owner_name" value="{{ f.get('owner_name','') or '' }}" maxlength="80"></div>
@@ -77,14 +127,16 @@
           <input id="cat" name="category" value="{{ f.get('category','') or '' }}" maxlength="60"
                  placeholder="Hardware &amp; Building Materials"></div>
       </div>
-      <div class="row3">
+      <div class="row2">
         <div><label for="loc">Locality</label>
           <input id="loc" name="locality" value="{{ f.get('locality','') or '' }}" maxlength="60"></div>
         <div><label for="dis">District</label>
           <input id="dis" name="district" value="{{ f.get('district','') or '' }}" maxlength="60"></div>
-        <div><label for="sn">State name</label>
-          <input id="sn" name="state_name" value="{{ f.get('state_name','') or '' }}" maxlength="60"></div>
       </div>
+      {# State name is derived from the state code (TN -> Tamil Nadu) — one less
+         box to fill. On edit the saved value is preserved as-is. #}
+      <input type="hidden" name="state_name" id="state-name-hidden"
+             value="{{ f.get('state_name','') or '' }}">
       <p class="note">Never a street address. The page shows the locality only —
         publishing a precise address alongside opening hours tells a stranger when
         the premises are empty.</p>
@@ -117,8 +169,30 @@
 
     <div class="card">
       <h2>Contact</h2>
-      <label for="phn">Phone numbers <span class="sub">one per line, maximum two</span></label>
-      <textarea id="phn" name="phones" rows="2">{{ (f.get('phones') or [])|join('\n') }}</textarea>
+      {# Two dedicated 10-digit inputs, not a free textarea: easier for the team
+         and it makes "10 digits only" enforceable. The +91 is a fixed prefix, so
+         the team types just the number. JS keeps the hidden `phones` field (the
+         server's contract, newline-separated) in sync from these two. #}
+      {% set _ph = f.get('phones') or [] %}
+      {% macro natdigits(v) %}{{ (v|string)|replace('+','')|replace(' ','')|replace('-','') }}{% endmacro %}
+      <label>Phone numbers <span class="sub">10-digit number, up to two</span></label>
+      <div class="phonegrid">
+        <div class="phonein">
+          <span class="cc">+91</span>
+          <input id="phone1" data-phone inputmode="numeric" maxlength="10" autocomplete="off"
+                 placeholder="98400 12345"
+                 value="{{ natdigits(_ph[0])[-10:] if _ph|length > 0 else '' }}">
+        </div>
+        <div class="phonein">
+          <span class="cc">+91</span>
+          <input id="phone2" data-phone inputmode="numeric" maxlength="10" autocomplete="off"
+                 placeholder="optional"
+                 value="{{ natdigits(_ph[1])[-10:] if _ph|length > 1 else '' }}">
+        </div>
+      </div>
+      <p class="fielderr" id="phone-err" hidden></p>
+      <input type="hidden" name="phones" id="phones-hidden"
+             value="{{ (f.get('phones') or [])|join('\n') }}">
       <label for="mu">Google Maps link</label>
       <input id="mu" name="map_url" value="{{ f.get('map_url','') or '' }}" maxlength="400">
       <p class="note"><b>This pin must be the BUSINESS, not the owner's home.</b>
@@ -133,18 +207,46 @@
       <textarea id="sum" name="summary" rows="2" maxlength="400">{{ f.get('summary','') or '' }}</textarea>
       <label for="ab">About <span class="sub">one paragraph per line</span></label>
       <textarea id="ab" name="about" rows="5">{{ (f.get('about') or [])|join('\n') }}</textarea>
-      <label for="off">What they do <span class="sub">one per line</span></label>
-      <textarea id="off" name="offerings" rows="4">{{ (f.get('offerings') or [])|join('\n') }}</textarea>
-      <label for="fig">In numbers <span class="sub">Label | Value, one per line</span></label>
-      <textarea id="fig" name="figures" rows="3">{% for x in (f.get('figures') or []) %}{{ x.label }} | {{ x.value }}
-{% endfor %}</textarea>
+      {# Chip editors: type one item, press Add (or Enter). The hidden inputs
+         keep the server's existing newline contract, so a browser without JS
+         still saves whatever was already there. #}
+      <label for="off-in">What they do <span class="sub">one at a time — up to 8</span></label>
+      <div class="chipedit" data-chips="offerings" data-max="8">
+        <div class="chiprow" data-list></div>
+        <div class="chipadd">
+          <input id="off-in" type="text" maxlength="60" placeholder="e.g. PVC &amp; GI pipes" data-in>
+          <button type="button" class="addbtn" data-add>Add</button>
+        </div>
+      </div>
+      <input type="hidden" name="offerings" id="offerings-hidden"
+             value="{{ (f.get('offerings') or [])|join('\n') }}">
+
+      <label for="fig-label">In numbers <span class="sub">a label and its value — up to 4</span></label>
+      <div class="chipedit" data-figs data-max="4">
+        <div class="chiprow" data-list></div>
+        <div class="chipadd">
+          <input id="fig-label" type="text" maxlength="40" placeholder="Label — e.g. Years in business" data-fig-label>
+          <input type="text" class="figval" maxlength="20" placeholder="Value — 12" data-fig-value aria-label="Value">
+          <button type="button" class="addbtn" data-add>Add</button>
+        </div>
+      </div>
+      <input type="hidden" name="figures" id="figures-hidden"
+             value="{% for x in (f.get('figures') or []) %}{{ x.label }} | {{ x.value }}{{ '\n' if not loop.last else '' }}{% endfor %}">
       <p class="note">Shown as the owner's own claims — the page says
         "Figures shared by {{ f.get('owner_name') or 'the owner' }}". Prayaan publishes them, it does not certify them.</p>
       <div class="row2">
         <div><label for="hr">Hours</label>
           <input id="hr" name="hours" value="{{ f.get('hours','') or '' }}" maxlength="80"></div>
-        <div><label for="lg">Languages <span class="sub">one per line</span></label>
-          <textarea id="lg" name="languages" rows="2">{{ (f.get('languages') or [])|join('\n') }}</textarea></div>
+        <div><label for="lg-in">Languages <span class="sub">up to 4</span></label>
+          <div class="chipedit" data-chips="languages" data-max="4">
+            <div class="chiprow" data-list></div>
+            <div class="chipadd">
+              <input id="lg-in" type="text" maxlength="30" placeholder="e.g. Tamil" data-in>
+              <button type="button" class="addbtn" data-add>Add</button>
+            </div>
+          </div>
+          <input type="hidden" name="languages" id="languages-hidden"
+                 value="{{ (f.get('languages') or [])|join('\n') }}"></div>
       </div>
     </div>
 
@@ -173,9 +275,15 @@
         Allow search engines to index this page</label>
     </div>
 
-    <div class="actions">
-      <button class="primary" type="submit">{{ 'Save changes' if page else 'Create as draft' }}</button>
-      <a class="btn" href="/admin/pages">Cancel</a>
+    {# Sticky save bar — the form is long, so the team can save from anywhere
+       without scrolling to the bottom. A single validation summary appears here
+       when a field needs fixing. #}
+    <div class="savebar">
+      <p class="savehint" id="save-hint">{{ 'Editing an existing page.' if page else 'New page — saved as a draft first, then you publish it.' }}</p>
+      <div class="saveacts">
+        <a class="btn" href="/admin/pages">Cancel</a>
+        <button class="primary" type="submit">{{ 'Save changes' if page else 'Create as draft' }}</button>
+      </div>
     </div>
     </form>
 
@@ -215,7 +323,7 @@
           <iframe id="preview-frame" title="Live preview of the customer page"></iframe>
         </div>
       </div>
-      <p class="previewnote">Live preview — exactly what a customer sees. Updates as you type.</p>
+      <p class="previewnote"><span class="busydot" id="preview-busy" aria-hidden="true"></span>Live preview — exactly what a customer sees. Updates as you type.</p>
     </div>
   </aside>
 

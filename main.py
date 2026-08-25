@@ -12,6 +12,7 @@ build would need a regenerate-and-redeploy cycle.
 
 Run: uvicorn main:app --port 8797
 """
+import logging
 import os
 import time
 from pathlib import Path
@@ -22,23 +23,68 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import admin
+import auth
+import notify
 import store
+
+# ---- logging ---------------------------------------------------------------
+# An unhandled exception on a customer's page must land SOMEWHERE a human can
+# find: stderr always (uvicorn/journald/docker capture it), plus an optional
+# rotating file (PBN_ERROR_LOG=/path) and optional Sentry (PBN_SENTRY_DSN).
+log = logging.getLogger("pbn")
+if not log.handlers:
+    _fmt = logging.Formatter("%(asctime)s %(levelname)s pbn %(message)s")
+    _sh = logging.StreamHandler()
+    _sh.setFormatter(_fmt)
+    log.addHandler(_sh)
+    log.setLevel(logging.INFO)
+    _logfile = os.getenv("PBN_ERROR_LOG", "").strip()
+    if _logfile:
+        from logging.handlers import RotatingFileHandler
+        _fh = RotatingFileHandler(_logfile, maxBytes=1_000_000, backupCount=3)
+        _fh.setFormatter(_fmt)
+        log.addHandler(_fh)
+
+_SENTRY_DSN = os.getenv("PBN_SENTRY_DSN", "").strip()
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(dsn=_SENTRY_DSN, traces_sample_rate=0.0,
+                        send_default_pii=False)
+        log.info("sentry enabled")
+    except ImportError:
+        log.warning("PBN_SENTRY_DSN is set but sentry-sdk is not installed; "
+                    "errors go to the log only")
 
 BASE_DIR = Path(__file__).resolve().parent
 BASE_URL = os.getenv("PBN_BASE_URL", "https://business.prayaancapital.com").rstrip("/")
-CONSENT_VERSION = os.getenv("PBN_CONSENT_VERSION", "v1-2026-08")
+# v2: the age and contact-consent checkboxes merged into one combined
+# affirmative statement — the version stamps WHICH wording the lead agreed to.
+CONSENT_VERSION = os.getenv("PBN_CONSENT_VERSION", "v2-2026-08")
 
 # Anti-abuse. CGNAT means many genuine users share one IP on Indian mobile
 # networks, so the per-IP cap is deliberately generous — a tight one would
 # silently drop real leads, which is worse than admitting some spam.
 LEAD_CAP_PER_IP_DAY = int(os.getenv("PBN_LEAD_CAP_IP", "40"))
 LEAD_CAP_GLOBAL_DAY = int(os.getenv("PBN_LEAD_CAP_GLOBAL", "2000"))
+# Takedown/correction reports are rarer than leads, so their caps are tighter.
+REPORT_CAP_PER_IP_DAY = int(os.getenv("PBN_REPORT_CAP_IP", "10"))
+REPORT_CAP_GLOBAL_DAY = int(os.getenv("PBN_REPORT_CAP_GLOBAL", "200"))
 MIN_FILL_SECONDS = int(os.getenv("PBN_MIN_FILL_SECONDS", "3"))
 MAX_FIELD_LEN = 200
 MAX_BODY_BYTES = int(os.getenv("PBN_MAX_BODY_BYTES", "4096"))
 
+# Only trust X-Forwarded-For when a proxy WE run sets it (Caddy in the deploy
+# pack). Exposed directly, the header is attacker-controlled and per-IP lead
+# caps would be trivially dodged by rotating a fake value.
+TRUST_PROXY = os.getenv("PBN_TRUST_PROXY", "false").lower() in ("1", "true", "yes")
+
 app = FastAPI(title="Prayaan Business Pages", docs_url=None, redoc_url=None,
               openapi_url=None)
+# Compression at the app so every deployment shape gets it (Lighthouse showed
+# 82KB of CSS going over the wire raw; gzip cuts the text payload ~75%).
+from starlette.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 admin.init(templates)
@@ -94,6 +140,10 @@ def available_variants():
     return [(i, n) for i, n in VARIANTS if (VARIANTS_DIR / "v{}.html".format(i)).exists()]
 # The switcher is a review tool, not a customer-facing control — off in production.
 SHOW_SWITCHER = os.getenv("PBN_SHOW_SWITCHER", "true").lower() in ("1", "true", "yes")
+# The Business Loans offer card under the hero. Built, styled, kept — but
+# hidden for now at the user's call (2026-08-24). Flip PBN_SHOW_OFFER=true to
+# bring it back; nothing else needs touching.
+SHOW_OFFER = os.getenv("PBN_SHOW_OFFER", "false").lower() in ("1", "true", "yes")
 # The public business directory (/browse). A ROSTER of live customers, so it is
 # deliberately gated: defaults to SHOW_SWITCHER, meaning it shows while testing
 # and disappears in production unless explicitly turned on. Flip PBN_PUBLIC_DIR
@@ -102,10 +152,13 @@ PUBLIC_DIRECTORY = os.getenv("PBN_PUBLIC_DIR",
                              "true" if SHOW_SWITCHER else "false").lower() in ("1", "true", "yes")
 
 
-# Content-Security-Policy. The page runs NO JavaScript at all, which lets this be
-# unusually strict — script-src 'none' is an honest description, not an
-# aspiration. (The schema.org block is type="application/ld+json": a data block
-# the browser parses but never executes, so 'none' does not suppress it.)
+# Content-Security-Policy. The public page runs exactly ONE script — the
+# first-party /static/reveal.js scroll-entrance (user's call, 2026-08-25: the
+# reference-site reveal needs a trigger, and scrubbed CSS timelines lagged on
+# real Chromes). script-src 'self' admits only same-origin FILES: still no
+# inline script, no eval, no external hosts — injected markup cannot execute.
+# (The schema.org block is type="application/ld+json": a data block the
+# browser parses but never executes.)
 #
 # frame-ancestors is 'self', not 'none': the review gallery and the device-width
 # toggle embed pages in same-origin iframes. 'self' still blocks the attack that
@@ -117,11 +170,14 @@ PUBLIC_DIRECTORY = os.getenv("PBN_PUBLIC_DIR",
 # markup cannot redirect a customer's name and number to someone else's endpoint.
 CSP = "; ".join([
     "default-src 'self'",
-    "script-src 'none'",
-    "style-src 'self' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    # https: because photo_url may point at an external image host
-    "img-src 'self' data: https:",
+    "script-src 'self'",
+    # fonts are self-hosted now (/static/fonts) — no Google origins needed,
+    # which also stops visitor IPs flowing to a third party from a lender page
+    "style-src 'self'",
+    "font-src 'self'",
+    # 'self' only: photo_url is restricted to /static/... at the admin layer,
+    # so no external image host is ever needed — and none can watch visitors.
+    "img-src 'self' data:",
     "form-action 'self'",
     "frame-ancestors 'self'",
     "base-uri 'none'",
@@ -134,7 +190,7 @@ CSP = "; ".join([
 # off), so they get their own relaxed policy rather than weakening the one that
 # ships. The framed page INSIDE the wrapper is served on its own request and
 # keeps the strict policy, so review still exercises what customers get.
-CSP_REVIEW = CSP.replace("script-src 'none'", "script-src 'self' 'unsafe-inline'") \
+CSP_REVIEW = CSP.replace("script-src 'self'", "script-src 'self' 'unsafe-inline'") \
                 .replace("style-src 'self'", "style-src 'self' 'unsafe-inline'")
 
 # The back-office is the ONE place this service runs JavaScript, so it gets its
@@ -147,9 +203,9 @@ CSP_REVIEW = CSP.replace("script-src 'none'", "script-src 'self' 'unsafe-inline'
 CSP_ADMIN = "; ".join([
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: https:",
+    "style-src 'self'",
+    "font-src 'self'",
+    "img-src 'self' data:",
     "connect-src 'self'",
     "form-action 'self'",
     "frame-src 'self'",
@@ -168,6 +224,54 @@ SECURITY_HEADERS = {
     # the page asks for none of these; say so
     "Permissions-Policy": "geolocation=(), camera=(), microphone=(), payment=(), usb=()",
 }
+
+
+@app.middleware("http")
+async def _error_boundary(request: Request, call_next):
+    """Last line of defence. Registered BEFORE the security middleware so it
+    sits INSIDE it (Starlette stacks last-registered outermost): an exception
+    is caught here, and the 500 still passes through the header middleware on
+    the way out. Logs method + path only — the query string can carry a
+    reporter's ?p= path or other user text."""
+    try:
+        return await call_next(request)
+    except Exception:                                    # noqa: BLE001
+        log.exception("unhandled error on %s %s", request.method, request.url.path)
+        return HTMLResponse(
+            "<!doctype html><meta charset='utf-8'>"
+            "<title>Something went wrong</title>"
+            "<h1>Something went wrong</h1>"
+            "<p>The error has been recorded. Please try again in a moment.</p>",
+            status_code=500)
+
+
+@app.on_event("startup")
+async def _startup_checks():
+    """Refuse to boot in shapes that silently lose a promised property."""
+    backend = getattr(store.page_by_path, "__module__", "store")
+    if backend == "filestore":
+        # The file store seeds a KNOWN admin password — preview-only by design.
+        if not auth.PREVIEW_BUILD and os.getenv(
+                "PBN_ALLOW_FILESTORE", "").lower() not in ("1", "true", "yes"):
+            raise RuntimeError(
+                "The JSON file store is a preview backend (it seeds a known "
+                "admin password). Production runs on MongoDB — or set "
+                "PBN_ALLOW_FILESTORE=true to accept that risk knowingly.")
+    elif not auth.PREVIEW_BUILD:
+        store.boot_checks()
+    if backend != "filestore":
+        # Idempotent. The unique path index is the only real guard against two
+        # admins racing one address; failing to create it is worth a loud log
+        # but not a dead service (index rights may lag the first deploy).
+        try:
+            store.ensure_indexes()
+        except Exception:                                # noqa: BLE001
+            log.exception("could not ensure Mongo indexes")
+    if not notify.configured():
+        message = ("lead/report notifications are NOT configured "
+                   "(PBN_NOTIFY_WEBHOOK or PBN_SMTP_* + PBN_NOTIFY_EMAIL_TO) — "
+                   "new leads will sit until someone opens /admin/leads")
+        (log.info if auth.PREVIEW_BUILD else log.warning)(message)
 
 
 @app.middleware("http")
@@ -196,18 +300,31 @@ async def _security_and_cache_headers(request: Request, call_next):
         response.headers["Cache-Control"] = "no-store, private"
 
     if SHOW_SWITCHER and not request.url.path.startswith("/admin"):
-        is_gallery = request.url.path == "/preview"
+        is_gallery = request.url.path.startswith("/preview")
         is_device_wrapper = ("w" in request.query_params
                              and request.query_params.get("frame") != "1")
         if is_gallery or is_device_wrapper:
             response.headers["Content-Security-Policy"] = CSP_REVIEW
         if request.url.path.startswith("/static/"):
-            response.headers["Cache-Control"] = "no-store, must-revalidate"
+            # no-cache, NOT no-store: the browser revalidates by ETag and gets
+            # a bodyless 304 when nothing changed — always fresh (the stale-CSS
+            # audit problem stays solved) without refetching every byte of
+            # CSS, fonts and photos on every single page view.
+            response.headers["Cache-Control"] = "no-cache"
     return response
 
 
 # Device widths offered by the header toggle. 0 = the real browser window.
 DEVICES = [(0, "Full"), (375, "Phone"), (768, "Tablet"), (1100, "Desktop")]
+
+# Share-channel tags a page URL may carry (?via=). Whitelisted: anything else
+# is ignored, so the lead book can never fill with attacker-invented "sources".
+VALID_VIA = {"wa", "qr"}
+
+
+def _via_of(request: Request):
+    v = request.query_params.get("via", "")
+    return v if v in VALID_VIA else None
 
 
 def _device_of(request: Request) -> int:
@@ -234,8 +351,13 @@ def _variant_of(request: Request) -> int:
 
 
 def _client_ip(request: Request) -> str:
-    fwd = request.headers.get("x-forwarded-for", "")
-    return (fwd.split(",")[0].strip() if fwd else "") or (request.client.host if request.client else "")
+    """X-Forwarded-For only when PBN_TRUST_PROXY says a proxy we run sets it;
+    otherwise the socket peer, which cannot be forged."""
+    if TRUST_PROXY:
+        fwd = request.headers.get("x-forwarded-for", "")
+        if fwd:
+            return fwd.split(",")[0].strip()
+    return request.client.host if request.client else ""
 
 
 def _local_business_jsonld(page: dict, canonical: str, abs_photo: str) -> dict:
@@ -324,11 +446,14 @@ def _render_page(request: Request, page: dict, status_code: int = 200, error: st
          "jsonld": _local_business_jsonld(page, canonical, abs_photo) if indexed else None,
          "device": device, "devices": DEVICES, "framed": framed,
          # Keep the frame flag on submit so a form post inside the device view
-         # comes back inside the frame rather than escaping to a full page.
-         "form_action": "{}?v={}{}".format(
-             page["path"], variant, "&w={}&frame=1".format(device) if framed else ""),
+         # comes back inside the frame rather than escaping to a full page —
+         # and the via tag, so the share channel survives into the lead.
+         "form_action": "{}?v={}{}{}".format(
+             page["path"], variant,
+             "&w={}&frame=1".format(device) if framed else "",
+             "&via={}".format(_via_of(request)) if _via_of(request) else ""),
          "canonical": canonical, "error": error, "submitted": submitted,
-         "form": form or {}, "now": int(time.time()),
+         "form": form or {}, "now": auth.sign_ts(), "show_offer": SHOW_OFFER,
          "indexed": indexed,
          "variant": variant, "variants": [{"id": i, "name": n} for i, n in available_variants()],
          # chrome=0 strips the review switcher — the gallery and the device frame
@@ -363,7 +488,8 @@ def render_variant_html(page: dict, variant: int = None) -> str:
         "jsonld": _local_business_jsonld(page, canonical, abs_photo) if indexed else None,
         "device": 0, "devices": DEVICES, "framed": True,
         "form_action": path, "canonical": canonical, "error": None,
-        "submitted": False, "form": {}, "now": int(time.time()),
+        "submitted": False, "form": {}, "now": auth.sign_ts(),
+        "show_offer": SHOW_OFFER,
         "indexed": indexed, "variant": v,
         "variants": [{"id": i, "name": n} for i, n in available_variants()],
         # never show the review switcher inside the editor's own preview
@@ -385,6 +511,16 @@ def _not_found(request: Request):
 @app.get("/healthz")
 def healthz():
     return {"ok": True}
+
+
+@app.get("/preview/motion", response_class=HTMLResponse)
+def preview_motion(request: Request):
+    """Review-only motion showcase: the skills-pass effects loop continuously
+    here because on the real pages each fires only at its own moment (load,
+    submit, press) and is easy to miss in a walkthrough."""
+    if not SHOW_SWITCHER:
+        return _not_found(request)
+    return templates.TemplateResponse("preview_motion.html", {"request": request})
 
 
 @app.get("/preview", response_class=HTMLResponse)
@@ -435,7 +571,64 @@ def report(request: Request):
     autoescaping and never used to look anything up."""
     raw = (request.query_params.get("p") or "")[:200]
     path = raw if raw.startswith("/") else ""
-    return _doc(request, "report.html", path=path)
+    return _doc(request, "report.html", path=path, submitted=False,
+                error=None, form={}, now=auth.sign_ts())
+
+
+@app.post("/report", response_class=HTMLResponse)
+async def report_submit(request: Request):
+    """The takedown/correction intake — the second and last anonymous write
+    path in the service. Takedown-on-request is the basis on which pages are
+    published without prior consent, so this must actually store and alert,
+    not point at a contact page. Same defences as the lead form: body cap,
+    honeypot, time-on-page floor, daily quotas."""
+    from urllib.parse import parse_qs
+
+    raw = await request.body()
+    if len(raw) > MAX_BODY_BYTES:
+        raise HTTPException(413, "Request too large")
+    fields = parse_qs(raw.decode("utf-8", "replace"), keep_blank_values=True)
+
+    def _f(key, cap=MAX_FIELD_LEN):
+        return (fields.get(key) or [""])[0][:cap]
+
+    page_ref = _f("page")
+    rtype = _f("rtype", 20)
+    details = _f("details", 1000)
+    contact = _f("contact")
+    website = _f("website")
+    t = _f("t", 40)          # signed token is ~27 chars; a tighter cap mangles it
+    form = {"page": page_ref, "rtype": rtype, "details": details, "contact": contact}
+
+    def _back(error=None, submitted=False):
+        return _doc(request, "report.html", path="", submitted=submitted,
+                    error=error, form={} if submitted else form,
+                    now=auth.sign_ts())
+
+    # Honeypot and time floor answer with the normal success view, exactly like
+    # the lead form — a bot must not learn it was caught. The signed token
+    # cannot be minted with a back-dated time.
+    if website.strip():
+        return _back(submitted=True)
+    age = auth.ts_age(t)
+    if age is None or age < MIN_FILL_SECONDS:
+        return _back(submitted=True)
+
+    if len(details.strip()) < 10:
+        return _back(error="Please describe the page and what should happen, "
+                           "in a sentence or two.")
+
+    ip_hash = store.hash_ip(_client_ip(request))
+    if not store.reserve_lead_slot(REPORT_CAP_PER_IP_DAY, scope="report-ip:" + ip_hash):
+        return _back(error="Too many reports from this connection today. "
+                           "Please contact your branch instead.")
+    if not store.reserve_lead_slot(REPORT_CAP_GLOBAL_DAY, scope="report-global"):
+        return _back(error="We are receiving an unusually high number of "
+                           "reports. Please try again later.")
+
+    row = store.insert_report(page_ref, rtype, details, contact, ip_hash)
+    notify.report_alert(row)
+    return _back(submitted=True)
 
 
 @app.get("/favicon.ico")
@@ -452,6 +645,10 @@ def favicon():
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots():
+    # A review/preview deployment must never be crawled: it carries test pages
+    # and the design switcher, and an indexed copy would outlive the test.
+    if SHOW_SWITCHER:
+        return "User-agent: *\nDisallow: /\n"
     return "User-agent: *\nAllow: /\nSitemap: {}/sitemap.xml\n".format(BASE_URL)
 
 
@@ -510,6 +707,11 @@ def customer_page(request: Request, state: str, branch: str, slug: str):
         response = RedirectResponse(url=canonical, status_code=301)
     else:
         response = _render_page(request, page)
+        # A daily tally, not tracking: no cookie, no UA, no per-visitor record.
+        # Framed renders are the review tools looking at the page, not a visit.
+        if (request.method == "GET" and not request.query_params.get("frame")
+                and not request.query_params.get("w")):
+            store.count_view(page["id"])
 
     if request.method == "HEAD":
         from fastapi.responses import Response
@@ -544,8 +746,8 @@ async def submit_lead(request: Request, state: str, branch: str, slug: str):
 
     name = _f("name")
     mobile = _f("mobile")
-    pincode = _f("pincode")
-    age_ok = _f("age_ok")
+    pincode = _f("pincode")            # no longer on the form; tolerated if sent
+    agree = _f("agree")
     website = _f("website")
     t = _f("t")
 
@@ -564,16 +766,11 @@ async def submit_lead(request: Request, state: str, branch: str, slug: str):
     if website.strip():
         return _render_page(request, page, submitted=True)
 
-    # Time-on-page floor — scripted posts submit instantly.
-    try:
-        # a missing or unparseable token is treated as 0 seconds on page, which
-        # fails the floor below — a scripted post that simply omits t must not
-        # be able to skip the wait.
-        started = int(t)
-        elapsed = int(time.time()) - started if started > 0 else 0
-    except (TypeError, ValueError):
-        elapsed = 0
-    if elapsed < MIN_FILL_SECONDS:
+    # Time-on-page floor. The token is HMAC-signed at render time, so a script
+    # cannot mint t=now-10 and skip the wait — a forged or missing token reads
+    # as zero seconds on page.
+    age = auth.ts_age(t)
+    if age is None or age < MIN_FILL_SECONDS:
         return _render_page(request, page, submitted=True)
 
     name_v = name.strip()[:120]
@@ -583,23 +780,36 @@ async def submit_lead(request: Request, state: str, branch: str, slug: str):
     if len(name_v) < 2:
         return _render_page(request, page, error="Please enter your name.", form=form)
     if len(mobile_v) != 10:
-        return _render_page(request, page, error="Please enter a valid 10-digit mobile number.", form=form)
+        return _render_page(request, page, error="The mobile number should be "
+                            "10 digits — just the number, without +91 or 0.",
+                            form=form)
     if pincode_v and len(pincode_v) != 6:
         return _render_page(request, page, error="Pincode must be 6 digits.", form=form)
-    if age_ok.strip().lower() not in ("on", "true", "1", "yes"):
-        return _render_page(request, page, error="Please confirm you are 18 or older.", form=form)
+    # ONE affirmative tick, TWO statements: 18-or-older AND consent to be
+    # contacted. The wording lives in _enquiry.html; CONSENT_VERSION stamps it.
+    if agree.strip().lower() not in ("on", "true", "1", "yes"):
+        return _render_page(request, page, error="Please tick the box — it "
+                            "confirms you are 18 or older and agree to be "
+                            "contacted about your enquiry.", form=form)
 
     ip_hash = store.hash_ip(_client_ip(request))
     if not store.reserve_lead_slot(LEAD_CAP_PER_IP_DAY, scope="ip:" + ip_hash):
+        # ux-copy: an error must carry its own way out — the published
+        # customer-care number (prayaancapital.com footer), not "call us".
         return _render_page(request, page,
                             error="Too many enquiries from this connection today. "
-                                  "Please call us instead.", form=form)
+                                  "Please call Prayaan at +91-6380589898 instead.",
+                            form=form)
     if not store.reserve_lead_slot(LEAD_CAP_GLOBAL_DAY, scope="global"):
         return _render_page(request, page,
                             error="We are receiving an unusually high number of enquiries. "
                                   "Please try again later.", form=form)
 
-    store.insert_lead(name_v, mobile_v, pincode_v, path, CONSENT_VERSION, ip_hash)
+    lead = store.insert_lead(name_v, mobile_v, pincode_v, path, CONSENT_VERSION,
+                             ip_hash, via=_via_of(request))
+    # After the insert, never instead of it: the lead is safe in the store
+    # before any alert is attempted, and the alert cannot fail the request.
+    notify.lead_alert(lead, page)
     return _render_page(request, page, submitted=True)
 
 

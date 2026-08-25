@@ -22,8 +22,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ page.business_name }}">
 
-{# schema.org/LocalBusiness. A data block, not executable code — the page still
-   runs zero JavaScript, and the CSP says script-src 'none'.
+{# schema.org/LocalBusiness. A data block, not executable code — it does not
+   count against the CSP's same-origin-files-only script policy.
    `|tojson` is load-bearing: it is the ONLY safe way to put customer-supplied
    text inside a <script> element. Jinja's tojson escapes <, >, & and ' as \u
    sequences precisely so a business name containing "</script>" cannot break
@@ -31,10 +31,16 @@
    invalid structured data instead. #}
 {% if jsonld %}<script type="application/ld+json">{{ jsonld|tojson }}</script>{% endif %}
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+{# ONE combined font request for all four families — the shell's Instrument
+   pair and the variants' Space Grotesk + Inter Tight used to load as two
+   separate stylesheet round-trips. #}
+<link rel="stylesheet" href="/static/fonts/fonts.css">
 <link rel="stylesheet" href="/static/site.css">
+{# The ONE public script: reveal-on-scroll (see reveal.js header for the
+   failure-safety contract). Blocking on purpose — it must tag <html> before
+   first paint or above-fold content would flash. ~½KB, cached. Framed review
+   renders (gallery tiles, admin live preview) stay script-free. #}
+{% if not framed %}<script src="/static/reveal.js"></script>{% endif %}
 {% block head %}{% endblock %}
 </head>
 <body>
@@ -101,6 +107,9 @@
     <p><strong>Prayaan never asks for any fee before loan processing.</strong></p>
     <p>Loans are subject to credit assessment and property valuation. Interest rates, fees and charges are shared in writing before you sign.</p>
     <div class="lnks">
+      {# The share link is the distribution mechanism: every forward carries
+         ?via=wa, so the lead book can tell WhatsApp reach from everything else. #}
+      <a href="https://wa.me/?text={{ ('Take a look at ' ~ page.business_name ~ ' — ' ~ base_url ~ page.path ~ '?via=wa') | urlencode }}">Share on WhatsApp</a>
       <a href="/grievance">Grievance &amp; GRO</a>
       <a href="/privacy">Privacy notice</a>
       <a href="/report?p={{ page.path }}">Report this page</a>

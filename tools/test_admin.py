@@ -107,9 +107,20 @@ print("\n-- a draft is NOT public --")
 code, _, _ = get(LIVE)
 check("draft page 404s publicly", code == 404, code)
 
-print("\n-- publish --")
+print("\n-- publish refuses without consent evidence --")
 tok = csrf_from(edit_html)
-post("/admin/pages/%s/status" % pid, {"csrf": tok, "status": "live"})
+_, back_html, back_url = post("/admin/pages/%s/status" % pid, {"csrf": tok, "status": "live"})
+check("publish without consent bounces to the form", "err=consent" in back_url, back_url)
+check("consent error is shown", "record the customer" in back_html)
+code, _, _ = get(LIVE)
+check("page stayed draft (still 404 publicly)", code == 404, code)
+
+print("\n-- publish with consent evidence --")
+post("/admin/pages/%s/status" % pid,
+     {"csrf": tok, "status": "live", "consent_method": "written",
+      "consent_ref": "Signed form 12 Aug, kept at Vellore branch"})
+_, edit_html2, _ = get("/admin/pages/%s" % pid)
+check("consent recorded on the page", "Signed form 12 Aug" in edit_html2)
 code, page_html, _ = get(LIVE)
 check("published page is live", code == 200, code)
 check("content renders", "Velan Steel Traders" in page_html)
@@ -118,19 +129,20 @@ check("tier shows standing only", "Silver" in page_html and "referrals" not in p
 print("\n-- bad map link is discarded --")
 _, edit_html, _ = get("/admin/pages/%s" % pid)
 tok = csrf_from(edit_html)
-post("/admin/pages/%s" % pid, {"csrf": tok, "business_name": "Velan Steel Traders",
+post("/admin/pages/%s" % pid, {"csrf": tok, "form_complete": "1",
+                               "business_name": "Velan Steel Traders",
                                "map_url": "https://evil.example.com/phish"})
 _, edit_html, _ = get("/admin/pages/%s" % pid)
 check("non-Google map URL rejected", "evil.example.com" not in edit_html)
 
 print("\n-- lead capture against the new page --")
 _, live_html, _ = get(LIVE)
-m = re.search(r'name="t" value="(\d+)"', live_html)
+m = re.search(r'name="t" value="([^"]+)"', live_html)   # HMAC-signed token
 import time as _t
 _t.sleep(3.2)                                   # the form's time-on-page floor
 post(LIVE,
-     {"name": "Test Person", "mobile": "9876543210", "pincode": "632007",
-      "age_ok": "on", "t": m.group(1), "website": ""})
+     {"name": "Test Person", "mobile": "9876543210",
+      "agree": "on", "t": m.group(1), "website": ""})
 _, leads_html, _ = get("/admin/leads")
 check("lead reached the inbox", "Test Person" in leads_html)
 check("lead attributed to the referring business", "Velan Steel Traders" in leads_html)
@@ -182,8 +194,17 @@ check("preview rejects bad CSRF", code == 403, code)
 
 print("\n-- photo upload (git-backed) --")
 import base64 as _b64
-# smallest valid PNG (1x1)
-PNG = _b64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
+# A WELL-FORMED 1x1 PNG built from scratch. The popular tiny base64 fixture has
+# a lying IDAT length — the metadata stripper rightly refuses it and logs a
+# fallback, which would put a spurious traceback in every CI run.
+import struct as _st
+import zlib as _zl
+def _pchunk(typ, d):
+    return _st.pack(">I", len(d)) + typ + d + _st.pack(">I", _zl.crc32(typ + d) & 0xFFFFFFFF)
+PNG = (b"\x89PNG\r\n\x1a\n"
+       + _pchunk(b"IHDR", _st.pack(">IIBBBBB", 1, 1, 8, 0, 0, 0, 0))
+       + _pchunk(b"IDAT", _zl.compress(b"\x00\x00"))
+       + _pchunk(b"IEND", b""))
 import json as _j
 up_ok = _j.dumps({"csrf": tok, "data": "data:image/png;base64," + _b64.b64encode(PNG).decode()})
 code, body = post_raw("/admin/upload", up_ok, "application/json")
@@ -209,7 +230,9 @@ def csp(path):
 apub = _u2.urlopen(BASE + "/TN/vellore/santhosh-enterprise")
 pub_csp = dict(apub.headers).get("content-security-policy", "")
 adm_csp = csp("/admin/pages")
-check("public stays script-src 'none'", "script-src 'none'" in pub_csp, pub_csp)
+check("public script-src is 'self' files only (no inline/eval)",
+      "script-src 'self'" in pub_csp and "unsafe-inline" not in pub_csp.split("style-src")[0],
+      pub_csp)
 check("admin allows script-src 'self'", "script-src 'self'" in adm_csp)
 check("admin allows connect-src 'self'", "connect-src 'self'" in adm_csp)
 check("admin frame-ancestors 'self' (preview iframe)", "frame-ancestors 'self'" in adm_csp)

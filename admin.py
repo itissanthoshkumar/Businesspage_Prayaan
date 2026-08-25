@@ -1,9 +1,9 @@
 """The /admin back-office.
 
-Server-rendered forms with NO JavaScript. That is not nostalgia: the public
-pages ship a Content-Security-Policy of script-src 'none', and keeping the whole
-service honest to that means the policy needs no per-route exception and no
-nonce plumbing. A CRUD admin is exactly the kind of thing HTML forms were for.
+Server-rendered HTML forms, with admin.js as the one enhancement layer
+(live preview, uploads, chip editors). The public pages run a single
+same-origin script (reveal.js) under script-src 'self' — no inline script
+anywhere in the service, so no nonce plumbing.
 
 Bodies are parsed straight from urlencoded text rather than through FastAPI's
 Form(...), which would pull in python-multipart — a dependency this process
@@ -14,6 +14,7 @@ import csv
 import io
 import json
 import os
+import secrets
 from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Request
@@ -51,15 +52,46 @@ async def _form(request: Request) -> dict:
     return {k: v[0] for k, v in parsed.items()}
 
 
+# When on, only the admin role can publish: branch staff prepare pages, a
+# second person reviews and takes them live. Off by default for the pilot —
+# a one-person office cannot four-eyes itself.
+MAKER_CHECKER = os.getenv("PBN_MAKER_CHECKER", "false").lower() in ("1", "true", "yes")
+
+
 def _session(request: Request):
-    return auth.read_session(request.cookies.get(auth.SESSION_COOKIE, ""))
+    """Cookie signature AND the user row, every request. The cookie alone
+    cannot be revoked (stateless HMAC); re-checking active + session-version
+    against the store means suspending a user or changing their password kills
+    every session they hold on their very next request — not 8 hours later."""
+    sess = auth.read_session(request.cookies.get(auth.SESSION_COOKIE, ""))
+    if not sess:
+        return None
+    username = sess.get("u", "")
+    if username == auth.DEV_USERNAME:
+        return sess if auth.PREVIEW_BUILD else None
+    user = store.user_by_name(username)
+    if not user or not user.get("active", True):
+        return None
+    if int(user.get("sv", 1)) != int(sess.get("sv", 1)):
+        return None
+    sess["_user"] = {k: v for k, v in user.items() if k != "password"}
+    return sess
 
 
 def _render(request: Request, template: str, session, **ctx):
+    # A temp-password holder sees exactly one screen until they set their own.
+    if (session and template != "password.html"
+            and (session.get("_user") or {}).get("must_change")):
+        return RedirectResponse(url="/admin/password", status_code=303)
     base = {"request": request, "session": session, "base_url": BASE_URL,
-            "csrf": auth.csrf_token(session), "nav": ctx.pop("nav", "")}
+            "csrf": auth.csrf_token(session), "nav": ctx.pop("nav", ""),
+            "maker_checker": MAKER_CHECKER}
     base.update(ctx)
     return _templates.TemplateResponse("admin/" + template, base)
+
+
+def _is_admin(session) -> bool:
+    return bool(session) and session.get("r") == "admin"
 
 
 def _login_redirect():
@@ -75,17 +107,21 @@ def _login_page(request: Request, error=None, status_code=200):
     }, status_code=status_code)
 
 
-def _signed_in(request: Request, username: str, role: str):
+def _signed_in(request: Request, username: str, role: str, sv: int = 1,
+               to: str = "/admin/pages"):
     """The single place a session cookie is minted, so the preview shortcut
     cannot drift into a weaker session than a typed password produces."""
-    resp = RedirectResponse(url="/admin/pages", status_code=303)
+    resp = RedirectResponse(url=to, status_code=303)
     resp.set_cookie(
-        auth.SESSION_COOKIE, auth.make_session(username, role),
+        auth.SESSION_COOKIE, auth.make_session(username, role, sv),
         max_age=auth.SESSION_MAX_AGE, httponly=True, samesite="lax",
         # Path=/admin: the browser never attaches this to a public page request,
         # so the credential is simply absent from anonymous traffic.
         path=auth.SESSION_PATH,
-        secure=request.url.scheme == "https")
+        # Production builds mint Secure cookies unconditionally: behind a
+        # TLS-terminating proxy the app-side scheme reads "http", and keying
+        # off it would silently drop the flag exactly where it matters.
+        secure=(not auth.PREVIEW_BUILD) or request.url.scheme == "https")
     return resp
 
 
@@ -126,11 +162,20 @@ def _clean_map_url(value):
 
 
 def _clean_phones(value):
+    """Two numbers max, each a 10-digit Indian national number, stored as
+    "+91 XXXXXXXXXX". The server is the real gate — the two form inputs enforce
+    10 digits in the browser, but a scripted post or the CSV importer must not be
+    able to store a malformed number. A +91 or leading-0 prefix is stripped to
+    the 10 national digits; anything that is not exactly 10 digits is dropped."""
     out = []
-    for ln in _lines(value)[:2]:            # two is the cap the design honours
-        digits = "".join(c for c in ln if c.isdigit() or c == "+")
-        if len(digits) >= 8:
-            out.append(ln.strip()[:20])
+    for ln in _lines(value)[:2]:
+        digits = "".join(c for c in ln if c.isdigit())
+        if len(digits) == 12 and digits.startswith("91"):
+            digits = digits[2:]
+        elif len(digits) == 11 and digits.startswith("0"):
+            digits = digits[1:]
+        if len(digits) == 10:
+            out.append("+91 " + digits)
     return out
 
 
@@ -186,6 +231,12 @@ def _store_accepts_typed_address() -> bool:
 # cannot. Anything else is dropped, which (with the template) hides the tier.
 TIER_STATUSES = {"active", "inactive", "lapsed"}
 
+# How a customer's consent to publish can have been given. First publish
+# requires one of these plus a free-text reference saying where the evidence
+# lives — the difference between "an admin clicked publish" and something that
+# stands up when a customer disputes the page.
+CONSENT_METHODS = {"written", "whatsapp", "verbal"}
+
 
 def _clean_tier_status(value):
     v = str(value or "").strip().lower()
@@ -204,7 +255,11 @@ def _page_payload(form):
         "business_name": form.get("business_name", "").strip()[:120],
         "owner_name": form.get("owner_name", "").strip()[:80] or None,
         "category": form.get("category", "").strip()[:60] or None,
-        "photo_url": form.get("photo_url", "").strip()[:400] or None,
+        # Own-host photos only. An external image on a lender-branded page can
+        # change after review and leaks every visitor's IP to whoever hosts it;
+        # the upload flow exists precisely so nothing needs hot-linking.
+        "photo_url": (lambda p: p if p.startswith("/static/") else None)(
+            form.get("photo_url", "").strip()[:400]),
         "locality": form.get("locality", "").strip()[:60] or None,
         "district": form.get("district", "").strip()[:60] or None,
         "state_name": form.get("state_name", "").strip()[:60] or None,
@@ -261,7 +316,9 @@ async def login(request: Request):
                            status_code=401)
 
     auth.clear_failures(username)
-    return _signed_in(request, user["username"], user.get("role", "admin"))
+    return _signed_in(request, user["username"], user.get("role", "admin"),
+                      sv=int(user.get("sv", 1)),
+                      to="/admin/password" if user.get("must_change") else "/admin/pages")
 
 
 @router.post("/dev-login")
@@ -368,8 +425,16 @@ def page_edit(request: Request, page_id: int):
     page = store.page_by_id(page_id)
     if not page:
         return Response("Not found", status_code=404)
+    error = None
+    if request.query_params.get("err") == "consent":
+        error = ("To publish, record the customer's consent: pick how it was "
+                 "given and add a reference — where the signed form is kept, "
+                 "the WhatsApp message date, or who took it verbally and when.")
+    elif request.query_params.get("err") == "approval":
+        error = "Publishing needs an admin: ask one to review this page and take it live."
     return _render(request, "page_form.html", session, nav="pages",
-                   page=page, error=None, events=store.page_events(page_id))
+                   page=page, error=error, events=store.page_events(page_id),
+                   views=store.views_for(page_id) if page.get("status") == "live" else 0)
 
 
 @router.post("/pages/{page_id}", response_class=HTMLResponse)
@@ -380,6 +445,13 @@ async def page_update(request: Request, page_id: int):
     form = await _form(request)
     if not auth.csrf_ok(session, form.get("csrf")):
         return Response("Bad CSRF token", status_code=403)
+    # update_page writes the FULL editable field set, so a partial POST would
+    # blank every field it did not send. The browser form always carries the
+    # sentinel; a script that hand-rolls a partial body is refused instead of
+    # silently wiping a live page.
+    if form.get("form_complete") != "1":
+        return Response("Rejected: partial form. Updates must send every field "
+                        "(missing ones would be erased).", status_code=400)
     store.update_page(page_id, _page_payload(form), session["u"])
     return RedirectResponse(url="/admin/pages/{}?saved=1".format(page_id), status_code=303)
 
@@ -395,7 +467,25 @@ async def page_status(request: Request, page_id: int):
     status = form.get("status")
     if status not in store.PAGE_STATUSES:
         return Response("Bad status", status_code=400)
-    store.set_page_status(page_id, status, session["u"], form.get("note") or None)
+    consent_method = None
+    consent_ref = None
+    if status == store.PAGE_LIVE:
+        # Maker-checker: staff prepare, an admin takes it live.
+        if MAKER_CHECKER and not _is_admin(session):
+            return RedirectResponse(
+                url="/admin/pages/{}?err=approval".format(page_id), status_code=303)
+        page = store.page_by_id(page_id)
+        if page and not page.get("consent"):
+            # First publish: consent evidence is REQUIRED, not defaulted. A
+            # publish that cannot say how the customer agreed goes back to the
+            # form instead of going live.
+            consent_method = (form.get("consent_method") or "").strip().lower()
+            consent_ref = (form.get("consent_ref") or "").strip()[:200]
+            if consent_method not in CONSENT_METHODS or not consent_ref:
+                return RedirectResponse(
+                    url="/admin/pages/{}?err=consent".format(page_id), status_code=303)
+    store.set_page_status(page_id, status, session["u"], form.get("note") or None,
+                          consent_method=consent_method, consent_ref=consent_ref)
     return RedirectResponse(url="/admin/pages/{}".format(page_id), status_code=303)
 
 
@@ -467,6 +557,11 @@ async def upload_photo(request: Request):
     if not auth.csrf_ok(session, body.get("csrf")):
         return Response(json.dumps({"error": "Session expired. Reload and try again."}),
                         status_code=403, media_type="application/json")
+    # Per-admin daily cap: a leaked session must not be able to fill the disk.
+    if not store.reserve_lead_slot(200, scope="upload:" + session["u"]):
+        return Response(json.dumps({"error": "Daily upload limit reached for "
+                                             "this account."}),
+                        status_code=429, media_type="application/json")
     data_url = body.get("data") or ""
     # strip an optional "data:image/png;base64," prefix
     if "," in data_url and data_url.strip().lower().startswith("data:"):
@@ -493,8 +588,19 @@ def leads_list(request: Request):
         return _login_redirect()
     status = request.query_params.get("status") or None
     q = request.query_params.get("q") or None
+    leads = store.list_leads(status=status, q=q)
+    # Age annotation so a NEW lead that has waited past the "we call within one
+    # working day" promise is visibly on fire, not just another row.
+    from datetime import datetime as _dt
+    now = _dt.now(store.IST).replace(tzinfo=None)
+    for lead in leads:
+        try:
+            t0 = _dt.strptime(lead.get("at", ""), "%Y-%m-%d %H:%M:%S")
+            lead["age_hours"] = max(0, int((now - t0).total_seconds() // 3600))
+        except ValueError:
+            lead["age_hours"] = None
     return _render(request, "leads.html", session, nav="leads",
-                   leads=store.list_leads(status=status, q=q),
+                   leads=leads,
                    status=status or "", q=q or "",
                    statuses=store.LEAD_STATUSES)
 
@@ -518,6 +624,173 @@ async def lead_update(request: Request, lead_id: int):
     return RedirectResponse(url=back, status_code=303)
 
 
+# ---- users (admin role only) -------------------------------------------------
+def _temp_password() -> str:
+    """Readable enough to dictate over the phone, random enough to matter for
+    the minutes it lives — the holder must change it at first sign-in."""
+    return secrets.token_urlsafe(9)
+
+
+@router.get("/users", response_class=HTMLResponse)
+def users_list(request: Request):
+    session = _session(request)
+    if not session:
+        return _login_redirect()
+    if not _is_admin(session):
+        return Response("Managing users needs the admin role.", status_code=403)
+    return _render(request, "users.html", session, nav="users",
+                   users=store.list_users(), temp_pw=None, temp_user=None,
+                   error=None, roles=store.USER_ROLES)
+
+
+@router.post("/users/new", response_class=HTMLResponse)
+async def user_create(request: Request):
+    session = _session(request)
+    if not session:
+        return _login_redirect()
+    if not _is_admin(session):
+        return Response("Managing users needs the admin role.", status_code=403)
+    form = await _form(request)
+    if not auth.csrf_ok(session, form.get("csrf")):
+        return Response("Bad CSRF token", status_code=403)
+    username = (form.get("username") or "").strip().lower()[:60]
+    role = form.get("role") if form.get("role") in store.USER_ROLES else "staff"
+    error = None
+    if not username or not username.replace("-", "").replace(".", "").isalnum():
+        error = "Username: letters, numbers, dots and hyphens only."
+    elif store.user_by_name(username):
+        error = "That username already exists."
+    if error:
+        return _render(request, "users.html", session, nav="users",
+                       users=store.list_users(), temp_pw=None, temp_user=None,
+                       error=error, roles=store.USER_ROLES)
+    temp = _temp_password()
+    store.create_user(username, auth.hash_password(temp), role=role,
+                      by=session["u"], must_change=True)
+    # The temp password is rendered ONCE, on this no-store response, and never
+    # persisted anywhere in the clear.
+    return _render(request, "users.html", session, nav="users",
+                   users=store.list_users(), temp_pw=temp, temp_user=username,
+                   error=None, roles=store.USER_ROLES)
+
+
+@router.post("/users/{user_id}", response_class=HTMLResponse)
+async def user_action(request: Request, user_id: int):
+    session = _session(request)
+    if not session:
+        return _login_redirect()
+    if not _is_admin(session):
+        return Response("Managing users needs the admin role.", status_code=403)
+    form = await _form(request)
+    if not auth.csrf_ok(session, form.get("csrf")):
+        return Response("Bad CSRF token", status_code=403)
+    target = store.user_by_id(user_id)
+    if not target:
+        return Response("No such user", status_code=404)
+    action = form.get("action")
+    temp_pw = None
+    if action == "suspend":
+        if target["username"] == session["u"]:
+            return Response("You cannot suspend your own account.", status_code=400)
+        store.update_user(user_id, by=session["u"], bump_sv=True, active=False)
+    elif action == "activate":
+        store.update_user(user_id, by=session["u"], active=True)
+    elif action == "reset":
+        temp_pw = _temp_password()
+        store.update_user(user_id, by=session["u"], bump_sv=True,
+                          password=auth.hash_password(temp_pw), must_change=True)
+    elif action == "role":
+        role = form.get("role")
+        if role not in store.USER_ROLES:
+            return Response("Bad role", status_code=400)
+        if target["username"] == session["u"] and role != "admin":
+            return Response("You cannot demote your own account.", status_code=400)
+        store.update_user(user_id, by=session["u"], bump_sv=True, role=role)
+    else:
+        return Response("Bad action", status_code=400)
+    return _render(request, "users.html", session, nav="users",
+                   users=store.list_users(), temp_pw=temp_pw,
+                   temp_user=target["username"] if temp_pw else None,
+                   error=None, roles=store.USER_ROLES)
+
+
+# ---- own password -------------------------------------------------------------
+@router.get("/password", response_class=HTMLResponse)
+def password_form(request: Request):
+    session = _session(request)
+    if not session:
+        return _login_redirect()
+    return _render(request, "password.html", session, nav="",
+                   error=None, done=False,
+                   forced=bool((session.get("_user") or {}).get("must_change")))
+
+
+@router.post("/password", response_class=HTMLResponse)
+async def password_change(request: Request):
+    session = _session(request)
+    if not session:
+        return _login_redirect()
+    form = await _form(request)
+    if not auth.csrf_ok(session, form.get("csrf")):
+        return Response("Bad CSRF token", status_code=403)
+    user = store.user_by_name(session["u"])
+    if not user:
+        return Response("The preview sign-in has no password to change.",
+                        status_code=400)
+    current = form.get("current") or ""
+    new = form.get("new") or ""
+    confirm = form.get("confirm") or ""
+    error = None
+    if not auth.verify_password(current, user.get("password", "")):
+        error = "Current password is wrong."
+    elif len(new) < 8:
+        error = "New password must be at least 8 characters."
+    elif new == current:
+        error = "The new password must be different."
+    elif new != confirm:
+        error = "The two copies of the new password do not match."
+    if error:
+        return _render(request, "password.html", session, nav="",
+                       error=error, done=False,
+                       forced=bool(user.get("must_change")))
+    updated = store.update_user(user["id"], by=session["u"], bump_sv=True,
+                                password=auth.hash_password(new), must_change=False)
+    # bump_sv killed every session including THIS one — mint a fresh cookie so
+    # the user changing their password is the one person not logged out by it.
+    return _signed_in(request, user["username"], user.get("role", "admin"),
+                      sv=int(updated.get("sv", 1)))
+
+
+# ---- page reports (takedown / correction intake) ----------------------------
+@router.get("/reports", response_class=HTMLResponse)
+def reports_list(request: Request):
+    session = _session(request)
+    if not session:
+        return _login_redirect()
+    status = request.query_params.get("status") or None
+    return _render(request, "reports.html", session, nav="reports",
+                   reports=store.list_reports(status=status),
+                   status=status or "", statuses=store.REPORT_STATUSES)
+
+
+@router.post("/reports/{report_id}", response_class=HTMLResponse)
+async def report_update(request: Request, report_id: int):
+    session = _session(request)
+    if not session:
+        return _login_redirect()
+    form = await _form(request)
+    if not auth.csrf_ok(session, form.get("csrf")):
+        return Response("Bad CSRF token", status_code=403)
+    status = form.get("status")
+    if status not in store.REPORT_STATUSES:
+        return Response("Bad status", status_code=400)
+    store.update_report(report_id, status, session["u"], form.get("note"))
+    back = "/admin/reports"
+    if form.get("status_filter"):
+        back += "?status=" + form["status_filter"]
+    return RedirectResponse(url=back, status_code=303)
+
+
 def _csv_safe(value):
     """Neutralise spreadsheet formula injection. A lead name like
     =HYPERLINK(...) or +cmd would execute when the exported CSV is opened in
@@ -535,11 +808,16 @@ def leads_csv(request: Request):
     session = _session(request)
     if not session:
         return _login_redirect()
+    # Reading one lead and walking out with the whole book are different acts:
+    # the bulk export is admin-only.
+    if not _is_admin(session):
+        return Response("Exporting the full lead book needs the admin role.",
+                        status_code=403)
     rows = store.list_leads(status=request.query_params.get("status") or None,
                             limit=20000)
     buf = io.StringIO()
     cols = ["id", "at", "name", "mobile", "pincode", "referrer_business_name",
-            "source_path", "status", "assigned_branch", "routed_at",
+            "source_path", "via", "status", "assigned_branch", "routed_at",
             "called_by", "called_at", "cs_notes"]
     w = csv.writer(buf)
     w.writerow(cols)

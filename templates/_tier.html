@@ -34,5 +34,10 @@
   </svg>
   <b>{{ page.tier|capitalize }}</b>
   <span class="why">{{ page.tier_status }}</span>
+  {# Three glint stars, staggered — pure CSS twinkle (Magic UI's sparkles
+     effect ported without its JavaScript; the page ships script-src 'none'). #}
+  <i class="spk s1" aria-hidden="true"></i>
+  <i class="spk s2" aria-hidden="true"></i>
+  <i class="spk s3" aria-hidden="true"></i>
 </span>
 {% endif %}

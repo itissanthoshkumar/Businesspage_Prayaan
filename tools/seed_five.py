@@ -94,7 +94,9 @@ for biz in BUSINESSES:
     path = path.group(1) if path else None
     draft_public = g(path)[0] if path else 0
     # publish
-    post("/admin/pages/%s/status" % pid, {"csrf": csrf(edit), "status": "live"})
+    post("/admin/pages/%s/status" % pid,
+         {"csrf": csrf(edit), "status": "live", "consent_method": "written",
+          "consent_ref": "seed data — consent form on file"})
     live_code, live_html, _ = g(path)
     ok_live = live_code == 200 and _html.escape(biz["business_name"]) in live_html
     ok_draft_hidden = draft_public == 404

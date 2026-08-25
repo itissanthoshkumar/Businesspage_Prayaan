@@ -15,7 +15,6 @@
       {% endfor %}
     </div>
     {% endif %}
-    {% if addr or page.map_url %}
     <div class="where">
       {% if addr %}
       <span class="addr">
@@ -26,11 +25,29 @@
       {% if page.map_url %}
       <a class="maplink" href="{{ page.map_url }}" target="_blank" rel="noopener nofollow">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-8.5 8.5"/><path d="M18 14.5V19a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 014 19V8a1.5 1.5 0 011.5-1.5H10"/></svg>
-        View on Google Maps
+        Open in Maps
       </a>
       {% endif %}
+      {# The owner's share button. The prefilled message is written in the
+         OWNER'S voice — this page spreads because the owner forwards it to
+         their own circle with pride, not because Prayaan advertises it. The
+         ?via=wa tag lets the lead book credit WhatsApp forwards. #}
+      {% set place2 = [page.locality, page.district]|select|list %}
+      {% set share_msg = 'This is my business — ' ~ page.business_name
+         ~ ((', ' ~ place2|join(', ')) if place2 else '')
+         ~ '. Do take a look, and share it with your friends: '
+         ~ base_url ~ page.path ~ '?via=wa' %}
+      <a class="maplink washare" href="https://wa.me/?text={{ share_msg|urlencode }}"
+         target="_blank" rel="noopener">
+        {# The universal share-nodes glyph, in WhatsApp green — "share" is the
+           action, the label says where to. #}
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.4 10.8l7.2-4.2M8.4 13.2l7.2 4.2"/></svg>
+        {# One flex item for the whole label (the icon is the other). "Share
+           on " drops away inside the NARROW plate (v27 hero) at phone width —
+           the pill must never spill past the card's edge. #}
+        <span><span class="washide">Share on </span>WhatsApp</span>
+      </a>
     </div>
-    {% endif %}
   </div>
 </div>
 {% endif %}

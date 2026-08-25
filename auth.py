@@ -116,9 +116,14 @@ def _unsign(token: str):
         return None
 
 
-def make_session(username: str, role: str) -> str:
+def make_session(username: str, role: str, sv: int = 1) -> str:
     payload = json.dumps({
         "u": username, "r": role, "t": int(time.time()),
+        # session-version: copied from the user row at login and re-checked on
+        # every request. Suspending a user or changing their password bumps the
+        # row's sv, so every cookie minted before that moment dies immediately —
+        # stateless HMAC sessions get revocation without a session table.
+        "sv": int(sv),
         # a random nonce so two sessions for the same user in the same second
         # are still distinct tokens, and so the CSRF token differs per login
         "n": secrets.token_urlsafe(9),
@@ -148,8 +153,35 @@ def csrf_ok(session: dict, given: str) -> bool:
     return bool(want) and hmac.compare_digest(want, given or "")
 
 
+def sign_ts(ts: int = None) -> str:
+    """HMAC-signed timestamp for the lead/report time-on-page floor. The old
+    floor trusted a client-supplied integer, so a bot could post t=now-10 and
+    walk through; a signed token can only have been issued by us, at the time
+    it says."""
+    ts = int(ts or time.time())
+    mac = hmac.new(SECRET.encode("utf-8"), str(ts).encode(), hashlib.sha256).hexdigest()[:16]
+    return "{}.{}".format(ts, mac)
+
+
+def ts_age(token: str):
+    """Seconds since the token was issued, or None if forged/malformed."""
+    try:
+        ts_s, mac = str(token or "").split(".", 1)
+        want = hmac.new(SECRET.encode("utf-8"), ts_s.encode(), hashlib.sha256).hexdigest()[:16]
+        if not hmac.compare_digest(want, mac):
+            return None
+        return int(time.time()) - int(ts_s)
+    except (ValueError, TypeError):
+        return None
+
+
 def note_failure(username: str):
     now = time.time()
+    # Cap the dict: random-username spray must not grow memory forever. Evicting
+    # the stalest entry keeps the recent attackers' counters intact.
+    if username not in _ATTEMPTS and len(_ATTEMPTS) >= 2000:
+        oldest = min(_ATTEMPTS, key=lambda k: _ATTEMPTS[k][1])
+        _ATTEMPTS.pop(oldest, None)
     count, _ = _ATTEMPTS.get(username, (0, now))
     _ATTEMPTS[username] = (count + 1, now)
 

@@ -1,0 +1,34 @@
+# Prayaan Business Pages — VM deployment.
+#
+#   cd deploy
+#   cp .env.example .env      # fill it in — the app REFUSES to boot half-set
+#   docker compose up -d --build
+#
+# Caddy owns 80/443 and auto-provisions TLS for the domain in ./Caddyfile.
+# The app port is never published — only Caddy can reach it.
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    env_file: .env
+    expose:
+      - "8797"
+    volumes:
+      # Customer photos (the git-backed upload store) must outlive the container.
+      - uploads:/app/static/img/uploads
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  uploads:
+  caddy_data:
+  caddy_config:

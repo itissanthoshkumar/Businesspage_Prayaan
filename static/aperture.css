@@ -198,6 +198,123 @@
   transition:border-color .15s,background .15s}
 .ap .maplink .ico{width:15px;height:15px;color:var(--ap-acc-ink);flex:none}
 .ap .maplink:hover{border-color:var(--ap-acc)}
+/* The two action chips get their function's colour instead of both sitting
+   in the same grey: Maps in a wash of the house blue, WhatsApp in its own
+   green (the one deliberate exception to the logo-only palette — the brand
+   colour is what makes it read as WhatsApp at a glance). Green text on the
+   green wash measures 5.6:1. */
+.ap .maplink{background:rgba(0,92,161,.055);border-color:rgba(0,92,161,.32);
+  border-radius:999px}
+.ap .maplink:hover{border-color:#005CA1;background:rgba(0,92,161,.09)}
+.ap .washare{background:#F0FBF4;border-color:rgba(37,211,102,.60);color:#0E7A38}
+.ap .washare .ico{color:#25D366}
+.ap .washare:hover{border-color:#25D366;background:#E4F8EC}
+/* Loan-offer card under the hero — the PRIMARY conversion surface, so it gets
+   real depth: gradient face, inset top highlight, a deep soft drop and a big
+   rupee watermark behind the copy. The CTA carries its own shadow and lifts
+   on hover. All still the two house colours. */
+.ap .offer{position:relative;margin:28px 0 10px;padding:26px 28px 28px;max-width:680px;
+  /* the house yellow as a soft gold gradient — yellow is a FILL, never a text
+     colour, so all type stays ink/navy and the navy CTA gets maximum pop */
+  background:linear-gradient(160deg,#FFF8E6 0%,#FCE9BC 55%,#FFF3D4 100%);
+  border:1px solid rgba(212,150,10,.40);border-radius:20px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),
+             0 1px 2px rgba(90,60,0,.07),
+             0 22px 44px -18px rgba(150,98,0,.38);
+  isolation:isolate;overflow:clip}
+.ap .offer::after{content:"\20B9";position:absolute;right:-4px;bottom:-38px;z-index:-1;
+  font:700 180px/1 "Space Grotesk","Inter Tight",sans-serif;
+  color:rgba(196,132,0,.12);pointer-events:none}
+.ap .offer-eyebrow{margin:0 0 10px;font-size:11.5px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:#005CA1}
+.ap .offer h2{margin:0 0 8px;font-size:24px;line-height:1.25;
+  letter-spacing:-.015em;color:var(--ap-ink)}
+.ap .offer-sub{margin:0 0 20px;font-size:14.5px;line-height:1.55;color:var(--ap-ink2)}
+.ap .offer-cta{display:inline-flex;align-items:center;gap:9px;min-height:50px;
+  padding:0 26px;border-radius:999px;color:#fff;text-decoration:none;
+  font-size:15.5px;font-weight:600;
+  background:linear-gradient(180deg,#0B6BB5 0%,#005CA1 55%,#00477D 100%);
+  box-shadow:0 12px 24px -10px rgba(0,71,125,.6),0 2px 4px rgba(0,71,125,.28),
+             inset 0 1px 0 rgba(255,255,255,.25);
+  transition:transform .15s,box-shadow .15s,filter .15s}
+.ap .offer-cta:hover{transform:translateY(-1.5px);filter:brightness(1.05);
+  box-shadow:0 16px 30px -10px rgba(0,71,125,.65),0 3px 6px rgba(0,71,125,.32),
+             inset 0 1px 0 rgba(255,255,255,.25)}
+.ap .offer-cta:active{transform:translateY(0)}
+.ap .offer-cta .ico{width:15px;height:15px;flex:none}
+@media (max-width:560px){
+  .ap .offer{padding:22px 20px 24px}
+  .ap .offer h2{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){
+  .ap .offer-cta,.ap .offer-cta:hover{transform:none;transition:none}
+}
+
+/* motion-framer port: press give on the contact chips, and a staggered
+   entrance for the offering chips (30-50ms steps, Material's stagger window).
+   Both transform/opacity only; both sit behind reduced-motion. */
+@media (prefers-reduced-motion:no-preference){
+  .ap .maplink,.ap .phones a{transition:transform .18s cubic-bezier(.34,1.56,.64,1),
+    border-color .15s,background .15s}
+  .ap .maplink:active,.ap .phones a:active{transform:scale(.97)}
+
+  /* Load-time stagger is now only the NO-JS fallback: with reveal.js active
+     the scroll-triggered cascade in site.css owns these items instead. */
+  html:not(.js-anim) .ap .chips li{animation:chip-rise .4s ease-out both}
+  html:not(.js-anim) .ap .chips li:nth-child(2){animation-delay:.05s}
+  html:not(.js-anim) .ap .chips li:nth-child(3){animation-delay:.1s}
+  html:not(.js-anim) .ap .chips li:nth-child(4){animation-delay:.15s}
+  html:not(.js-anim) .ap .chips li:nth-child(5){animation-delay:.2s}
+  html:not(.js-anim) .ap .chips li:nth-child(n+6){animation-delay:.25s}
+}
+@keyframes chip-rise{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:none}
+}
+@keyframes item-rise{
+  from{opacity:0;transform:translateY(22px)}
+  to{opacity:1;transform:none}
+}
+@keyframes rise-settle{
+  from{opacity:0;transform:translateY(24px) scale(.96)}
+  to{opacity:1;transform:none}
+}
+@keyframes label-in{
+  from{opacity:0;transform:translateX(-14px)}
+  to{opacity:1;transform:none}
+}
+@keyframes ico-pop{
+  from{opacity:0;transform:scale(.5) rotate(-8deg)}
+  to{opacity:1;transform:none}
+}
+
+/* owner + Est. side by side under the business name */
+.ap .ownrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;margin:6px 0 0}
+.ap .ownrow .own{margin:0}
+.ap .ownrow .pill{margin:0}
+
+/* anchor landing: the enquiry form breathes below the viewport top */
+.ap #enquire{scroll-margin-top:16px}
+
+/* Tier badge stamped ON the photograph (cover and panel heroes). The pill's
+   metal gradient is translucent by design — fine on white, illegible on an
+   unknown photo — so on-image it gets a solid white ground underneath plus a
+   lift shadow. Positioning contexts declared explicitly rather than assumed. */
+.ap .stage,.ap .eye{position:relative}
+.ap .stage .tier,.ap .eye .tier{position:absolute;top:14px;right:14px;z-index:3;
+  margin-top:0;background-color:#fff;
+  box-shadow:0 2px 12px rgba(11,33,53,.28),0 0 10px var(--tier-glow)}
+
+/* Phones: address on its own row, then Maps + WhatsApp as one equal pair —
+   never stacked one-per-line. Mirrors the paired phone buttons above. */
+@media (max-width:560px){
+  .ap .where{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch}
+  .ap .where .addr{grid-column:1/-1;min-height:0}
+  .ap .where .maplink{justify-content:center;padding:0 10px;min-width:0}
+  /* the v27 plate is narrower than the v31 card; the long label overflowed
+     its edge there, so inside that plate the pill reads just "WhatsApp" */
+  .ap .lens:not(.hm) .washide{display:none}
+}
 
 /* ---- hero layouts -------------------------------------------------------- */
 @media(min-width:900px){
@@ -456,9 +573,14 @@
   box-shadow:0 18px 36px rgba(var(--ap-shadow),.32)}
 .ap .enq button:active{transform:translateY(0)}
 @media (prefers-reduced-motion:no-preference){
-  .ap .enq button{animation:hcta-flow 7s linear infinite}
   .ap .enq button::after{animation:hcta-sheen 3.6s ease-in-out infinite;animation-delay:1.4s}
 }
 .ap .enq .ref{font-size:11.5px}
 
 .ap .colo{margin-top:32px;text-align:center;font-size:11.5px;color:var(--ap-ink2)}
+
+/* About Prayaan Capital — links inside body prose otherwise fall back to
+   browser-default blue, which nothing else on the page uses. */
+.ap .prose a,.ap .attrib a{color:var(--ap-ink);text-decoration:none;
+  border-bottom:1.5px solid var(--ap-acc)}
+.ap .prose a:hover,.ap .attrib a:hover{color:var(--ap-acc-ink)}

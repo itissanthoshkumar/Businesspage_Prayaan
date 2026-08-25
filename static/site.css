@@ -135,10 +135,12 @@ h1,h2,h3{line-height:1.15;font-weight:400}
   box-shadow:0 12px 26px rgba(28,39,67,.38),inset 0 0 0 1px rgba(244,174,0,.85)}
 .topbar .hcta:active{transform:translateY(0)}
 @media (prefers-reduced-motion:no-preference){
-  .topbar .hcta{animation:hcta-flow 7s linear infinite}
   .topbar .hcta::after{animation:hcta-sheen 3.6s ease-in-out infinite}
   .topbar .hcta .ico{animation:hcta-bob 2.4s ease-in-out infinite}
-  @keyframes hcta-flow{from{background-position:0% 50%}to{background-position:260% 50%}}
+  /* hcta-flow (background-position drift) REMOVED: it repainted the two
+     always-visible CTAs every frame, forever - the page's biggest hidden
+     scroll cost. The transform-based ::after sheen carries the moving-light
+     effect on the compositor instead. */
   /* the sheen rests off-screen for most of the cycle, so it reads as a glint
      rather than a stripe going round and round */
   @keyframes hcta-sheen{0%{transform:translateX(-240%) skewX(-16deg)}
@@ -319,20 +321,38 @@ h1,h2,h3{line-height:1.15;font-weight:400}
 .metarow dt{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--muted)}
 .metarow dd{margin:5px 0 0;font-size:14.5px}
-/* ---- reveal-on-scroll -----------------------------------------------------
-   Scroll-driven CSS animation, no JavaScript. Where `animation-timeline: view()`
-   is unsupported the rule simply never applies and content is visible from the
-   start — a JS reveal would risk leaving content permanently hidden if it failed,
-   which is unacceptable on a page whose job is to show a business. Add .reveal to
-   a section, and .reveal-d1/2/3 to stagger children. */
+/* ---- reveal-on-scroll, TRIGGERED not scrubbed -----------------------------
+   History: v1 scrubbed these with animation-timeline:view() — pure CSS, but on
+   main-thread Chromes the rise lagged the finger. v2 is the reference-site
+   mechanism (prayaancapital.com): /static/reveal.js watches sections and adds
+   .in once, and these TIMED transitions play on their own clock — compositor-
+   friendly transform/opacity, smooth everywhere.
+
+   Everything is scoped under .js-anim, which only the script sets (pre-paint):
+   no JS = nothing is ever hidden. Children cascade off their section's .in
+   with stepped delays — the framer-style stagger. */
 @media (prefers-reduced-motion:no-preference){
-  @supports (animation-timeline:view()){
-    .reveal{animation:pbn-rise both;animation-timeline:view();animation-range:entry 0% entry 58%}
-    .reveal-d1{animation-range:entry 4% entry 62%}
-    .reveal-d2{animation-range:entry 8% entry 66%}
-    .reveal-d3{animation-range:entry 12% entry 70%}
-    @keyframes pbn-rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-  }
+  .js-anim .reveal{opacity:0;transform:translateY(24px);
+    transition:opacity .55s cubic-bezier(.22,.9,.3,1),
+               transform .55s cubic-bezier(.22,.9,.3,1)}
+  .js-anim .reveal.in{opacity:1;transform:none}
+
+  .js-anim .reveal .lab{opacity:0;transform:translateX(-14px);
+    transition:opacity .5s cubic-bezier(.22,.9,.3,1) .1s,
+               transform .5s cubic-bezier(.22,.9,.3,1) .1s}
+  .js-anim .reveal.in .lab{opacity:1;transform:none}
+
+  .js-anim .reveal :is(.chips li,.figs li,.metarow>div){
+    opacity:0;transform:translateY(16px) scale(.97);
+    transition:opacity .5s cubic-bezier(.22,.9,.3,1),
+               transform .5s cubic-bezier(.22,.9,.3,1)}
+  .js-anim .reveal.in :is(.chips li,.figs li,.metarow>div){opacity:1;transform:none}
+  .js-anim .reveal.in :is(.chips li,.figs li,.metarow>div):nth-child(1){transition-delay:.08s}
+  .js-anim .reveal.in :is(.chips li,.figs li,.metarow>div):nth-child(2){transition-delay:.16s}
+  .js-anim .reveal.in :is(.chips li,.figs li,.metarow>div):nth-child(3){transition-delay:.24s}
+  .js-anim .reveal.in :is(.chips li,.figs li,.metarow>div):nth-child(4){transition-delay:.32s}
+  .js-anim .reveal.in :is(.chips li,.figs li,.metarow>div):nth-child(5){transition-delay:.4s}
+  .js-anim .reveal.in :is(.chips li,.figs li,.metarow>div):nth-child(n+6){transition-delay:.48s}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
@@ -383,7 +403,100 @@ h1,h2,h3{line-height:1.15;font-weight:400}
   --tier-ink:#7A4A22;
   --tier-edge:rgba(160,100,58,.55);
   --tier-face:linear-gradient(135deg,rgba(193,121,74,.20),rgba(247,224,205,.60) 45%,rgba(193,121,74,.20));
+  --tier-glow:rgba(193,121,74,.45);
 }
+.tier-gold{--tier-glow:rgba(212,175,55,.60)}
+.tier-silver{--tier-glow:rgba(150,161,171,.50)}
+
+/* ux-pro-max: kill the legacy 300ms tap delay on every interactive element */
+a,button,input,select,textarea,label{touch-action:manipulation}
+
+/* ---- success tick, drawn (the Lottie confirmation moment, ported to pure
+   CSS/SVG — this page runs no JavaScript): the badge pops in on a spring
+   curve, then the check STROKES itself in. Reduced motion = static tick. ---- */
+@keyframes tick-pop{
+  0%{transform:scale(.55);opacity:0}
+  60%{transform:scale(1.09);opacity:1}
+  100%{transform:scale(1)}
+}
+@keyframes tick-draw{
+  from{stroke-dashoffset:30}
+  to{stroke-dashoffset:0}
+}
+@keyframes enq-rise{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .enq .done .tick{animation:tick-pop .45s cubic-bezier(.34,1.56,.64,1) both}
+  .enq .done .tick path{stroke-dasharray:30;stroke-dashoffset:30;
+    animation:tick-draw .45s .3s ease-out forwards}
+  .enq .done h2{animation:enq-rise .35s .15s ease-out both}
+  .enq .done .sub{animation:enq-rise .35s .25s ease-out both}
+}
+
+/* motion-framer port: press feedback — every tappable thing gives back a
+   little, and returns on a spring. Transform-only, so no layout shift. */
+@media (prefers-reduced-motion:no-preference){
+  .enq button,.stickycta a,.hcta{transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+  .enq button:active,.stickycta a:active,.hcta:active{transform:scale(.975)}
+}
+
+/* ---- enquiry, compacted: the whole form on ONE phone screen ---------------
+   Two fields, one consent, one button. Overrides sit after the base rules so
+   they win at equal specificity; tap targets stay >=44px throughout. */
+.enq h2{font-size:20px}
+.enq .sub{margin-top:5px;font-size:12.5px;line-height:1.5}
+.enq label{margin:10px 0 4px;font-size:11.5px}
+.enq input[type=text],.enq input[type=tel]{min-height:44px}
+.enq .reward{margin-top:10px;padding:8px 11px;font-size:12px;line-height:1.45}
+.enq .reward .ico{width:15px;height:15px}
+.enq .chk{margin-top:10px;padding:9px 12px}
+.enq .chk span{font-size:12.5px;line-height:1.45}
+.enq button{margin-top:12px}
+.enq .ref{margin-top:10px;padding-top:9px}
+/* the read-only "Referred by" field: clearly a fact, not an input */
+.enq input[type=text].refin{background:var(--sec);color:var(--muted);
+  cursor:default;pointer-events:none;border-style:dashed}
+
+/* ---- glitter: living metal + glint stars + breathing glow ------------------
+   Three layered effects (the shimmer/sparkle/glow trio from the animated
+   component libraries, ported to pure CSS — the page runs no JavaScript):
+     1. the metal face itself drifts (oversized gradient, moving position),
+     2. three tiny stars glint in a staggered cycle,
+     3. a soft halo breathes in the tier's own metal colour.
+   All three sit behind prefers-reduced-motion; without motion the badge is
+   the same still pill as before. */
+.tier .spk{position:absolute;width:7px;height:7px;z-index:2;pointer-events:none;
+  background:#fff;opacity:0;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);
+  filter:drop-shadow(0 0 3px rgba(255,255,255,.95))}
+.tier .spk.s1{top:2px;left:24%}
+.tier .spk.s2{top:52%;right:12px;width:5px;height:5px}
+.tier .spk.s3{bottom:2px;left:52%;width:6px;height:6px}
+@keyframes tier-metal{
+  0%{background-position:0% 30%}
+  100%{background-position:100% 70%}
+}
+@keyframes tier-twinkle{
+  0%,100%{opacity:0;transform:scale(.3) rotate(0deg)}
+  50%{opacity:1;transform:scale(1.2) rotate(90deg)}
+}
+@keyframes tier-glow{
+  0%,100%{box-shadow:0 2px 12px rgba(11,33,53,.22),0 0 5px var(--tier-glow)}
+  50%{box-shadow:0 2px 12px rgba(11,33,53,.22),0 0 16px var(--tier-glow)}
+}
+@media (prefers-reduced-motion:no-preference){
+  /* Only compositor-friendly properties run continuously (transform/opacity:
+     the sheen sweep + the twinkles). The metal drift (background-position)
+     and glow pulse (box-shadow) repainted the hero region every frame and
+     made scrolling judder — the glow is now a STATIC halo below. */
+  .tier .spk{animation:tier-twinkle 2.4s ease-in-out infinite}
+  .tier .spk.s2{animation-delay:.8s}
+  .tier .spk.s3{animation-delay:1.6s}
+}
+/* static glow — same jewellery, zero repaint */
+.tier{box-shadow:0 2px 12px rgba(11,33,53,.22),0 0 10px var(--tier-glow)}
 
 /* ---- sticky action bar (phones) -------------------------------------------
    The loan CTA moves out of the header and into the thumb zone below ~768px.
@@ -402,9 +515,11 @@ h1,h2,h3{line-height:1.15;font-weight:400}
        old rgba-white panel picked up the wash behind it and read as a stray
        pale rectangle. A gradient that fades to transparent at the top lets the
        bar emerge from the page instead of sitting on it as a box. */
+    /* NO backdrop-filter here: a fixed bar that blurs the page behind it
+       re-samples the backdrop on every scrolled frame — the single biggest
+       scroll-jank source this page had. The gradient alone does the job. */
     background:linear-gradient(to top,
-      var(--bg) 0%, var(--bg) 62%, rgba(247,248,250,.86) 88%, rgba(247,248,250,0) 100%);
-    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+      var(--bg) 0%, var(--bg) 66%, rgba(247,248,250,.93) 88%, rgba(247,248,250,0) 100%);
     padding:16px 16px calc(10px + env(safe-area-inset-bottom))}
   .stickycta a{display:flex;align-items:center;justify-content:center;gap:9px;
     min-height:50px;border-radius:999px;text-decoration:none;
@@ -422,7 +537,6 @@ h1,h2,h3{line-height:1.15;font-weight:400}
   .topbar .hcta{padding:0 15px;font-size:13.5px}
   .topbar .hcta .ico{width:13px;height:13px}
   @media (prefers-reduced-motion:no-preference){
-    .stickycta a{animation:hcta-flow 7s linear infinite}
     .stickycta a .ico{animation:hcta-bob 2.4s ease-in-out infinite}
   }
 }
@@ -467,7 +581,6 @@ h1,h2,h3{line-height:1.15;font-weight:400}
   font-size:15.5px;font-weight:600;
   box-shadow:0 10px 24px rgba(0,42,74,.26),inset 0 0 0 1px rgba(244,174,0,.55)}
 @media (prefers-reduced-motion:no-preference){
-  .hbtn{animation:hcta-flow 7s linear infinite}
 }
 .hnote{font-family:"Inter Tight",ui-sans-serif,system-ui,sans-serif;
   font-size:13.5px;line-height:1.6;color:#4A5D6E;margin-top:16px;max-width:46ch}
@@ -519,7 +632,6 @@ h1,h2,h3{line-height:1.15;font-weight:400}
   font-size:15.5px;font-weight:600;
   box-shadow:0 10px 24px rgba(0,42,74,.26),inset 0 0 0 1px rgba(244,174,0,.55)}
 @media (prefers-reduced-motion:no-preference){
-  .btnlink{animation:hcta-flow 7s linear infinite}
 }
 
 /* review-only strip on the landing page; never rendered in production */
@@ -568,7 +680,7 @@ h1,h2,h3{line-height:1.15;font-weight:400}
   color:#B8C4D2;background:linear-gradient(150deg,#EDF1F6,#DCE4EE)}
 .dirtier{position:absolute;top:10px;right:10px;border-radius:999px;padding:3px 10px;
   font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  background:rgba(255,255,255,.97)}
 .dirtier.t-gold{color:#8A6410}.dirtier.t-silver{color:#4E555B}.dirtier.t-bronze{color:#7A4A22}
 .dirbody{display:block;padding:14px 16px 16px}
 .dircat{display:block;font-size:10.5px;font-weight:700;letter-spacing:.13em;
@@ -578,3 +690,31 @@ h1,h2,h3{line-height:1.15;font-weight:400}
 .dirloc{display:block;font-family:"Inter Tight",sans-serif;font-size:13.5px;color:#4A5D6E;margin-top:4px}
 .dirpath{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
   font-size:11.5px;color:#8A97A6;margin-top:8px;overflow-wrap:anywhere}
+
+/* ---- standing-page form (/report takedown intake) ---- */
+.docform{margin:18px 0 26px;max-width:560px}
+.docform label{display:block;font:600 13.5px "Inter Tight",sans-serif;
+  color:#0B2135;margin:16px 0 6px}
+.docform label .opt{font-weight:400;color:#5A6E80}
+.docform input[type=text],.docform textarea{width:100%;box-sizing:border-box;
+  font:400 15px "Inter Tight",sans-serif;color:#0B2135;background:#fff;
+  border:1.5px solid #C7D2DD;border-radius:10px;padding:11px 12px}
+.docform input[type=text]:focus,.docform textarea:focus{outline:none;
+  border-color:#005CA1;box-shadow:0 0 0 3px rgba(0,92,161,.14)}
+.docform .radios{border:0;padding:0;margin:16px 0 0}
+.docform .radios legend{font:600 13.5px "Inter Tight",sans-serif;color:#0B2135;
+  padding:0;margin:0 0 6px}
+.docform .chk{display:flex;align-items:center;gap:9px;font:400 14.5px "Inter Tight",sans-serif;
+  color:#0B2135;margin:7px 0}
+.docform .chk input{accent-color:#005CA1;width:16px;height:16px}
+.docform .hp{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+.docform .err{margin:14px 0 0;padding:10px 12px;border-radius:10px;
+  background:#FBEFEF;border:1px solid #E4B8B8;color:#8C2F2F;
+  font:500 14px "Inter Tight",sans-serif}
+.docform button{margin-top:18px;min-height:48px;padding:0 26px;border:0;
+  border-radius:12px;cursor:pointer;background:#005CA1;color:#fff;
+  font:600 15.5px "Space Grotesk",sans-serif}
+.docform button:hover{background:#00477D}
+.docdone{margin:14px 0 30px;padding:18px 20px;border-radius:14px;
+  background:#EEF5EC;border:1px solid #BFD8BA}
+.docdone h2{margin:0 0 8px}

@@ -21,9 +21,14 @@
   <tbody>
   {% for l in leads %}
   <tr>
-    <td class="sub">{{ l.at }}</td>
+    <td class="sub">{{ l.at }}
+      {% if l.status == 'NEW' and l.age_hours is not none and l.age_hours >= 24 %}
+      <span class="agewarn">{{ l.age_hours }}h waiting</span>
+      {% endif %}</td>
     <td><b>{{ l.name }}</b><span class="sub"><a href="tel:{{ l.mobile }}">{{ l.mobile }}</a>{% if l.pincode %} · {{ l.pincode }}{% endif %}</span></td>
-    <td>{{ l.referrer_business_name or '—' }}<span class="sub"><code>{{ l.source_path or '' }}</code></span></td>
+    <td>{{ l.referrer_business_name or '—' }}
+      {% if l.via %}<span class="viachip">{{ 'WhatsApp' if l.via == 'wa' else 'QR' }}</span>{% endif %}
+      <span class="sub"><code>{{ l.source_path or '' }}</code></span></td>
     <td>
       <form method="post" action="/admin/leads/{{ l.id }}" class="leadform">
         <input type="hidden" name="csrf" value="{{ csrf }}">
