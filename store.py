@@ -614,6 +614,19 @@ def boot_checks():
         problems.append(
             "PBN_MONGO_DB is '{}' — Sherlock's database. PBN must use its own; "
             "set PBN_MONGO_DB (e.g. 'pbn').".format(SHERLOCK_DB))
+    if os.getenv("PBN_ALLOW_SHARED_DB_USER", "").lower() in ("1", "true", "yes"):
+        # Sanctioned, SHOUTED bypass for free-tier pilots that have not yet
+        # created the three scoped Atlas users. The guard's job is that the
+        # property is never lost SILENTLY — this is explicit and logged, and
+        # the scoped users remain the bar for real customer volume.
+        import logging
+        logging.getLogger("pbn").warning(
+            "PBN_ALLOW_SHARED_DB_USER is set: running with ONE shared DB user. "
+            "A flaw in the public request path can read customer records. "
+            "Create the scoped RO/RW users before real customer volume.")
+        if problems:
+            raise RuntimeError("PBN refuses to start:\n  - " + "\n  - ".join(problems))
+        return
     if not (os.getenv("PBN_MONGO_URI_RO") and os.getenv("PBN_MONGO_URI_RW")
             and os.getenv("PBN_MONGO_URI_ADMIN")):
         problems.append(

@@ -1,0 +1,40 @@
+# Render.com blueprint — free-tier pilot deployment.
+#
+#   dashboard.render.com -> New + -> Blueprint -> connect this repo -> Apply.
+#   Render reads this file, builds the Dockerfile, and prompts only for the
+#   three sync:false values (paste the Atlas URI into all three).
+#
+# Free-tier caveats, accepted knowingly:
+#   - service sleeps after ~15 idle minutes (first visitor waits ~50s)
+#   - the disk is ephemeral: photos UPLOADED through /admin on Render vanish
+#     on restart — do photo work locally, commit, push (auto-redeploys)
+#   - PBN_ALLOW_SHARED_DB_USER runs one shared Atlas user; create the scoped
+#     RO/RW users and remove that flag before real customer volume.
+services:
+  - type: web
+    name: prayaan-business-pages
+    runtime: docker
+    plan: free
+    region: singapore          # closest Render region to India
+    healthCheckPath: /healthz
+    envVars:
+      - key: PBN_SHOW_SWITCHER # production posture: review tools + dev-login OFF
+        value: "false"
+      - key: PBN_PUBLIC_DIR
+        value: "false"
+      - key: PBN_TRUST_PROXY
+        value: "true"
+      - key: PBN_MONGO_DB
+        value: pbn
+      - key: PBN_ALLOW_SHARED_DB_USER
+        value: "true"
+      - key: PBN_SECRET_KEY
+        generateValue: true    # Render mints a strong random value
+      - key: PBN_BASE_URL
+        value: https://prayaan-business-pages.onrender.com
+      - key: PBN_MONGO_URI_RO
+        sync: false            # prompted on Apply — paste the Atlas URI
+      - key: PBN_MONGO_URI_RW
+        sync: false
+      - key: PBN_MONGO_URI_ADMIN
+        sync: false
