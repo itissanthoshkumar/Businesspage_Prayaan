@@ -39,20 +39,47 @@
    * Fonts, and resetting scroll: the constant flicker. Instead we load the doc
    * ONCE, then on every update swap only <body>'s innerHTML. The <head> (all the
    * CSS + fonts) persists, so there is no network, no reflash, no scroll jump. */
+  /* First paint is a real form POST targeted INTO the iframe, not srcdoc:
+   * the iframe then holds a genuine same-origin document whose CSP arrives
+   * on its own response. Older Chromes mis-apply inherited CSP inside
+   * about:srcdoc on https (styles silently refused — seen on the first
+   * production deploy); a real-URL document sidesteps the whole bug class. */
+  var firstPainting = false;
+  function firstPaint() {
+    if (firstPainting) return;
+    firstPainting = true;
+    setBusy(true);
+    var f = document.createElement("form");
+    f.method = "post";
+    f.action = "/admin/preview";
+    f.target = "preview-pane";
+    f.style.display = "none";
+    serialize().forEach(function (value, key) {
+      var input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value;
+      f.appendChild(input);
+    });
+    document.body.appendChild(f);
+    f.submit();
+    f.remove();
+  }
+
   function paint(html) {
     if (!ready) {
-      // first render: one honest full load, and remember when it is done
+      // first render: one honest full document load via the form POST
       pending = null;
-      frame.srcdoc = html;
+      firstPaint();
       return;
     }
     var doc = frame.contentDocument;
-    if (!doc || !doc.body) { frame.srcdoc = html; return; }
+    if (!doc || !doc.body) { ready = false; firstPaint(); return; }
     var incoming;
     try {
       incoming = new DOMParser().parseFromString(html, "text/html");
-    } catch (e) { frame.srcdoc = html; return; }
-    if (!incoming || !incoming.body) { frame.srcdoc = html; return; }
+    } catch (e) { ready = false; firstPaint(); return; }
+    if (!incoming || !incoming.body) { ready = false; firstPaint(); return; }
     var scroller = doc.scrollingElement || doc.documentElement;
     var y = scroller ? scroller.scrollTop : 0;
     doc.body.className = incoming.body.className;
@@ -65,13 +92,15 @@
 
   frame.addEventListener("load", function () {
     ready = true;
-    if (pending !== null) { var h = pending; pending = null; paint(h); }
+    firstPainting = false;
+    setBusy(false);
   });
 
   function refresh(force) {
     var body = serialize().toString();
     if (!force && body === lastPayload) return;     // nothing changed; don't refetch
     lastPayload = body;
+    if (!ready) { firstPaint(); return; }           // the form POST IS the request
     setBusy(true);
     fetch("/admin/preview", {
       method: "POST",
@@ -81,9 +110,7 @@
     }).then(function (r) { return r.ok ? r.text() : null; })
       .then(function (html) {
         setBusy(false);
-        if (html === null) return;
-        if (!ready) { pending = html; frame.srcdoc = html; }   // trigger first load
-        else paint(html);
+        if (html !== null) paint(html);
       }).catch(function () { setBusy(false); });
   }
 
