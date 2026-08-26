@@ -255,10 +255,11 @@ def _page_payload(form):
         "business_name": form.get("business_name", "").strip()[:120],
         "owner_name": form.get("owner_name", "").strip()[:80] or None,
         "category": form.get("category", "").strip()[:60] or None,
-        # Own-host photos only. An external image on a lender-branded page can
-        # change after review and leaks every visitor's IP to whoever hosts it;
-        # the upload flow exists precisely so nothing needs hot-linking.
-        "photo_url": (lambda p: p if p.startswith("/static/") else None)(
+        # Own-host photos only (/static bundled, /photo database-backed). An
+        # external image on a lender-branded page can change after review and
+        # leaks every visitor's IP to whoever hosts it; the upload flow exists
+        # precisely so nothing needs hot-linking.
+        "photo_url": (lambda p: p if p.startswith(("/static/", "/photo/")) else None)(
             form.get("photo_url", "").strip()[:400]),
         "locality": form.get("locality", "").strip()[:60] or None,
         "district": form.get("district", "").strip()[:60] or None,

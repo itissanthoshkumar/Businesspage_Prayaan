@@ -631,6 +631,25 @@ async def report_submit(request: Request):
     return _back(submitted=True)
 
 
+@app.get("/photo/{name}")
+def photo(name: str):
+    """Database-backed uploaded photos (Mongo deployments). Content-addressed:
+    the name IS the sha16 of the bytes, so the response is immutable and can
+    cache forever — a changed photo is a different URL."""
+    import re as _re
+    from fastapi.responses import Response
+    m = _re.fullmatch(r"([0-9a-f]{16})\.(jpg|png|webp)", name)
+    if m and getattr(store.page_by_path, "__module__", "store") != "filestore":
+        row = store.get_photo(m.group(1))
+        if row:
+            ct = {"jpg": "image/jpeg", "png": "image/png",
+                  "webp": "image/webp"}[m.group(2)]
+            return Response(content=bytes(row["data"]), media_type=ct,
+                            headers={"Cache-Control": "public, max-age=31536000, immutable",
+                                     "ETag": '"{}"'.format(m.group(1))})
+    raise HTTPException(404)
+
+
 @app.get("/favicon.ico")
 def favicon():
     """Browsers request this on every page; without it each view logs a 404."""

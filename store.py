@@ -599,6 +599,26 @@ def update_report(report_id, status, by, note=None):
     return db_admin().page_reports.find_one({"id": int(report_id)}, {"_id": 0})
 
 
+# ---- uploaded photos (database-backed) --------------------------------------
+# On ephemeral hosts (Render/serverless) a disk upload dies with the container
+# — Murugan Stores' photo lasted exactly one redeploy. Content-addressed rows
+# in Mongo survive every deploy; ~250KB per photo against Atlas's free 512MB
+# is thousands of photos. Served by GET /photo/<id>.<ext> with immutable
+# caching (the id IS the content hash).
+# NOTE for the scoped-users setup: the RO role needs `find` on pbn.photos.
+def save_photo(photo_id, ext, data, by=None):
+    from bson import Binary
+    db_admin().photos.update_one(
+        {"_id": str(photo_id)},
+        {"$setOnInsert": {"ext": str(ext), "data": Binary(bytes(data)),
+                          "size": len(data), "at": _now(), "by": by}},
+        upsert=True)
+
+
+def get_photo(photo_id):
+    return db_ro().photos.find_one({"_id": str(photo_id)})
+
+
 # ---- boot checks ------------------------------------------------------------
 SHERLOCK_DB = "dpd_early_warning"
 

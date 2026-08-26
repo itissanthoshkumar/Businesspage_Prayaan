@@ -6,10 +6,10 @@
 #
 # Free-tier caveats, accepted knowingly:
 #   - service sleeps after ~15 idle minutes (first visitor waits ~50s)
-#   - the disk is ephemeral: photos UPLOADED through /admin on Render vanish
-#     on restart — do photo work locally, commit, push (auto-redeploys)
 #   - PBN_ALLOW_SHARED_DB_USER runs one shared Atlas user; create the scoped
 #     RO/RW users and remove that flag before real customer volume.
+# (Photo uploads are DURABLE: stored in Atlas, served at /photo/<hash>.<ext> —
+#  the ephemeral disk no longer matters for images.)
 services:
   - type: web
     name: prayaan-business-pages

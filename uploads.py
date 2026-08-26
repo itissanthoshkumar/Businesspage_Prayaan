@@ -230,6 +230,15 @@ def save_image(data: bytes, by=None) -> dict:
     data = strip_metadata(data, ext)
 
     digest = hashlib.sha256(data).hexdigest()[:16]
+
+    # On the Mongo backend, photos live IN the database: ephemeral hosts wipe
+    # the local disk on every deploy (a live upload died that way on Render).
+    # The file-store backend keeps the git-backed local directory below.
+    import store
+    if getattr(store.page_by_path, "__module__", "store") != "filestore":
+        store.save_photo(digest, ext, data, by=by)
+        return {"url": "/photo/{}.{}".format(digest, ext),
+                "committed": True, "note": "stored in the database"}
     filename = "{}.{}".format(digest, ext)
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     dest = UPLOAD_DIR / filename
