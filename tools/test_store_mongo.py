@@ -35,7 +35,20 @@ except Exception as exc:                                 # noqa: BLE001
 
 if store.MONGO_DB == store.SHERLOCK_DB:
     raise SystemExit("refusing to test against Sherlock's database")
-store.db_admin().client.drop_database(store.MONGO_DB)
+
+
+def wipe():
+    """dropDatabase needs privileges a properly scoped Atlas user lacks —
+    fall back to dropping the collections one by one."""
+    db = store.db_admin()
+    try:
+        db.client.drop_database(store.MONGO_DB)
+    except Exception:                                    # noqa: BLE001
+        for name in db.list_collection_names():
+            db.drop_collection(name)
+
+
+wipe()
 
 print("\n-- indexes --")
 store.ensure_indexes()
@@ -87,6 +100,6 @@ check("user starts sv=1 must_change", user["sv"] == 1 and user["must_change"])
 bumped = store.update_user(user["id"], bump_sv=True, active=False)
 check("suspend bumps sv", bumped["sv"] == 2 and bumped["active"] is False)
 
-store.db_admin().client.drop_database(store.MONGO_DB)
+wipe()
 print("\n" + ("ALL PASS" if not fails else "FAILURES: " + ", ".join(fails)))
 raise SystemExit(1 if fails else 0)
