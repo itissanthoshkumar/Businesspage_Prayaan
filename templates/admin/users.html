@@ -1,73 +1,90 @@
 {% extends "admin/_shell.html" %}
 {% block title %}Users{% endblock %}
 {% block body %}
-<div class="head">
-  <div class="headtext">
-    <h1>Users</h1>
-    <p class="headsub">Branch staff sign in with their own account — never a
-      shared password. New accounts get a one-time temporary password and must
-      set their own at first sign-in. Suspending an account ends its sessions
-      immediately.</p>
+<div class="stagger">
+
+  <div class="head">
+    <div class="headtext">
+      <span class="eyebrow">Access</span>
+      <h1>Users</h1>
+      <p class="headsub">Branch staff sign in with their own account — never a
+        shared password. A new account gets a one-time temporary password and
+        must set its own at first sign-in. Suspending an account ends its
+        sessions immediately.</p>
+    </div>
   </div>
-</div>
 
-{% if error %}<p class="err">{{ error }}</p>{% endif %}
-{% if temp_pw %}
-<div class="tmppw" role="status">
-  <b>Temporary password for {{ temp_user }}:</b> <code>{{ temp_pw }}</code>
-  <span class="sub">Shown once — pass it on now. They will be asked to change it
-  at first sign-in.</span>
-</div>
-{% endif %}
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
 
-<div class="card">
-  <h2>Add a user</h2>
-  <form method="post" action="/admin/users/new" class="pubform">
-    <input type="hidden" name="csrf" value="{{ csrf }}">
-    <input name="username" required maxlength="60" placeholder="username (e.g. asha.vellore)"
-           autocomplete="off">
-    <select name="role" aria-label="Role">
-      {% for r in roles %}<option value="{{ r }}" {% if r == 'staff' %}selected{% endif %}>{{ r }}</option>{% endfor %}
-    </select>
-    <button type="submit" class="primary">Create</button>
-  </form>
-  <p class="note"><b>staff</b> manage pages and work leads. <b>admin</b> can also
-    export the lead book, manage users{% if maker_checker %} and publish pages{% endif %}.</p>
-</div>
+  {% if temp_pw %}
+  <div class="tmppw" role="status">
+    <b>Temporary password for {{ temp_user }}:</b> <code>{{ temp_pw }}</code>
+    <span class="sub">Shown once — pass it on now. They will be asked to change
+      it at first sign-in.</span>
+  </div>
+  {% endif %}
 
-<div class="tablewrap"><table class="grid">
-  <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
-  <tbody>
-  {% for u in users %}
-  <tr>
-    <td><b>{{ u.username }}</b><span class="sub">since {{ u.created_at }}{% if u.must_change %} · temp password not yet changed{% endif %}</span></td>
-    <td>
-      <form method="post" action="/admin/users/{{ u.id }}" class="leadform">
-        <input type="hidden" name="csrf" value="{{ csrf }}">
-        <input type="hidden" name="action" value="role">
-        <select name="role">
-          {% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
-        </select>
-        <button type="submit">Set</button>
-      </form>
-    </td>
-    <td><span class="pill s-{{ 'live' if u.active else 'removed' }}">{{ 'active' if u.active else 'suspended' }}</span></td>
-    <td>
-      <div class="statusacts">
-        <form method="post" action="/admin/users/{{ u.id }}">
+  <div class="card">
+    <div class="gutter">
+      <div class="gutterhead">
+        <h2>Add a user</h2>
+        <p><b>staff</b> manage pages and work leads. <b>admin</b> can also export
+          the lead book and manage users{% if maker_checker %}, and is the only role that can
+          publish a page{% endif %}.</p>
+      </div>
+      <div class="gutterbody">
+        <form method="post" action="/admin/users/new" class="pubform">
           <input type="hidden" name="csrf" value="{{ csrf }}">
-          <input type="hidden" name="action" value="{{ 'suspend' if u.active else 'activate' }}">
-          <button type="submit" class="{{ 'danger' if u.active else '' }}">{{ 'Suspend' if u.active else 'Activate' }}</button>
-        </form>
-        <form method="post" action="/admin/users/{{ u.id }}">
-          <input type="hidden" name="csrf" value="{{ csrf }}">
-          <input type="hidden" name="action" value="reset">
-          <button type="submit">Reset password</button>
+          <input name="username" required maxlength="60"
+                 placeholder="username — e.g. asha.vellore"
+                 autocomplete="off" aria-label="Username">
+          <select name="role" aria-label="Role">
+            {% for r in roles %}<option value="{{ r }}" {% if r == 'staff' %}selected{% endif %}>{{ r }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="primary">Create</button>
         </form>
       </div>
-    </td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table></div>
+    </div>
+  </div>
+
+  <div class="tablewrap"><div class="tablescroll"><table class="grid">
+    <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+    <tr>
+      <td>
+        <span class="rowname">{{ u.username }}</span>
+        <span class="sub">since {{ u.created_at }}{% if u.must_change %} &middot; temporary password not yet changed{% endif %}</span>
+      </td>
+      <td>
+        <form method="post" action="/admin/users/{{ u.id }}" class="leadform">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="action" value="role">
+          <select name="role" aria-label="Role for {{ u.username }}">
+            {% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+          </select>
+          <button type="submit">Set</button>
+        </form>
+      </td>
+      <td><span class="pill s-{{ 'live' if u.active else 'removed' }}">{{ 'active' if u.active else 'suspended' }}</span></td>
+      <td>
+        <div class="statusacts">
+          <form method="post" action="/admin/users/{{ u.id }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="hidden" name="action" value="{{ 'suspend' if u.active else 'activate' }}">
+            <button type="submit" class="{{ 'danger' if u.active else '' }}">{{ 'Suspend' if u.active else 'Activate' }}</button>
+          </form>
+          <form method="post" action="/admin/users/{{ u.id }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="hidden" name="action" value="reset">
+            <button type="submit">Reset password</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div></div>
+
+</div>
 {% endblock %}

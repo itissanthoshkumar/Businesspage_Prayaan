@@ -1,30 +1,86 @@
 {% extends "admin/_shell.html" %}
 {% block title %}Sign in{% endblock %}
 {% block body %}
-<div class="card narrow">
-  <h1>Sign in</h1>
-  {% if error %}<p class="err">{{ error }}</p>{% endif %}
-  <form method="post" action="/admin/login">
-    <label for="u">Username</label>
-    <input id="u" name="username" type="text" autocomplete="username" required autofocus>
-    <label for="p">Password</label>
-    <input id="p" name="password" type="password" autocomplete="current-password" required>
-    <button class="primary" type="submit">Sign in</button>
-  </form>
-  {% if dev_login %}
-  {# Review builds only (PBN_SHOW_SWITCHER). This block vanishing is NOT the
-     control — /admin/dev-login checks the same flag and 404s in production, so
-     a cached copy of this page buys nothing. #}
-  <div class="devsignin">
-    <form method="post" action="/admin/dev-login">
-      <button type="submit">Sign in as Admin
-        <span class="warn">Preview only — no password</span>
-      </button>
-    </form>
-    <p class="note">A shortcut for reviewing this build. It does not exist in
-      production, and everything it creates is signed <code>preview-admin</code>
-      in the history so it is never mistaken for real work.</p>
-  </div>
-  {% endif %}
+{# Split screen: the brand half states what this system is and what it
+   guarantees, the form half does one job. Both halves are real claims the
+   code keeps — consent evidence at publish, a stamped event per change, and
+   an eight-hour session that dies on any password change. #}
+<div class="signin">
+
+  <section class="signin-brand">
+    <div class="brandtop">
+      <img class="brandlogo" src="/static/img/prayaan-logo-full.png"
+           alt="Prayaan Capital" width="167" height="30">
+    </div>
+
+    <div class="brandmid">
+      <h2>Every customer&rsquo;s page, in one place.</h2>
+      <p>Build the page with the owner, record how they agreed to it, publish
+        it, and work the enquiries their WhatsApp circle sends back.</p>
+      <ul class="brandlist">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 12.5l5 5L20 6.5"/></svg>
+          A page goes live only once the customer&rsquo;s consent is on record.
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 12.5l5 5L20 6.5"/></svg>
+          Every edit is stamped with who made it and when.
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 12.5l5 5L20 6.5"/></svg>
+          Sessions expire after eight hours, and the moment a password changes.
+        </li>
+      </ul>
+    </div>
+
+    <p class="brandfoot">Prayaan Capital &middot; RBI-registered NBFC<br>
+      Internal system. Authorised staff only.</p>
+  </section>
+
+  <section class="signin-form">
+    <div class="signin-card">
+      <img class="signin-mark" src="/static/img/prayaan-logo-full.png"
+           alt="Prayaan Capital" width="167" height="30">
+      <span class="eyebrow">Angadi &middot; Back-office</span>
+      <h1>Sign in</h1>
+      <p class="lede">Use the account issued to you — never a shared one.</p>
+
+      {% if error %}<p class="err">{{ error }}</p>{% endif %}
+
+      <form method="post" action="/admin/login">
+        <label for="u">Username</label>
+        <input id="u" name="username" type="text" autocomplete="username" required autofocus>
+        <label for="p">Password</label>
+        <input id="p" name="password" type="password" autocomplete="current-password" required>
+        <button class="primary" type="submit">Sign in</button>
+      </form>
+
+      {% if dev_login %}
+      {# Review builds only (PBN_SHOW_SWITCHER). This block vanishing is NOT the
+         control — /admin/dev-login checks the same flag and 404s in production,
+         so a cached copy of this page buys nothing. #}
+      <div class="devsignin">
+        <form method="post" action="/admin/dev-login">
+          <button type="submit">Sign in as Admin
+            <span class="warn">Preview only — no password</span>
+          </button>
+        </form>
+        <p class="note">A shortcut for reviewing this build. It does not exist in
+          production, and everything it creates is signed <code>preview-admin</code>
+          in the history so it is never mistaken for real work.</p>
+      </div>
+      {% endif %}
+
+      <p class="signin-foot">Forgotten your password? An admin can reset it for
+        you from the Users screen.</p>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

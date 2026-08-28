@@ -1,38 +1,125 @@
 {% extends "admin/_shell.html" %}
 {% block title %}Business pages{% endblock %}
 {% block body %}
-<div class="head">
-  <h1>Business pages</h1>
-  <a class="primary btn" href="/admin/pages/new">New page</a>
+{# `keep` carries every filter EXCEPT the status, so clicking a tile narrows
+   the table without discarding the search, dates or sort already set. #}
+{% set sep = '&' if keep else '' %}
+<div class="stagger">
+
+  <div class="head">
+    <div class="headtext">
+      <span class="eyebrow">Customers</span>
+      <h1>Business pages</h1>
+      <p class="headsub">One page per customer, shared on WhatsApp. A draft is
+        invisible to the public until you publish it.</p>
+    </div>
+    <div class="headacts">
+      <a class="primary btn" href="/admin/pages/new">New page</a>
+    </div>
+  </div>
+
+  {# Upshots. Each one is a link that filters the table below to that status;
+     the numbers always describe the whole book, not the current view. #}
+  <nav class="upshots" aria-label="Filter pages by status">
+    <a class="upshot u-all" href="/admin/pages{{ '?' + keep if keep else '' }}"
+       {% if not status %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.total }}</span>
+      <span class="uplabel">Total pages</span>
+      <span class="upsub">{{ counts.live }} active &middot; {{ counts.draft }} draft</span>
+    </a>
+    <a class="upshot u-live" href="/admin/pages?status=live{{ sep }}{{ keep }}"
+       {% if status == 'live' %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.live }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Active</span>
+      <span class="upsub">public &middot; owner can share</span>
+    </a>
+    <a class="upshot u-draft" href="/admin/pages?status=draft{{ sep }}{{ keep }}"
+       {% if status == 'draft' %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.draft }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Draft</span>
+      <span class="upsub">not visible yet</span>
+    </a>
+    <a class="upshot u-removed" href="/admin/pages?status=removed{{ sep }}{{ keep }}"
+       {% if status == 'removed' %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.removed }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Removed</span>
+      <span class="upsub">link shows “not available”</span>
+    </a>
+  </nav>
+
+  <form class="toolbar" method="get" action="/admin/pages" role="search">
+    {# the tile selection rides along, so applying a search keeps the slice #}
+    <input type="hidden" name="status" value="{{ status }}">
+    <div class="tfield tgrow">
+      <label for="f-q">Search</label>
+      <input id="f-q" name="q" type="text" value="{{ q }}"
+             placeholder="Name, owner or address">
+    </div>
+    <div class="tfield">
+      <label for="f-from">Updated from</label>
+      <input id="f-from" name="from" type="date" value="{{ date_from }}">
+    </div>
+    <div class="tfield">
+      <label for="f-to">Updated to</label>
+      <input id="f-to" name="to" type="date" value="{{ date_to }}">
+    </div>
+    <div class="tfield">
+      <label for="f-sort">Sort by</label>
+      <select id="f-sort" name="sort">
+        {% for value, label in sort_labels %}
+        <option value="{{ value }}" {% if sort == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="tactions">
+      <button type="submit">Apply</button>
+      {% if filtered %}<a class="btn ghost" href="/admin/pages">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  {% if pages %}
+  <p class="resultline">Showing <b>{{ pages|length }}</b> of {{ counts.total }}
+    {% if status %}&middot; {{ 'Active' if status == 'live' else status|capitalize }} only{% endif %}
+    {% if date_from or date_to %}&middot; updated {{ date_from or 'any' }} to {{ date_to or 'any' }}{% endif %}</p>
+  {% endif %}
+
+  {% if not pages %}
+  <div class="empty">
+    {% if filtered %}
+    <b>Nothing matches those filters</b>
+    <p>No page is {% if status %}{{ 'Active' if status == 'live' else status }}{% else %}stored{% endif %}
+      {%- if q %} matching “{{ q }}”{% endif %}
+      {%- if date_from or date_to %} in that date range{% endif %}.
+      <a href="/admin/pages">Clear the filters</a> to see them all.</p>
+    {% else %}
+    <b>No business pages yet</b>
+    <p>A page is one customer's shop, ready to share on WhatsApp.<br>
+      <a href="/admin/pages/new">Create the first one.</a></p>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="tablewrap"><div class="tablescroll"><table class="grid">
+    <thead><tr>
+      <th>Business</th><th>Web address</th><th>Status</th><th>Updated</th>
+      <th class="col-act">Edit</th>
+    </tr></thead>
+    <tbody>
+    {% for p in pages %}
+    <tr>
+      <td>
+        <a class="rowname" href="/admin/pages/{{ p.id }}">{{ p.business_name }}</a>
+        {% if p.owner_name %}<span class="sub">{{ p.owner_name }}</span>{% endif %}
+      </td>
+      <td><code>{{ p.path }}</code></td>
+      <td><span class="pill s-{{ p.status }}">{{ p.status }}</span>
+          {% if not p.indexed %}<span class="pill s-noindex">noindex</span>{% endif %}</td>
+      <td class="sub mono">{{ p.updated_at }}</td>
+      <td class="col-act"><a class="rowedit" href="/admin/pages/{{ p.id }}">Edit</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div></div>
+  {% endif %}
+
 </div>
-<form class="filters" method="get" action="/admin/pages">
-  <input name="q" type="text" value="{{ q }}" placeholder="Name, owner or path">
-  <select name="status">
-    <option value="">All statuses</option>
-    {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
-  </select>
-  <button type="submit">Filter</button>
-</form>
-{% if not pages %}
-<p class="empty">No pages yet. <a href="/admin/pages/new">Create the first one.</a></p>
-{% else %}
-<div class="tablewrap"><table class="grid">
-  <thead><tr><th>Business</th><th>Address</th><th>Status</th><th>Updated</th><th class="col-act">Edit</th></tr></thead>
-  <tbody>
-  {% for p in pages %}
-  <tr>
-    <td><a href="/admin/pages/{{ p.id }}"><b>{{ p.business_name }}</b></a>
-        {% if p.owner_name %}<span class="sub">{{ p.owner_name }}</span>{% endif %}</td>
-    <td><code>{{ p.path }}</code></td>
-    <td><span class="pill s-{{ p.status }}">{{ p.status }}</span>
-        {% if not p.indexed %}<span class="pill s-noindex">noindex</span>{% endif %}</td>
-    <td class="sub">{{ p.updated_at }}</td>
-    <td class="col-act">
-      <a class="rowedit" href="/admin/pages/{{ p.id }}">Edit</a>
-    </td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table></div>
-{% endif %}
 {% endblock %}

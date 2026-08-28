@@ -545,46 +545,479 @@ a,button,input,select,textarea,label{touch-action:manipulation}
    The root used to return the same "not available" screen as a mistyped URL, so
    anyone trimming a shared link back to the domain hit a dead end on a lender's
    own address. Logo blue and logo yellow only. */
-.home{padding:44px 0 72px;background:
-  radial-gradient(58vw 40vw at 96% -10%, rgba(0,92,161,.12), transparent 62%),
-  radial-gradient(50vw 36vw at 2% 46%, rgba(244,174,0,.10), transparent 64%),
-  var(--bg)}
-@media(min-width:900px){.home{padding:72px 0 96px}}
-.home .eyebrow{color:#8A6200}
-.home h1{font-family:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
-  font-weight:500;letter-spacing:-.032em;line-height:1.04;color:#0B2135;
-  font-size:clamp(32px,6.4vw,58px);max-width:16ch;margin-top:12px}
-.home .hlede{font-family:"Inter Tight",ui-sans-serif,system-ui,sans-serif;
-  font-size:clamp(16px,2.4vw,20px);line-height:1.55;color:#4A5D6E;
-  max-width:52ch;margin-top:18px}
+/* ===========================================================================
+   LANDING PAGE (/) — used by home.html only, scoped under body.lp.
 
-.hcards{display:grid;gap:14px;margin-top:40px}
-@media(min-width:820px){.hcards{grid-template-columns:repeat(3,1fr);gap:18px}}
-.hcard{background:#fff;border:1px solid rgba(0,42,74,.12);border-radius:14px;
-  padding:22px;box-shadow:0 12px 30px rgba(0,42,74,.07)}
-.hcard .n{display:inline-grid;place-items:center;width:30px;height:30px;
-  border-radius:9px;background:#F4AE00;color:#3A2900;
-  font-weight:700;font-size:14px;font-family:"Space Grotesk",sans-serif}
-.hcard h2{font-family:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
-  font-size:18px;font-weight:600;letter-spacing:-.015em;color:#0B2135;margin-top:14px}
-.hcard p{font-family:"Inter Tight",ui-sans-serif,system-ui,sans-serif;
-  font-size:14.5px;line-height:1.6;color:#4A5D6E;margin-top:8px}
+   Reference: irisventure.com. What that site actually is, measured rather
+   than eyeballed: ONE typeface at weight 400 everywhere (no bold at all),
+   ink #303761, a coral accent used only for small section labels, eight
+   full-viewport sections with a dot rail down the right, and a pale
+   atmospheric ground with a particle field. Its calm comes from restraint —
+   72px headings at regular weight, enormous air, almost no colour.
 
-.hact{margin-top:40px}
-.hbtn{display:inline-flex;align-items:center;justify-content:center;
-  min-height:52px;padding:0 28px;border-radius:12px;text-decoration:none;
-  color:#fff;background-color:#00426F;
-  background-image:linear-gradient(100deg,#00426F 0%,#005CA1 20%,#00426F 42%,
-                                          #00659F 64%,#00426F 100%);
-  background-size:260% 100%;
-  font-family:"Inter Tight",ui-sans-serif,system-ui,sans-serif;
-  font-size:15.5px;font-weight:600;
-  box-shadow:0 10px 24px rgba(0,42,74,.26),inset 0 0 0 1px rgba(244,174,0,.55)}
-@media (prefers-reduced-motion:no-preference){
+   Rendered here in PRAYAAN's tokens rather than IRIS's, because the brief was
+   "like this", not "be them", and the last four attempts failed on being
+   off-brand. Taken from prayaancapital.com: ground #F8F2ED warm cream, ink
+   #262239 indigo, accent #0B7ADA. Prayaan's ink and IRIS's are near-identical
+   already, so the style transfers honestly.
+
+   Constraints: img-src / font-src / style-src / script-src all 'self'. The
+   face is Instrument Sans — already self-hosted, and the closest grotesque to
+   the reference. Plus Jakarta Sans (Prayaan's real body face) would need
+   vendoring before it can be used here.
+   =========================================================================== */
+:root{
+  --i-bg:#F8F2ED;              /* Prayaan warm cream */
+  --i-bg-2:#F2ECE7;
+  --i-ink:#262239;             /* Prayaan indigo */
+  --i-ink-2:#565273;
+  --i-mute:#6A6581;
+  --i-deep:#1B1B2B;            /* dark sections */
+  --i-deep-2:#141420;
+  --i-accent:#0B7ADA;          /* Prayaan blue — labels only, as IRIS uses coral */
+  --i-line:rgba(38,34,57,.12);
+  --i-line-d:rgba(255,255,255,.14);
+
+  /* the face prayaancapital.com actually uses, now self-hosted */
+  --i-font:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --out:cubic-bezier(.16,1,.3,1);
+  --step:70ms;
 }
-.hnote{font-family:"Inter Tight",ui-sans-serif,system-ui,sans-serif;
-  font-size:13.5px;line-height:1.6;color:#4A5D6E;margin-top:16px;max-width:46ch}
+body.lp{background:var(--i-bg);color:var(--i-ink);font-family:var(--i-font);
+  -webkit-font-smoothing:antialiased}
+/* clip, not hidden: overflow-x:hidden makes this a scroll container, which
+   silently breaks position:sticky for the scroll-driven flow section */
+.lpmain{width:100%;max-width:100%;overflow-x:clip}
 
+/* full-viewport sections, gently snapped — proximity not mandatory, so a
+   reader is never trapped mid-section on a short screen */
+@media(min-width:900px) and (min-height:620px){
+  html{scroll-snap-type:y proximity}
+  .sc{scroll-snap-align:start;scroll-snap-stop:normal}
+}
+
+body.lp ::selection{background:rgba(11,122,218,.18);color:var(--i-ink)}
+body.lp :focus-visible{outline:2px solid var(--i-accent);outline-offset:3px;
+  border-radius:5px}
+body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
+
+.lwrap{max-width:1240px;margin:0 auto;padding:0 24px;position:relative;z-index:2;
+  width:100%}
+@media(min-width:800px){.lwrap{padding:0 56px}}
+
+/* ---- the label. IRIS's only use of colour: small, spaced, accent --------- */
+.lab{font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--i-accent);display:block}
+.ondark .lab{color:#6FB6F5}
+
+/* ---- floating pill nav, centred ------------------------------------------ */
+.nav{position:fixed;top:20px;left:0;right:0;z-index:30;display:flex;
+  justify-content:center;padding:0 20px;pointer-events:none}
+.navpill{display:flex;align-items:center;gap:8px 22px;flex-wrap:wrap;
+  pointer-events:auto;background:rgba(255,255,255,.62);
+  border:1px solid rgba(255,255,255,.7);border-radius:999px;
+  padding:9px 12px 9px 18px;
+  box-shadow:0 10px 34px -22px rgba(38,34,57,.6)}
+@supports (backdrop-filter:blur(6px)){
+  .navpill{backdrop-filter:blur(18px) saturate(1.3)}
+}
+.nav .lockup{display:inline-flex;align-items:center;flex:none}
+.nav .lockup img{height:22px;width:auto;display:block}
+.navacts{display:flex;align-items:center;gap:4px 20px;flex-wrap:wrap}
+.nlink{font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--i-ink-2);text-decoration:none;padding:4px 2px}
+.nlink:hover{color:var(--i-accent)}
+.nbtn{display:inline-flex;align-items:center;min-height:34px;padding:0 16px;
+  border-radius:999px;background:var(--i-ink);color:#fff;text-decoration:none;
+  font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  transition:background .5s var(--out)}
+.nbtn:hover{background:var(--i-accent)}
+@media(max-width:760px){.navacts .nlink{display:none}}
+
+/* ---- the dot rail -------------------------------------------------------- */
+.rail{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:29;
+  display:none;flex-direction:column;align-items:center;gap:0}
+@media(min-width:1000px){.rail{display:flex}}
+.rail a{display:block;padding:9px 6px;position:relative}
+.rail i{display:block;width:6px;height:6px;border-radius:50%;
+  background:rgba(38,34,57,.24);
+  transition:background .5s var(--out),transform .5s var(--out)}
+.rail a:hover i{transform:scale(1.5)}
+.rail a.on i{background:var(--i-accent);transform:scale(1.6)}
+.rail::before{content:"";position:absolute;top:14px;bottom:14px;width:1px;
+  background:rgba(38,34,57,.13);z-index:-1}
+.ondark-rail .rail i{background:rgba(255,255,255,.3)}
+.ondark-rail .rail::before{background:rgba(255,255,255,.16)}
+.ondark-rail .rail a.on i{background:#6FB6F5}
+
+/* ===========================================================================
+   SECTIONS — every one a full viewport, air first
+   =========================================================================== */
+.sc{position:relative;min-height:100dvh;display:flex;align-items:center;
+  padding:118px 0 90px;overflow:hidden}
+.sc.ondark{background:var(--i-deep);color:#fff}
+.sc.ondark p{color:rgba(255,255,255,.72)}
+
+/* the atmosphere: soft light, and a sparse particle field, both pure CSS */
+.air{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(52vw 44vw at 74% 12%, rgba(11,122,218,.13), transparent 66%),
+    radial-gradient(46vw 38vw at 12% 88%, rgba(11,122,218,.08), transparent 68%),
+    radial-gradient(70vw 56vw at 50% 46%, rgba(255,255,255,.85), transparent 72%)}
+.ondark .air{background:
+    radial-gradient(56vw 46vw at 78% 8%, rgba(11,122,218,.24), transparent 66%),
+    radial-gradient(44vw 36vw at 10% 92%, rgba(11,122,218,.14), transparent 70%)}
+.dust{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(38,34,57,.34), transparent 60%),
+    radial-gradient(1.5px 1.5px at 78% 16%, rgba(38,34,57,.28), transparent 60%),
+    radial-gradient(2px 2px at 62% 68%, rgba(11,122,218,.36), transparent 60%),
+    radial-gradient(1.5px 1.5px at 30% 76%, rgba(38,34,57,.24), transparent 60%),
+    radial-gradient(1.5px 1.5px at 88% 58%, rgba(38,34,57,.2), transparent 60%),
+    radial-gradient(2px 2px at 44% 34%, rgba(11,122,218,.28), transparent 60%),
+    radial-gradient(1.5px 1.5px at 20% 52%, rgba(38,34,57,.22), transparent 60%)}
+.ondark .dust{background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1.5px 1.5px at 78% 16%, rgba(255,255,255,.36), transparent 60%),
+    radial-gradient(2px 2px at 62% 68%, rgba(111,182,245,.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 30% 76%, rgba(255,255,255,.3), transparent 60%),
+    radial-gradient(1.5px 1.5px at 88% 58%, rgba(255,255,255,.26), transparent 60%),
+    radial-gradient(2px 2px at 44% 34%, rgba(111,182,245,.44), transparent 60%),
+    radial-gradient(1.5px 1.5px at 20% 52%, rgba(255,255,255,.3), transparent 60%)}
+/* the particle field. Sits above the wash and below the type, and is inert
+   without JS — the .dust layer stays as the static field in that case. */
+.pfield{position:absolute;inset:0;z-index:1;width:100%;height:100%;
+  pointer-events:none;display:block}
+/* the drifting CSS dust is the no-JS fallback; once the canvas is live the
+   two would read as noise on top of noise, so it steps back */
+.js-anim .hero .dust{opacity:.18}
+
+/* the ring the reference draws behind its hero */
+.ring{position:absolute;left:50%;top:46%;width:min(96vw,1040px);aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;z-index:0;pointer-events:none;
+  border:1px solid rgba(38,34,57,.09)}
+.ring::after{content:"";position:absolute;inset:13%;border-radius:50%;
+  border:1px solid rgba(38,34,57,.06)}
+
+/* ---- type scale: one weight, generous size, nothing shouting ------------- */
+.sc h1{font-size:clamp(2.7rem,6.6vw,4.6rem);font-weight:400;line-height:1.04;
+  letter-spacing:-.028em;color:var(--i-ink);max-width:15ch;text-wrap:balance}
+.sc h2{font-size:clamp(2rem,4.2vw,3.1rem);font-weight:400;line-height:1.1;
+  letter-spacing:-.024em;color:var(--i-ink);max-width:20ch;margin-top:22px;
+  text-wrap:balance}
+.sc.ondark h1,.sc.ondark h2{color:#fff}
+.sc h3{font-size:20px;font-weight:500;letter-spacing:-.012em;line-height:1.25}
+.sc p{font-size:16.5px;line-height:1.72;color:var(--i-mute);max-width:52ch}
+.sc .lead{font-size:clamp(16.5px,1.8vw,19px);margin-top:26px;max-width:54ch}
+
+.acts{display:flex;flex-wrap:wrap;gap:12px;margin-top:38px}
+.act{display:inline-flex;align-items:center;gap:12px;min-height:50px;padding:0 26px;
+  border-radius:999px;background:var(--i-ink);color:#fff;text-decoration:none;
+  font-size:14.5px;font-weight:500;letter-spacing:.01em;
+  transition:background .5s var(--out),transform .5s var(--out)}
+.act:hover{background:var(--i-accent);transform:translateY(-2px)}
+.act.wire{background:transparent;color:var(--i-ink);
+  box-shadow:inset 0 0 0 1px var(--i-line)}
+.act.wire:hover{background:rgba(38,34,57,.05);color:var(--i-ink)}
+.ondark .act{background:#fff;color:var(--i-ink)}
+.ondark .act:hover{background:var(--i-accent);color:#fff}
+.ondark .act.wire{background:transparent;color:#fff;
+  box-shadow:inset 0 0 0 1px var(--i-line-d)}
+
+/* ---- hero: headline low-left, exactly as the reference sets it ----------- */
+.hero{align-items:flex-end}
+.hero .lwrap{padding-bottom:clamp(40px,8vh,96px)}
+.hero .lab{margin-bottom:26px}
+.hero .lead{max-width:46ch}
+
+/* ---- counters strip ------------------------------------------------------ */
+.figs{display:grid;gap:1px;margin-top:clamp(44px,5vw,72px);
+  background:var(--i-line);border-top:1px solid var(--i-line);
+  border-bottom:1px solid var(--i-line)}
+@media(min-width:820px){.figs{grid-template-columns:repeat(4,1fr)}}
+.figs>div{background:var(--i-bg);padding:30px 26px 32px}
+.ondark .figs{background:var(--i-line-d);border-color:var(--i-line-d)}
+.ondark .figs>div{background:var(--i-deep)}
+.fig{font-size:clamp(2.6rem,4.6vw,3.6rem);font-weight:400;letter-spacing:-.04em;
+  line-height:1;color:var(--i-ink);font-variant-numeric:tabular-nums}
+.ondark .fig{color:#fff}
+.figl{margin-top:14px;font-size:14px;line-height:1.55;color:var(--i-mute);
+  max-width:28ch}
+.ondark .figl{color:rgba(255,255,255,.66)}
+
+/* ---- core: four capabilities, hairline-divided --------------------------- */
+.core{display:grid;gap:0;margin-top:clamp(40px,5vw,64px)}
+@media(min-width:900px){.core{grid-template-columns:repeat(4,1fr);gap:0 34px}}
+.core>div{padding:30px 0;border-top:1px solid var(--i-line-d)}
+.core h3{margin-bottom:14px;color:#fff}
+.core p{font-size:15px;line-height:1.65;max-width:34ch}
+
+/* ---- steps --------------------------------------------------------------- */
+.steps{display:grid;gap:0;margin-top:clamp(40px,5vw,64px)}
+@media(min-width:900px){.steps{grid-template-columns:repeat(3,1fr);gap:0 44px}}
+.steps>div{padding:32px 0;border-top:1px solid var(--i-line)}
+.stepn{font-size:12px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--i-accent)}
+.steps h3{margin:16px 0 14px}
+.steps ul{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+.steps li{font-size:15px;line-height:1.6;color:var(--i-mute);padding-left:18px;
+  position:relative}
+.steps li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;
+  border-radius:50%;background:var(--i-accent);opacity:.5}
+
+/* ---- split: copy beside a photograph ------------------------------------- */
+.split{display:grid;gap:40px;align-items:center;width:100%}
+@media(min-width:940px){.split{grid-template-columns:1fr 1fr;gap:clamp(48px,6vw,86px)}
+  .split.flip .scopy{order:2}}
+.shot{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;
+  box-shadow:0 30px 70px -40px rgba(38,34,57,.7)}
+.shot i{position:absolute;inset:0;display:block;background-size:cover;
+  background-position:center;transition:transform 1.6s var(--out)}
+.shot:hover i{transform:scale(1.05)}
+.s-hardware i{background-image:url("/static/img/biz-hardware.jpg")}
+.s-garments i{background-image:url("/static/img/biz-garments.jpg")}
+.s-traders i{background-image:url("/static/img/biz-traders.jpg")}
+.s-workshop i{background-image:url("/static/img/biz-workshop.jpg")}
+
+/* ---- guardrail list ------------------------------------------------------ */
+.rails{display:grid;gap:0;margin-top:clamp(36px,4.4vw,56px);max-width:74ch}
+.rails>li{list-style:none;padding:20px 0;border-top:1px solid var(--i-line);
+  font-size:16px;line-height:1.7;color:var(--i-mute)}
+.rails b{color:var(--i-ink);font-weight:500}
+.rails a{color:var(--i-accent)}
+
+/* ---- closing + footer ---------------------------------------------------- */
+.fin{text-align:center;flex-direction:column;justify-content:center}
+.fin h2{margin-left:auto;margin-right:auto;max-width:17ch}
+.fin p{margin-left:auto;margin-right:auto}
+.fin .acts{justify-content:center}
+.foot{background:var(--i-deep-2);color:rgba(255,255,255,.6);
+  padding:clamp(52px,6vw,80px) 0 40px}
+.foot .cols{display:grid;gap:34px}
+@media(min-width:760px){.foot .cols{grid-template-columns:1.7fr 1fr 1fr 1fr;gap:40px}}
+.foot .mark img{height:22px;width:auto;background:#fff;border-radius:999px;
+  padding:6px 12px;box-sizing:content-box}
+.foot .blurb{margin-top:18px;font-size:14px;line-height:1.65;
+  color:rgba(255,255,255,.46);max-width:34ch}
+.foot h4{font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.4);margin-bottom:14px}
+.foot ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.foot a{color:rgba(255,255,255,.66);text-decoration:none;font-size:14.5px}
+.foot a:hover{color:#6FB6F5}
+.foot .fine{margin-top:clamp(38px,5vw,58px);padding-top:24px;
+  border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;line-height:1.7;
+  color:rgba(255,255,255,.42);max-width:84ch}
+.foot .fine strong{color:rgba(255,255,255,.62)}
+
+/* ---- the referral flow, animated ------------------------------------------
+   A real <ol>, so a screen reader gets five plain steps in order. Sighted
+   users additionally get a token travelling the track, each stage lighting as
+   it passes, and the two reward chips landing at the end — because only the
+   last step pays, and that is the point the animation has to make.
+   All CSS: no library, no script, and inert under Reduce Motion. */
+.flow{margin-top:clamp(42px,5vw,68px);position:relative}
+/* the illustrations sit above the track, each stroked in its stage's colour */
+.fart{display:block;height:44px;margin-bottom:18px}
+.fart svg{width:40px;height:40px;display:block;fill:none;stroke:currentColor;
+  stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;
+  color:var(--stage,var(--i-accent));opacity:.92}
+/* track sits below the art row, level with the numbered dots */
+.ftrack{position:absolute;left:0;right:0;top:75px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--i-line) 6%,
+                             var(--i-line) 94%,transparent);
+  overflow:hidden;display:none}
+@media(min-width:900px){.ftrack{display:block}}
+.ftoken{position:absolute;top:-4px;left:0;width:10px;height:10px;border-radius:50%;
+  background:var(--i-accent);box-shadow:0 0 0 5px rgba(11,122,218,.16);opacity:0}
+.fsteps{list-style:none;margin:0;padding:0;display:grid;gap:26px;
+  counter-reset:fstep}
+@media(min-width:900px){.fsteps{grid-template-columns:repeat(5,1fr);gap:0 22px}}
+.fstep{position:relative;padding-top:0}
+.fdot{display:block;width:28px;height:28px;border-radius:50%;
+  background:var(--i-bg);border:2px solid var(--i-line);position:relative;z-index:2;
+  display:grid;place-items:center;
+  font-size:11px;font-weight:600;color:var(--i-mute);
+  transition:border-color .5s var(--out),background .5s var(--out),
+             color .5s var(--out),transform .5s var(--out)}
+.fstep b{display:block;margin-top:16px;font-size:16px;font-weight:500;
+  color:var(--i-ink);letter-spacing:-.01em}
+.fstep span.fsub{display:block;margin-top:7px;font-size:14px;line-height:1.55;
+  color:var(--i-mute);max-width:22ch}
+/* the two chips that land when a loan is disbursed */
+.fwin{display:inline-block;margin-top:12px;padding:4px 11px;border-radius:999px;
+  font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:#0A5FA6;background:rgba(11,122,218,.12);
+  border:1px solid rgba(11,122,218,.28);opacity:0}
+.flownote{margin-top:clamp(28px,3.4vw,44px);font-size:15px;line-height:1.7;
+  color:var(--i-mute);max-width:64ch}
+.flownote a{color:var(--i-accent)}
+
+/* The scroll-driven version: the section is tall, the stage inside it is
+   sticky, and the reader advances the five steps themselves by scrolling —
+   the token crosses, the track fills behind it, each step wakes as it is
+   reached, and the two reward chips only land once disbursal is passed.
+   Scrubbed by a named view-timeline, so the browser runs it off the main
+   thread; no library and no scroll listener. The timed loop below remains the
+   fallback wherever scroll timelines are unsupported. */
+/* snap is deliberately off here: it would yank the reader back to the section
+   start mid-scrub and make the sequence jump */
+.sc.tall{display:block;min-height:0;padding:0;overflow:visible;
+  scroll-snap-align:none}
+.flowscroll{position:relative;height:340vh}
+.flowstage{position:sticky;top:0;min-height:100dvh;display:flex;align-items:center;
+  padding:118px 0 90px}
+/* Each stage owns a colour, and the journey runs through them: blue while the
+   link is moving, indigo when Prayaan picks it up, amber while the loan is
+   being assessed, green on disbursal. Four serious hues, not a rainbow — it
+   reads as a lending pipeline because that is what it is. */
+.f1{--stage:#0B7ADA}
+.f2{--stage:#0B7ADA}
+.f3{--stage:#3E5BD9}
+.f4{--stage:#B57A12}
+.f5{--stage:#157F52}
+.ffill{position:absolute;left:0;top:0;height:100%;width:0;
+  background:#0B7ADA;transform-origin:0 50%}
+/* the token carries its colour in `color`, so the head and its trail shift
+   together with one animated property */
+.ftoken{color:#0B7ADA;background:currentColor;
+  box-shadow:0 0 0 5px rgba(11,122,218,.16)}
+.ftoken::after{content:"";position:absolute;right:100%;top:50%;
+  width:130px;height:2px;transform:translateY(-50%);
+  background:linear-gradient(90deg,transparent,currentColor);opacity:.65}
+/* the ground itself takes the stage colour — currentColor inside the gradient
+   means animating one property repaints the whole wash */
+.fwash{position:absolute;inset:0;z-index:0;pointer-events:none;
+  color:rgba(11,122,218,.16);
+  background:radial-gradient(58vw 46vw at 50% 48%,currentColor,transparent 72%)}
+
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference){
+    .flowscroll{view-timeline-name:--flow;view-timeline-axis:block}
+
+    /* every piece reads the same timeline; the slice each one occupies is set
+       once per step below, for the step and its dot together */
+    .lp .fstep,.lp .fstep .fdot{animation-timeline:--flow}
+    .lp .fstep{animation-name:stepOn;animation-timing-function:linear;
+      animation-fill-mode:both}
+    .lp .fstep .fdot{animation-name:dotOn;animation-timing-function:linear;
+      animation-fill-mode:both}
+    @keyframes stepOn{from{opacity:.3;transform:translateY(12px)}
+                      to{opacity:1;transform:none}}
+    /* --stage is inherited from the step, so each dot lands on its own colour */
+    @keyframes dotOn{
+      from{border-color:var(--i-line);background:var(--i-bg);
+           color:var(--i-mute);transform:scale(1)}
+      to{border-color:var(--stage);background:var(--stage);
+         color:#fff;transform:scale(1.14)}}
+    .lp .f1,.lp .f1 .fdot{animation-range:contain 3% contain 15%}
+    .lp .f2,.lp .f2 .fdot{animation-range:contain 21% contain 33%}
+    .lp .f3,.lp .f3 .fdot{animation-range:contain 39% contain 51%}
+    .lp .f4,.lp .f4 .fdot{animation-range:contain 57% contain 69%}
+    .lp .f5,.lp .f5 .fdot{animation-range:contain 75% contain 87%}
+
+    .lp .ftoken{animation:ftokScroll linear both;animation-timeline:--flow;
+      animation-range:contain 3% contain 87%}
+    /* travel and colour in one animation: the head moves left to right while
+       its colour walks the pipeline, and the trail follows because both read
+       currentColor */
+    @keyframes ftokScroll{
+      0%{left:0;color:#0B7ADA}
+      28%{color:#0B7ADA}
+      48%{color:#3E5BD9}
+      70%{color:#B57A12}
+      88%{color:#157F52}
+      100%{left:100%;color:#157F52}}
+    .lp .ffill{animation:ffill linear both;animation-timeline:--flow;
+      animation-range:contain 3% contain 87%}
+    @keyframes ffill{
+      0%{width:0;background:#0B7ADA}
+      28%{background:#0B7ADA}
+      48%{background:#3E5BD9}
+      70%{background:#B57A12}
+      88%{background:#157F52}
+      100%{width:100%;background:#157F52}}
+    /* the section's own light changes with the stage */
+    .lp .fwash{animation:fwash linear both;animation-timeline:--flow;
+      animation-range:contain 0% contain 95%}
+    @keyframes fwash{
+      0%{color:rgba(11,122,218,.16)}
+      45%{color:rgba(62,91,217,.17)}
+      70%{color:rgba(181,122,18,.16)}
+      100%{color:rgba(21,127,82,.21)}}
+
+    /* both chips land together, and only after disbursal */
+    .lp .fwin{animation:fwinScroll linear both;animation-timeline:--flow;
+      animation-range:contain 84% contain 93%}
+    @keyframes fwinScroll{from{opacity:0;transform:translateY(8px) scale(.94)}
+                          to{opacity:1;transform:none}}
+
+    /* the heading holds while the steps run, then releases with the section */
+    .lp .flowhead{animation:flowHead linear both;animation-timeline:--flow;
+      animation-range:contain 88% contain 100%}
+    @keyframes flowHead{from{opacity:1}to{opacity:.55}}
+  }
+}
+
+@media (prefers-reduced-motion:no-preference){
+  /* Fallback for browsers without scroll timelines: the same sequence on an
+     11s clock, so the section still explains itself. */
+  .ftoken{animation:ftok 11s var(--out) infinite}
+  @keyframes ftok{
+    0%,3%{left:0;opacity:0}
+    6%{opacity:1}
+    72%{left:100%;opacity:1}
+    78%,100%{left:100%;opacity:0}}
+  .fstep .fdot{animation:fdot 11s linear infinite}
+  .f1 .fdot{animation-delay:0s}
+  .f2 .fdot{animation-delay:1.6s}
+  .f3 .fdot{animation-delay:3.2s}
+  .f4 .fdot{animation-delay:4.8s}
+  .f5 .fdot{animation-delay:6.4s}
+  @keyframes fdot{
+    0%,2%{border-color:var(--i-line);background:var(--i-bg);color:var(--i-mute);
+      transform:scale(1)}
+    6%{border-color:var(--stage);background:var(--stage);color:#fff;
+      transform:scale(1.18)}
+    16%{border-color:var(--stage);background:var(--stage);color:#fff;
+      transform:scale(1)}
+    34%,100%{border-color:rgba(11,122,218,.4);background:var(--i-bg);
+      color:var(--i-accent);transform:scale(1)}}
+  .fwin{animation:fwin 11s var(--out) infinite}
+  .f1 .fwin{animation-delay:.15s}
+  @keyframes fwin{
+    0%,66%{opacity:0;transform:translateY(6px) scale(.94)}
+    74%{opacity:1;transform:none}
+    92%{opacity:1;transform:none}
+    100%{opacity:0;transform:translateY(6px) scale(.94)}}
+}
+
+/* ---- motion: slow, single, never bouncy ---------------------------------- */
+.navsentinel{position:absolute;top:0;left:0;width:1px;height:1px}
+.scrollline{position:fixed;top:0;left:0;z-index:40;height:2px;width:100%;
+  transform:scaleX(0);transform-origin:0 50%;pointer-events:none;
+  background:var(--i-accent);opacity:.7}
+
+@media (prefers-reduced-motion:no-preference){
+  .js-anim .reveal [data-stagger]>*{
+    opacity:0;transform:translateY(22px);
+    transition:opacity .9s var(--out),transform 1s var(--out);
+    transition-delay:calc(var(--i,0) * var(--step))}
+  .js-anim .reveal.in [data-stagger]>*{opacity:1;transform:none}
+  /* the particle field drifts, very slowly — the only perpetual motion */
+  .dust{animation:dustDrift 46s linear infinite alternate}
+  @keyframes dustDrift{to{transform:translate3d(-18px,-14px,0) scale(1.04)}}
+}
+
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference){
+    .scrollline{animation:progress linear both;animation-timeline:scroll(root)}
+    @keyframes progress{to{transform:scaleX(1)}}
+    .shot i{animation:shotDrift linear both;
+      animation-timeline:view();animation-range:cover 0% cover 100%}
+    @keyframes shotDrift{from{transform:scale(1.1) translateY(-2%)}
+                         to{transform:scale(1.02) translateY(2%)}}
+  }
+}
 /* ---- standing pages (privacy, grievance, referral terms, report) ---------- */
 .doc{padding:36px 0 64px;background:var(--bg)}
 @media(min-width:900px){.doc{padding:56px 0 88px}}
@@ -605,11 +1038,13 @@ a,button,input,select,textarea,label{touch-action:manipulation}
 .doc .docref{color:#4A5D6E;font-size:14px}
 /* Unresolved facts are marked, never invented — a grievance page carrying a
    made-up officer's name is a fabricated regulatory record. */
-.doc .todo{background:rgba(244,174,0,.14);border:1px solid rgba(244,174,0,.55);
-  border-left:4px solid #F4AE00;border-radius:10px;padding:14px 16px;
-  color:#4A3A10;font-size:14.5px}
-.doc .warn{background:#fff;border:1px solid rgba(0,92,161,.35);
-  border-left:4px solid #005CA1;border-radius:10px;padding:14px 16px;color:#0B2135}
+/* Tint and a hairline carry the meaning. The 4px colour bar these used to have
+   on one side is the most recognisable tell of a generated interface, and on a
+   rounded box the straight edge fights the corner radius anyway. */
+.doc .todo{background:rgba(244,174,0,.13);border:1px solid rgba(244,174,0,.5);
+  border-radius:10px;padding:14px 16px;color:#4A3A10;font-size:14.5px}
+.doc .warn{background:rgba(0,92,161,.05);border:1px solid rgba(0,92,161,.3);
+  border-radius:10px;padding:14px 16px;color:#0B2135}
 
 
 /* ---- 404 page ------------------------------------------------------------- */

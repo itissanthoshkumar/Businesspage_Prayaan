@@ -15,7 +15,7 @@ import io
 import json
 import os
 import secrets
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlencode
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -78,6 +78,17 @@ def _session(request: Request):
     return sess
 
 
+def _open_reports() -> int:
+    """Badge count for the Reports tab. A takedown request is a clock, so the
+    number belongs in the chrome of every screen rather than only on the one
+    nobody opens. Never allowed to break a page render: a storage hiccup here
+    costs a badge, not the back-office."""
+    try:
+        return int(store.open_report_count())
+    except Exception:                                   # noqa: BLE001
+        return 0
+
+
 def _render(request: Request, template: str, session, **ctx):
     # A temp-password holder sees exactly one screen until they set their own.
     if (session and template != "password.html"
@@ -85,7 +96,8 @@ def _render(request: Request, template: str, session, **ctx):
         return RedirectResponse(url="/admin/password", status_code=303)
     base = {"request": request, "session": session, "base_url": BASE_URL,
             "csrf": auth.csrf_token(session), "nav": ctx.pop("nav", ""),
-            "maker_checker": MAKER_CHECKER}
+            "maker_checker": MAKER_CHECKER,
+            "open_reports": _open_reports() if session else 0}
     base.update(ctx)
     return _templates.TemplateResponse("admin/" + template, base)
 
@@ -361,16 +373,93 @@ def admin_root(request: Request):
     return RedirectResponse(url="/admin/pages", status_code=303)
 
 
+# Sort orders offered on the Pages screen: (row key, reverse). A whitelist
+# rather than a passthrough — the value arrives in a query string, and an
+# unknown one falls back to the default instead of reaching the data layer.
+PAGE_SORTS = {
+    "updated_desc": ("updated_at", True),
+    "updated_asc": ("updated_at", False),
+    "created_desc": ("created_at", True),
+    "created_asc": ("created_at", False),
+    "name_asc": ("business_name", False),
+    "name_desc": ("business_name", True),
+}
+PAGE_SORT_LABELS = [
+    ("updated_desc", "Recently updated"),
+    ("updated_asc", "Longest untouched"),
+    ("created_desc", "Newest page"),
+    ("created_asc", "Oldest page"),
+    ("name_asc", "Name A–Z"),
+    ("name_desc", "Name Z–A"),
+]
+DEFAULT_PAGE_SORT = "updated_desc"
+
+
+def _clean_date(value):
+    """'YYYY-MM-DD' or None. Timestamps are stored as IST strings in exactly
+    this shape, so a validated date can be compared as text — no parsing of
+    every row just to filter a list."""
+    import datetime as _dt
+    v = str(value or "").strip()[:10]
+    try:
+        _dt.datetime.strptime(v, "%Y-%m-%d")
+        return v
+    except ValueError:
+        return None
+
+
 @router.get("/pages", response_class=HTMLResponse)
 def pages_list(request: Request):
     session = _session(request)
     if not session:
         return _login_redirect()
-    status = request.query_params.get("status") or None
-    q = request.query_params.get("q") or None
+    p = request.query_params
+
+    status = (p.get("status") or "").strip().lower()
+    if status not in store.PAGE_STATUSES:
+        status = ""
+    q = (p.get("q") or "").strip()[:80]
+    date_from = _clean_date(p.get("from"))
+    date_to = _clean_date(p.get("to"))
+    sort = p.get("sort") if p.get("sort") in PAGE_SORTS else DEFAULT_PAGE_SORT
+
+    # ONE fetch, then count and filter here. The tiles must total the WHOLE
+    # book while the table shows a single slice of it; counting with a second
+    # round-trip would let the headline numbers drift from the rows on screen.
+    rows = store.list_pages(limit=2000)
+    counts = {"total": len(rows), "live": 0, "draft": 0, "removed": 0}
+    for r in rows:
+        if r.get("status") in counts:
+            counts[r["status"]] += 1
+
+    sel = rows
+    if status:
+        sel = [r for r in sel if r.get("status") == status]
+    if q:
+        needle = q.lower()
+        sel = [r for r in sel
+               if needle in " ".join(str(r.get(k) or "") for k in
+                                     ("business_name", "owner_name", "path")).lower()]
+    if date_from:
+        sel = [r for r in sel if str(r.get("updated_at") or "")[:10] >= date_from]
+    if date_to:
+        sel = [r for r in sel if str(r.get("updated_at") or "")[:10] <= date_to]
+
+    key, reverse = PAGE_SORTS[sort]
+    sel = sorted(sel, key=lambda r: str(r.get(key) or "").lower(), reverse=reverse)
+
+    # Every filter except the status tile, pre-encoded: the tiles are links, so
+    # clicking one must keep the search, dates and sort the user already set.
+    keep = urlencode([(k, v) for k, v in (
+        ("q", q), ("from", date_from), ("to", date_to),
+        ("sort", sort if sort != DEFAULT_PAGE_SORT else "")) if v])
+
     return _render(request, "pages.html", session, nav="pages",
-                   pages=store.list_pages(status=status, q=q),
-                   status=status or "", q=q or "",
+                   pages=sel, counts=counts, status=status, q=q,
+                   date_from=date_from or "", date_to=date_to or "",
+                   sort=sort, sort_labels=PAGE_SORT_LABELS, keep=keep,
+                   filtered=bool(status or q or date_from or date_to
+                                 or sort != DEFAULT_PAGE_SORT),
                    statuses=store.PAGE_STATUSES)
 
 

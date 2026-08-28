@@ -1,49 +1,83 @@
 {% extends "admin/_shell.html" %}
 {% block title %}Leads{% endblock %}
 {% block body %}
-<div class="head">
-  <h1>Leads</h1>
-  <a class="btn" href="/admin/leads.csv{% if status %}?status={{ status }}{% endif %}">Export CSV</a>
+{% set new_n = leads|selectattr('status','equalto','NEW')|list|length %}
+<div class="stagger">
+
+  <div class="head">
+    <div class="headtext">
+      <span class="eyebrow">Enquiries</span>
+      <h1>Leads</h1>
+      {% if leads %}
+      <p class="headsub">{{ leads|length }} enquir{{ 'y' if leads|length == 1 else 'ies' }}{% if new_n %},
+        <b>{{ new_n }}</b> not picked up yet{% endif %}. Each one came from a
+        customer's page — the referring business is credited on the row.</p>
+      {% endif %}
+    </div>
+    <div class="headacts">
+      <a class="btn" href="/admin/leads.csv{% if status %}?status={{ status }}{% endif %}">Export CSV</a>
+    </div>
+  </div>
+
+  <form class="filters" method="get" action="/admin/leads" role="search">
+    <input name="q" type="text" value="{{ q }}" placeholder="Search name, mobile or referring business"
+           aria-label="Search leads">
+    <select name="status" aria-label="Filter by status">
+      <option value="">All statuses</option>
+      {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+  </form>
+
+  {% if not leads %}
+  <div class="empty e-leads">
+    {% if q or status %}
+    <b>No lead matches that search</b>
+    <p><a href="/admin/leads">Clear the filters</a> to see every enquiry.</p>
+    {% else %}
+    <b>No enquiries yet</b>
+    <p>A lead arrives the moment someone fills the form on a live business page.
+      Share a page on WhatsApp and they start landing here.</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="tablewrap"><div class="tablescroll"><table class="grid">
+    <thead><tr>
+      <th>Received</th><th>Person</th><th>Referred by</th><th>Working it</th>
+    </tr></thead>
+    <tbody>
+    {% for l in leads %}
+    <tr>
+      <td class="sub mono">{{ l.at }}
+        {% if l.status == 'NEW' and l.age_hours is not none and l.age_hours >= 24 %}
+        <span class="agewarn">{{ l.age_hours }}h waiting</span>
+        {% endif %}</td>
+      <td>
+        <span class="rowname">{{ l.name }}</span>
+        <span class="sub"><a class="mono" href="tel:{{ l.mobile }}">{{ l.mobile }}</a>{% if l.pincode %} &middot; {{ l.pincode }}{% endif %}</span>
+      </td>
+      <td>{{ l.referrer_business_name or '—' }}
+        {% if l.via %}<span class="viachip">{{ 'WhatsApp' if l.via == 'wa' else 'QR' }}</span>{% endif %}
+        <span class="sub"><code>{{ l.source_path or '' }}</code></span></td>
+      <td>
+        <form method="post" action="/admin/leads/{{ l.id }}" class="leadform">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="status_filter" value="{{ status }}">
+          <select name="status" aria-label="Lead status">
+            {% for s in statuses %}<option value="{{ s }}" {% if l.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+          </select>
+          <input name="assigned_branch" value="{{ l.assigned_branch or '' }}" placeholder="Branch"
+                 maxlength="40" aria-label="Assigned branch">
+          <input name="cs_notes" value="{{ l.cs_notes or '' }}" placeholder="Notes"
+                 maxlength="300" aria-label="Notes">
+          <button type="submit">Save</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div></div>
+  {% endif %}
+
 </div>
-<form class="filters" method="get" action="/admin/leads">
-  <input name="q" type="text" value="{{ q }}" placeholder="Name, mobile or referring business">
-  <select name="status">
-    <option value="">All statuses</option>
-    {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
-  </select>
-  <button type="submit">Filter</button>
-</form>
-{% if not leads %}
-<p class="empty">No leads yet. They arrive when someone submits the form on a live page.</p>
-{% else %}
-<div class="tablewrap"><table class="grid">
-  <thead><tr><th>Received</th><th>Person</th><th>Referred by</th><th>Working it</th></tr></thead>
-  <tbody>
-  {% for l in leads %}
-  <tr>
-    <td class="sub">{{ l.at }}
-      {% if l.status == 'NEW' and l.age_hours is not none and l.age_hours >= 24 %}
-      <span class="agewarn">{{ l.age_hours }}h waiting</span>
-      {% endif %}</td>
-    <td><b>{{ l.name }}</b><span class="sub"><a href="tel:{{ l.mobile }}">{{ l.mobile }}</a>{% if l.pincode %} · {{ l.pincode }}{% endif %}</span></td>
-    <td>{{ l.referrer_business_name or '—' }}
-      {% if l.via %}<span class="viachip">{{ 'WhatsApp' if l.via == 'wa' else 'QR' }}</span>{% endif %}
-      <span class="sub"><code>{{ l.source_path or '' }}</code></span></td>
-    <td>
-      <form method="post" action="/admin/leads/{{ l.id }}" class="leadform">
-        <input type="hidden" name="csrf" value="{{ csrf }}">
-        <input type="hidden" name="status_filter" value="{{ status }}">
-        <select name="status">
-          {% for s in statuses %}<option value="{{ s }}" {% if l.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
-        </select>
-        <input name="assigned_branch" value="{{ l.assigned_branch or '' }}" placeholder="Branch" maxlength="40">
-        <input name="cs_notes" value="{{ l.cs_notes or '' }}" placeholder="Notes" maxlength="300">
-        <button type="submit">Save</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table></div>
-{% endif %}
 {% endblock %}

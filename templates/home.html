@@ -1,113 +1,359 @@
 {# Landing page at /.
 
-   The root used to return the same "page is not available" screen as a mistyped
-   URL, because the service only ever served per-customer paths. Anyone who
-   trimmed a shared link back to the domain — a normal thing to do — hit a dead
-   end on an RBI-registered lender's own address.
+   POSITIONING: this is a referral programme with a page as its vehicle, not a
+   goodwill exercise. Two wins drive it —
 
-   There is deliberately NO list of businesses here. Publishing a directory would
-   hand anyone a roster of Prayaan's customers in a single request, which is the
-   very thing the identical 404 on every unknown path exists to prevent. #}
+     the customer  : a free page for their business, AND a referral reward when
+                     someone they introduce takes a loan;
+     Prayaan       : leads sourced from the market rather than from branch ROs
+                     alone.
+
+   The customer's win is what this page sells. Prayaan's win is the business
+   case and belongs in a leadership deck, not in front of a shop owner, so it
+   appears here only as the one honest line about why Prayaan built it.
+
+   The reward is stated GENERICALLY and linked to /referral-terms, which is
+   already published and says the same thing. No amount appears here: the
+   amount, the tax treatment, and compliance's confirmation that paying
+   customers per disbursed referral does not make them unregistered sourcing
+   agents are all still open on that page. Nothing about the reward is invented.
+
+   Design reference: irisventure.com — one face at weight 400, a single accent
+   used only on small labels, full-viewport sections, a dot rail, and a pale
+   atmospheric ground. Rendered in Prayaan's tokens (ground #F8F2ED, ink
+   #262239, accent #0B7ADA) taken from prayaancapital.com.
+
+   There is deliberately NO list of businesses here. A directory would hand
+   anyone a roster of Prayaan's customers in one request. The example shop is
+   invented; photographs are the bundled demo set, never a customer upload.
+
+   img-src / font-src / style-src / script-src are all 'self'. #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prayaan Business Pages</title>
-<meta name="description" content="Every Prayaan Capital customer gets a page for their business — the shop, what they do, and how to reach them.">
+<meta name="description" content="Every Prayaan Capital customer gets a free page for their business. Share it, and when someone you introduce takes a loan, you earn a referral reward.">
 <link rel="canonical" href="{{ base_url }}/">
 <link rel="stylesheet" href="/static/fonts/fonts.css">
-
 <link rel="stylesheet" href="/static/site.css">
+<script src="/static/reveal.js"></script>
+<script src="/static/particles.js" defer></script>
 </head>
-<body>
+<body class="lp">
+<div class="scrollline" aria-hidden="true"></div>
+<span class="navsentinel" aria-hidden="true"></span>
 
-<header class="topbar">
-  <div class="wrap">
-    <div class="brandrow">
-      <div class="brandid">
-        <a class="lockup" href="https://www.prayaancapital.com" aria-label="Prayaan Capital — Business Page">
-          <picture>
-            <source srcset="/static/img/prayaan-logo-full.webp" type="image/webp">
-            <img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30">
-          </picture>
-          <span class="lockdiv" aria-hidden="true"></span>
-          <span class="locktxt">Business Page</span>
-        </a>
-        <span class="regd">RBI-registered NBFC</span>
-      </div>
-    </div>
+<header class="nav">
+  <div class="navpill">
+    <a class="lockup" href="https://www.prayaancapital.com" aria-label="Prayaan Capital">
+      <picture>
+        <source srcset="/static/img/prayaan-logo-full.webp" type="image/webp">
+        <img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30">
+      </picture>
+    </a>
+    <nav class="navacts" aria-label="Site">
+      <a class="nlink" href="#reward">The reward</a>
+      <a class="nlink" href="#how">How it works</a>
+      <a class="nlink" href="#page">Your page</a>
+      <a class="nlink" href="#rules">The rules</a>
+      <a class="nbtn" href="/admin/login">Sign in</a>
+    </nav>
   </div>
 </header>
 
-<main class="home">
-  <div class="wrap">
-    <p class="eyebrow">Prayaan Business Pages</p>
-    <h1>Every Prayaan customer gets a page for their&nbsp;business.</h1>
-    <p class="hlede">A page of their own — the shop, what they do, how to reach
-      them — at a link they can share with anyone.</p>
+<nav class="rail" aria-label="Sections">
+  <a href="#top" data-dot aria-label="Opening"><i></i></a>
+  <a href="#reward" data-dot aria-label="The reward"><i></i></a>
+  <a href="#how" data-dot aria-label="How the referral works"><i></i></a>
+  <a href="#page" data-dot aria-label="Your page"><i></i></a>
+  <a href="#tiers" data-dot aria-label="Standing"><i></i></a>
+  <a href="#rules" data-dot aria-label="The rules"><i></i></a>
+  <a href="#close" data-dot aria-label="Get started"><i></i></a>
+</nav>
 
-    <div class="hcards">
-      <div class="hcard">
-        <span class="n">1</span>
-        <h2>A page for the business</h2>
-        <p>The photograph, what they sell, how long they have been going, and
-          their phone numbers — one tap to call.</p>
-      </div>
-      <div class="hcard">
-        <span class="n">2</span>
-        <h2>Shared by the owner</h2>
-        <p>A short link that opens properly on WhatsApp, showing the shop's own
-          name and picture in the preview.</p>
-      </div>
-      <div class="hcard">
-        <span class="n">3</span>
-        <h2>A way in for their circle</h2>
-        <p>Anyone who sees it can ask Prayaan about a loan against property. Our
-          team calls back — there is no application on the page.</p>
+<main class="lpmain">
+
+  <!-- 01 — the offer -->
+  <section class="sc hero reveal" id="top">
+    <div class="air" aria-hidden="true"></div>
+    <div class="ring" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <canvas id="pfield" class="pfield" aria-hidden="true"></canvas>
+    <div class="lwrap" data-stagger>
+      <span class="lab">Prayaan Business Pages</span>
+      <h1>A page for your shop, and a reward when it brings someone in.</h1>
+      <p class="lead">Every Prayaan Capital customer gets a page for their
+        business, free. Share it — and when someone you introduce takes a loan,
+        you earn a referral reward.</p>
+      <div class="acts">
+        <a class="act" href="https://www.prayaancapital.com">Talk to Prayaan Capital</a>
+        <a class="act wire" href="#how">See how the referral works</a>
       </div>
     </div>
+  </section>
 
-    <div class="hact">
-      <a class="hbtn" href="https://www.prayaancapital.com">Talk to Prayaan Capital</a>
-      {% if public_directory %}
-      <a class="hbtn ghost" href="/browse">Browse businesses</a>
-      {% endif %}
-      <p class="hnote">
-        {% if public_directory %}Browsing all live pages is for testing and is hidden before launch.
-        {% else %}Looking for a particular business? Open the link its owner sent you — pages are not listed here.{% endif %}</p>
+  <!-- 02 — the two wins, stated plainly -->
+  <section class="sc reveal" id="reward">
+    <div class="air" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <div class="lwrap split" data-stagger>
+      <div class="scopy">
+        <span class="lab">What you get</span>
+        <h2>A free page that can pay you back.</h2>
+        <p class="lead">Search for most small businesses and there is nothing —
+          no photograph, no timings, no number that dials. The page fixes that,
+          and costs you nothing.</p>
+        <p class="lead">Then it keeps working. Anyone who opens your link and
+          needs a loan can leave their number on it. If their loan is disbursed,
+          <b>you</b> earn a referral reward — you made the introduction. They
+          get the loan they came for, on the terms they were quoted.</p>
+        <p class="lead"><a href="/referral-terms">Read the referral terms</a> —
+          what is earned, when, and what it is not.</p>
+      </div>
+      <div class="shot s-hardware"><i></i></div>
     </div>
+  </section>
 
-    {% if show_switcher %}
-    {# REVIEW ONLY — never rendered in production (PBN_SHOW_SWITCHER=false).
-       The gallery lists every live business, which is precisely the directory
-       the public root withholds. #}
+  <!-- 03 — HOW THE REFERRAL WORKS (scroll-driven) ------------------------
+       The wrapper is tall and the stage inside it is sticky, so the reader
+       advances the five steps by scrolling through the section rather than
+       waiting on a clock. Scrubbed by a named view-timeline. -->
+  <section class="sc tall reveal" id="how">
+    <div class="flowscroll">
+      <div class="flowstage">
+        <div class="air" aria-hidden="true"></div>
+        {# the ground takes the colour of whichever stage the reader is on #}
+        <div class="fwash" aria-hidden="true"></div>
+        <div class="dust" aria-hidden="true"></div>
+        <div class="lwrap">
+          <div class="flowhead">
+            <span class="lab">How the referral works</span>
+            <h2>Five steps, and only the last one pays.</h2>
+          </div>
+      <div class="flow">
+        <div class="ftrack" aria-hidden="true"><span class="ffill"></span><span class="ftoken"></span></div>
+        {# Illustrations are authored inline SVG, stroked in currentColor so each
+           one takes its own stage colour. No image request, nothing external. #}
+        <ol class="fsteps">
+          <li class="fstep f1">
+            <span class="fart" aria-hidden="true"><svg viewBox="0 0 40 40">
+              <rect x="6" y="5" width="17" height="26" rx="3"/>
+              <path d="M10 12h9M10 17h6"/>
+              <path d="M23 25l9-9M32 16h-6M32 16v6"/></svg></span>
+            <span class="fdot" aria-hidden="true">1</span>
+            <b>You share your page</b>
+            <span class="fsub">One tap opens WhatsApp. Family, your groups,
+              your regular customers.</span>
+            <span class="fwin" aria-hidden="true">You earn</span>
+          </li>
+          <li class="fstep f2">
+            <span class="fart" aria-hidden="true"><svg viewBox="0 0 40 40">
+              <circle cx="14" cy="14" r="5"/>
+              <path d="M5 33c0-5 4-9 9-9s9 4 9 9"/>
+              <path d="M25 5h11v9h-5l-3 3v-3h-3z"/></svg></span>
+            <span class="fdot" aria-hidden="true">2</span>
+            <b>Someone needs a loan</b>
+            <span class="fsub">They open your link and leave a name and a
+              number. Nothing more.</span>
+          </li>
+          <li class="fstep f3">
+            <span class="fart" aria-hidden="true"><svg viewBox="0 0 40 40">
+              <path d="M9 7h5l2 6-3 2a15 15 0 0 0 7 7l2-3 6 2v5a2 2 0 0 1-2 2A22 22 0 0 1 7 9a2 2 0 0 1 2-2z"/>
+              <path d="M26 6a10 10 0 0 1 8 8"/>
+              <path d="M25 12a5 5 0 0 1 3 3"/></svg></span>
+            <span class="fdot" aria-hidden="true">3</span>
+            <b>Prayaan calls them</b>
+            <span class="fsub">A person from the branch, not a form. The
+              enquiry arrives credited to your page.</span>
+          </li>
+          <li class="fstep f4">
+            <span class="fart" aria-hidden="true"><svg viewBox="0 0 40 40">
+              <path d="M8 4h13l6 6v9"/><path d="M8 4v28h10"/>
+              <path d="M21 4v6h6"/><path d="M12 14h9M12 19h6"/>
+              <circle cx="26" cy="26" r="6.5"/><path d="M30.8 30.8L35 35"/></svg></span>
+            <span class="fdot" aria-hidden="true">4</span>
+            <b>The loan is assessed</b>
+            <span class="fsub">On its own merits. Your referral does not change
+              the decision or the terms.</span>
+          </li>
+          <li class="fstep f5">
+            <span class="fart" aria-hidden="true"><svg viewBox="0 0 40 40">
+              <path d="M20 3v9M16.5 8.5L20 12l3.5-3.5"/>
+              <circle cx="20" cy="25" r="11"/>
+              <path d="M15 20h10M15 24h10M22 20c0 4-3.5 4-7 4l8 7"/></svg></span>
+            <span class="fdot" aria-hidden="true">5</span>
+            <b>It is disbursed</b>
+            <span class="fsub">They get their loan. Only now is your referral
+              reward earned.</span>
+          </li>
+        </ol>
+      </div>
+      <p class="flownote">No reward is earned on an enquiry, on an application,
+        or on a sanction — only on disbursal. It is never a fee you pay, and
+        referring someone does not make you an agent of Prayaan Capital.
+        <a href="/referral-terms">Full terms</a>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 — what the page itself carries -->
+  <section class="sc ondark reveal" id="page">
+    <div class="air" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <div class="lwrap" data-stagger>
+      <span class="lab">Your page</span>
+      <h2>Your page holds four things.</h2>
+      <div class="core">
+        <div>
+          <h3>The shop</h3>
+          <p>One photograph, its EXIF and GPS stripped before it is ever stored.</p>
+        </div>
+        <div>
+          <h3>The trade</h3>
+          <p>What you sell, the years you have been open, the hours you keep.</p>
+        </div>
+        <div>
+          <h3>The number</h3>
+          <p>Up to two mobile numbers, one tap to dial. No form to reach you.</p>
+        </div>
+        <div>
+          <h3>The enquiry</h3>
+          <p>A name and a number from anyone who needs a loan. That is the
+            referral.</p>
+        </div>
+      </div>
+      <div class="figs">
+        <div><div class="fig">1</div><div class="figl">link that is yours — the only way in, because there is no directory</div></div>
+        <div><div class="fig">0</div><div class="figl">cost to you, to build it or to share it</div></div>
+        <div><div class="fig">2</div><div class="figl">fields on the enquiry: a name and a number</div></div>
+        <div><div class="fig">100%</div><div class="figl">of pages carry your recorded consent before going live</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 — standing -->
+  <section class="sc reveal" id="tiers">
+    <div class="air" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <div class="lwrap split flip" data-stagger>
+      <div class="scopy">
+        <span class="lab">Standing</span>
+        <h2>What the Gold, Silver and Bronze badges mean.</h2>
+        <p class="lead">A page may carry a standing. It reflects referrals you
+          have made and whether you are active in the programme, and it appears
+          on the page itself.</p>
+        <p class="lead">It is <b>not</b> a rating of your business, and it says
+          nothing about anyone's borrowing or repayment — yours or theirs.</p>
+      </div>
+      <div class="shot s-workshop"><i></i></div>
+    </div>
+  </section>
+
+  <!-- 06 — the rules -->
+  <section class="sc reveal" id="rules">
+    <div class="air" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <div class="lwrap" data-stagger>
+      <span class="lab">The rules</span>
+      <h2>What this deliberately never does.</h2>
+      <ul class="rails">
+        <li><b>It is never a fee you pay.</b> Prayaan never asks for money before
+          loan processing, and no reward scheme changes that.</li>
+        <li><b>It never changes a decision.</b> A referral does not affect whether
+          a loan is approved, or on what terms. Every application is assessed on
+          its own merits.</li>
+        <li><b>It does not make you an agent.</b> Referring someone does not make
+          you an agent of Prayaan Capital, and you must not represent yourself
+          as one.</li>
+        <li><b>Nothing publishes without your consent.</b> The branch records how
+          you agreed before your page can go live.</li>
+        <li><b>Your page is never listed.</b> No directory, here or in search of
+          this site. Your own link is the only way in, and it never shows your
+          street address or anything about your borrowing.</li>
+      </ul>
+      <p class="flownote">Why Prayaan built it: to meet borrowers through the
+        people who already know them, instead of through bought lists and cold
+        calls. <a href="/referral-terms">Referral terms</a> &middot;
+        <a href="/grievance">Grievance &amp; GRO</a>.</p>
+    </div>
+  </section>
+
+  <!-- 07 — close -->
+  <section class="sc fin reveal" id="close">
+    <div class="air" aria-hidden="true"></div>
+    <div class="ring" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <div class="lwrap" data-stagger>
+      <span class="lab">Get started</span>
+      <h2>Ask your branch for your page.</h2>
+      <p class="lead">It takes a few minutes at the counter, and it costs
+        nothing.</p>
+      <div class="acts">
+        <a class="act" href="https://www.prayaancapital.com">Talk to Prayaan Capital</a>
+      </div>
+      <p class="lead">Looking for a particular business? Open the link its owner
+        sent you — pages are not listed here.</p>
+    </div>
+  </section>
+
+  {% if show_switcher %}
+  {# REVIEW ONLY — never rendered in production (PBN_SHOW_SWITCHER=false). #}
+  <div class="lwrap">
     <div class="revbar">
       <span class="revtag">Internal</span>
       <p>Review tools are on for this build.</p>
       <div class="revlinks">
         <a href="/preview">Open the design gallery &rarr;</a>
+        {% if public_directory %}<a href="/browse">Browse businesses &rarr;</a>{% endif %}
         {% if sample %}<a href="{{ sample }}">See a live page &rarr;</a>{% endif %}
       </div>
     </div>
-    {% endif %}
   </div>
+  {% endif %}
+
 </main>
 
 <footer class="foot">
-  <div class="wrap">
-    <p><strong>Prayaan Capital Private Limited</strong> — RBI-registered NBFC</p>
-    <p><strong>Prayaan never asks for any fee before loan processing.</strong></p>
-    <p>Loans are subject to credit assessment and property valuation. Interest rates, fees and charges are shared in writing before you sign.</p>
-    <div class="lnks">
-      <a href="/grievance">Grievance &amp; GRO</a>
-      <a href="/privacy">Privacy notice</a>
-      {# Deliberately a quiet footer link, not a button in the hero: the team
-         needs one click to reach the back-office, customers should not be
-         invited toward a login wall. The link reveals nothing an attacker
-         cannot already find at /admin. #}
-      <a href="/admin/login">Admin sign in</a>
+  <div class="lwrap">
+    <div class="cols">
+      <div>
+        <span class="mark"><img src="/static/img/prayaan-logo-full.png" alt="Prayaan Capital" width="167" height="30"></span>
+        <p class="blurb">A free page for every Prayaan customer's business, and
+          a referral reward when it introduces a borrower. Built and published
+          by the branch, with consent on record.</p>
+      </div>
+      <div>
+        <h4>Programme</h4>
+        <ul>
+          <li><a href="#reward">What you get</a></li>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="/referral-terms">Referral terms</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="https://www.prayaancapital.com">Prayaan Capital</a></li>
+          <li><a href="/privacy">Privacy notice</a></li>
+          <li><a href="/admin/login">Staff sign in</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <ul>
+          <li><a href="/grievance">Grievance &amp; GRO</a></li>
+          <li><a href="/report">Report a page</a></li>
+        </ul>
+      </div>
     </div>
+    <p class="fine"><strong>Prayaan Capital Private Limited</strong> — RBI-registered NBFC.
+      <strong>Prayaan never asks for any fee before loan processing.</strong>
+      A referral reward is earned only on disbursal and is never a fee you pay.
+      Loans are subject to credit assessment and property valuation. Interest
+      rates, fees and charges are shared in writing before you sign.</p>
   </div>
 </footer>
 
