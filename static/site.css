@@ -606,9 +606,9 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
 @media(min-width:800px){.lwrap{padding:0 56px}}
 
 /* ---- the label. IRIS's only use of colour: small, spaced, accent --------- */
-.lab{font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+.lplab{font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
   color:var(--i-accent);display:block}
-.ondark .lab{color:#6FB6F5}
+.ondark .lplab{color:#6FB6F5}
 
 /* ---- floating pill nav, centred ------------------------------------------ */
 .nav{position:fixed;top:20px;left:0;right:0;z-index:30;display:flex;
@@ -635,20 +635,20 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
 @media(max-width:760px){.navacts .nlink{display:none}}
 
 /* ---- the dot rail -------------------------------------------------------- */
-.rail{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:29;
+.lprail{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:29;
   display:none;flex-direction:column;align-items:center;gap:0}
-@media(min-width:1000px){.rail{display:flex}}
-.rail a{display:block;padding:9px 6px;position:relative}
-.rail i{display:block;width:6px;height:6px;border-radius:50%;
+@media(min-width:1000px){.lprail{display:flex}}
+.lprail a{display:block;padding:9px 6px;position:relative}
+.lprail i{display:block;width:6px;height:6px;border-radius:50%;
   background:rgba(38,34,57,.24);
   transition:background .5s var(--out),transform .5s var(--out)}
-.rail a:hover i{transform:scale(1.5)}
-.rail a.on i{background:var(--i-accent);transform:scale(1.6)}
-.rail::before{content:"";position:absolute;top:14px;bottom:14px;width:1px;
+.lprail a:hover i{transform:scale(1.5)}
+.lprail a.on i{background:var(--i-accent);transform:scale(1.6)}
+.lprail::before{content:"";position:absolute;top:14px;bottom:14px;width:1px;
   background:rgba(38,34,57,.13);z-index:-1}
-.ondark-rail .rail i{background:rgba(255,255,255,.3)}
-.ondark-rail .rail::before{background:rgba(255,255,255,.16)}
-.ondark-rail .rail a.on i{background:#6FB6F5}
+.ondark-rail .lprail i{background:rgba(255,255,255,.3)}
+.ondark-rail .lprail::before{background:rgba(255,255,255,.16)}
+.ondark-rail .lprail a.on i{background:#6FB6F5}
 
 /* ===========================================================================
    SECTIONS — every one a full viewport, air first
@@ -710,7 +710,7 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
 .sc p{font-size:16.5px;line-height:1.72;color:var(--i-mute);max-width:52ch}
 .sc .lead{font-size:clamp(16.5px,1.8vw,19px);margin-top:26px;max-width:54ch}
 
-.acts{display:flex;flex-wrap:wrap;gap:12px;margin-top:38px}
+.lpacts{display:flex;flex-wrap:wrap;gap:12px;margin-top:38px}
 .act{display:inline-flex;align-items:center;gap:12px;min-height:50px;padding:0 26px;
   border-radius:999px;background:var(--i-ink);color:#fff;text-decoration:none;
   font-size:14.5px;font-weight:500;letter-spacing:.01em;
@@ -727,17 +727,17 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
 /* ---- hero: headline low-left, exactly as the reference sets it ----------- */
 .hero{align-items:flex-end}
 .hero .lwrap{padding-bottom:clamp(40px,8vh,96px)}
-.hero .lab{margin-bottom:26px}
+.hero .lplab{margin-bottom:26px}
 .hero .lead{max-width:46ch}
 
 /* ---- counters strip ------------------------------------------------------ */
-.figs{display:grid;gap:1px;margin-top:clamp(44px,5vw,72px);
+.lpfigs{display:grid;gap:1px;margin-top:clamp(44px,5vw,72px);
   background:var(--i-line);border-top:1px solid var(--i-line);
   border-bottom:1px solid var(--i-line)}
-@media(min-width:820px){.figs{grid-template-columns:repeat(4,1fr)}}
-.figs>div{background:var(--i-bg);padding:30px 26px 32px}
-.ondark .figs{background:var(--i-line-d);border-color:var(--i-line-d)}
-.ondark .figs>div{background:var(--i-deep)}
+@media(min-width:820px){.lpfigs{grid-template-columns:repeat(4,1fr)}}
+.lpfigs>div{background:var(--i-bg);padding:30px 26px 32px}
+.ondark .lpfigs{background:var(--i-line-d);border-color:var(--i-line-d)}
+.ondark .lpfigs>div{background:var(--i-deep)}
 .fig{font-size:clamp(2.6rem,4.6vw,3.6rem);font-weight:400;letter-spacing:-.04em;
   line-height:1;color:var(--i-ink);font-variant-numeric:tabular-nums}
 .ondark .fig{color:#fff}
@@ -769,11 +769,11 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
 .split{display:grid;gap:40px;align-items:center;width:100%}
 @media(min-width:940px){.split{grid-template-columns:1fr 1fr;gap:clamp(48px,6vw,86px)}
   .split.flip .scopy{order:2}}
-.shot{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;
+.lpshot{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;
   box-shadow:0 30px 70px -40px rgba(38,34,57,.7)}
-.shot i{position:absolute;inset:0;display:block;background-size:cover;
+.lpshot i{position:absolute;inset:0;display:block;background-size:cover;
   background-position:center;transition:transform 1.6s var(--out)}
-.shot:hover i{transform:scale(1.05)}
+.lpshot:hover i{transform:scale(1.05)}
 .s-hardware i{background-image:url("/static/img/biz-hardware.jpg")}
 .s-garments i{background-image:url("/static/img/biz-garments.jpg")}
 .s-traders i{background-image:url("/static/img/biz-traders.jpg")}
@@ -790,24 +790,24 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
 .fin{text-align:center;flex-direction:column;justify-content:center}
 .fin h2{margin-left:auto;margin-right:auto;max-width:17ch}
 .fin p{margin-left:auto;margin-right:auto}
-.fin .acts{justify-content:center}
-.foot{background:var(--i-deep-2);color:rgba(255,255,255,.6);
+.fin .lpacts{justify-content:center}
+.lpfoot{background:var(--i-deep-2);color:rgba(255,255,255,.6);
   padding:clamp(52px,6vw,80px) 0 40px}
-.foot .cols{display:grid;gap:34px}
-@media(min-width:760px){.foot .cols{grid-template-columns:1.7fr 1fr 1fr 1fr;gap:40px}}
-.foot .mark img{height:22px;width:auto;background:#fff;border-radius:999px;
+.lpfoot .cols{display:grid;gap:34px}
+@media(min-width:760px){.lpfoot .cols{grid-template-columns:1.7fr 1fr 1fr 1fr;gap:40px}}
+.lpfoot .mark img{height:22px;width:auto;background:#fff;border-radius:999px;
   padding:6px 12px;box-sizing:content-box}
-.foot .blurb{margin-top:18px;font-size:14px;line-height:1.65;
+.lpfoot .blurb{margin-top:18px;font-size:14px;line-height:1.65;
   color:rgba(255,255,255,.46);max-width:34ch}
-.foot h4{font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+.lpfoot h4{font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
   color:rgba(255,255,255,.4);margin-bottom:14px}
-.foot ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.foot a{color:rgba(255,255,255,.66);text-decoration:none;font-size:14.5px}
-.foot a:hover{color:#6FB6F5}
-.foot .fine{margin-top:clamp(38px,5vw,58px);padding-top:24px;
+.lpfoot ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.lpfoot a{color:rgba(255,255,255,.66);text-decoration:none;font-size:14.5px}
+.lpfoot a:hover{color:#6FB6F5}
+.lpfoot .fine{margin-top:clamp(38px,5vw,58px);padding-top:24px;
   border-top:1px solid rgba(255,255,255,.1);font-size:12.5px;line-height:1.7;
   color:rgba(255,255,255,.42);max-width:84ch}
-.foot .fine strong{color:rgba(255,255,255,.62)}
+.lpfoot .fine strong{color:rgba(255,255,255,.62)}
 
 /* ---- the referral flow, animated ------------------------------------------
    A real <ol>, so a screen reader gets five plain steps in order. Sighted
@@ -1012,7 +1012,7 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
   @media (prefers-reduced-motion:no-preference){
     .scrollline{animation:progress linear both;animation-timeline:scroll(root)}
     @keyframes progress{to{transform:scaleX(1)}}
-    .shot i{animation:shotDrift linear both;
+    .lpshot i{animation:shotDrift linear both;
       animation-timeline:view();animation-range:cover 0% cover 100%}
     @keyframes shotDrift{from{transform:scale(1.1) translateY(-2%)}
                          to{transform:scale(1.02) translateY(2%)}}
