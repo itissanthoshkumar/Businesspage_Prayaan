@@ -14,41 +14,51 @@
    =========================================================================== */
 
 /* -- 01 tokens ------------------------------------------------------------ */
+/* The back-office shares the public world's palette and face, taken from
+   prayaancapital.com: warm cream ground, indigo ink, one bright blue accent,
+   Plus Jakarta Sans throughout. It does NOT share the landing page's spacing —
+   this is a tool, read all day at close range, so density stays.
+
+   admin.css is the only stylesheet an admin page loads (never site.css), so
+   nothing here can reach the public pages and nothing there can reach here. */
 :root{
-  /* Neutrals are navy-tinted rather than grey: everything sits in the same
-     family as the Prayaan mark, so nothing reads as a stock admin theme. */
-  --ink:      #0D1B2A;          /* off-black. never #000 */
-  --ink-2:    #40566B;
-  --ink-3:    #6C8299;
+  --ink:      #262239;          /* Prayaan indigo. never #000 */
+  --ink-2:    #565273;
+  --ink-3:    #6A6581;
   --paper:    #FFFFFF;
-  --canvas:   #F3F6FA;
-  --sunken:   #EAEFF6;
+  --canvas:   #F8F2ED;          /* the warm cream the public side sits on */
+  --sunken:   #F2ECE7;
 
-  --line:     rgba(13,27,42,.10);
-  --line-2:   rgba(13,27,42,.16);
+  --line:     rgba(38,34,57,.12);
+  --line-2:   rgba(38,34,57,.20);
 
-  /* ONE accent. The gold is a status hue only — never a button, never a fill. */
-  --accent:   #0A5FA6;
-  --accent-2: #084B85;
-  --accent-w: rgba(10,95,166,.09);
-  --accent-r: rgba(10,95,166,.22);
+  /* ONE accent, the same bright blue the landing page uses for its labels. */
+  --accent:   #0B7ADA;
+  --accent-2: #0A5FA6;
+  --accent-w: rgba(11,122,218,.09);
+  --accent-r: rgba(11,122,218,.24);
 
-  --good:     #0B6B3F;  --good-w: rgba(11,107,63,.11);
-  --warn:     #9A6400;  --warn-w: rgba(244,174,0,.16);
+  /* Status hues match the referral pipeline on the public page, so "live" and
+     "disbursed" are the same green in both halves of the product. */
+  --good:     #157F52;  --good-w: rgba(21,127,82,.11);
+  --warn:     #B57A12;  --warn-w: rgba(181,122,18,.14);
   --bad:      #B3261E;  --bad-w:  rgba(179,38,30,.10);
 
   --r-xl: 20px; --r-lg: 15px; --r: 11px; --r-sm: 8px;
 
-  /* Diffusion shadows: wide, faint, tinted to the background hue. */
-  --lift-1: 0 1px 2px rgba(13,27,42,.05);
-  --lift-2: 0 1px 2px rgba(13,27,42,.05), 0 14px 30px -20px rgba(13,27,42,.40);
-  --lift-3: 0 2px 4px rgba(13,27,42,.06), 0 26px 50px -28px rgba(13,27,42,.50);
+  /* Diffusion shadows: wide, faint, tinted to the ink rather than to black. */
+  --lift-1: 0 1px 2px rgba(38,34,57,.05);
+  --lift-2: 0 1px 2px rgba(38,34,57,.05), 0 14px 30px -20px rgba(38,34,57,.38);
+  --lift-3: 0 2px 4px rgba(38,34,57,.06), 0 26px 50px -28px rgba(38,34,57,.46);
 
   --ease: cubic-bezier(.16,1,.3,1);
   --rail-w: 252px;
 
-  --ui: "Inter Tight", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --display: "Space Grotesk", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  /* One face, as on the public side — Plus Jakarta Sans is self-hosted and is
+     what prayaancapital.com actually uses. Replaces Inter Tight and Space
+     Grotesk, so the two halves of the product no longer speak differently. */
+  --ui: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
@@ -64,7 +74,10 @@
   text-rendering:optimizeLegibility;
 }
 
-.adm h1,.adm h2,.adm h3{font-family:var(--display);font-weight:600;margin:0}
+/* 500, not 600. The public side carries its headings at regular weight and its
+   calm comes from that restraint; at 600 the back-office read as a heavier,
+   separate product. Size and colour still do the ranking. */
+.adm h1,.adm h2,.adm h3{font-family:var(--display);font-weight:500;margin:0}
 .adm p{margin:0}
 
 .skip{
@@ -96,7 +109,7 @@
 .raillogo img{height:27px;width:auto;display:block}
 .railtag{
   display:block;margin:10px 8px 0;
-  font-size:10.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  font-size:10.5px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;
   color:var(--ink-3);
 }
 
@@ -164,19 +177,21 @@
 .headsub{font-size:14px;color:var(--ink-2);margin-top:8px;line-height:1.6;max-width:65ch}
 .headacts{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
 
+/* the same small accent label the public side uses above every heading */
 .eyebrow{
-  display:block;margin-bottom:9px;
-  font-size:10.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--ink-3);
+  display:block;margin-bottom:10px;
+  font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);
 }
 
 /* -- 05 buttons ----------------------------------------------------------- */
+/* pills, as on the public side — the one shape both halves share */
 .adm button,.adm .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  min-height:42px;padding:0 16px;
-  border:1px solid var(--line-2);border-radius:var(--r);
+  min-height:42px;padding:0 20px;
+  border:1px solid var(--line-2);border-radius:999px;
   background:var(--paper);color:var(--ink);
-  font:600 14px var(--ui);text-decoration:none;cursor:pointer;
+  font:500 14px var(--ui);text-decoration:none;cursor:pointer;
   transition:transform .18s var(--ease), border-color .18s var(--ease),
              background .18s var(--ease), box-shadow .18s var(--ease);
 }
@@ -186,11 +201,11 @@
 
 .adm button.primary,.adm .primary.btn{
   background:var(--accent);border-color:var(--accent);color:#fff;
-  box-shadow:0 10px 20px -12px rgba(10,95,166,.85);
+  box-shadow:0 10px 20px -12px rgba(11,122,218,.8);
 }
 .adm button.primary:hover,.adm .primary.btn:hover{
   background:var(--accent-2);border-color:var(--accent-2);
-  box-shadow:0 13px 24px -12px rgba(10,95,166,.95);
+  box-shadow:0 13px 24px -12px rgba(11,122,218,.92);
 }
 .adm button.danger{color:var(--bad);border-color:rgba(179,38,30,.30)}
 .adm button.danger:hover{background:var(--bad-w);border-color:var(--bad)}
@@ -231,6 +246,13 @@
 .rowname{font-size:14.5px;font-weight:600;color:var(--ink)}
 .sub{display:block;font-size:12.5px;color:var(--ink-3);font-weight:400;margin-top:3px}
 .sub a{font-weight:500}
+/* .sub is a block modifier for the small line under a row title, but four of
+   the admin tables also hang it on a <td> to quieten a timestamp column. The
+   display:block above then took that cell OUT of table layout: it sized itself
+   independently of the row, so its bottom border drew ~22px above every other
+   cell's and the rules looked staggered. Restore cell semantics here rather
+   than editing six templates. */
+td.sub{display:table-cell;margin:0;vertical-align:top}
 .col-act{text-align:right;white-space:nowrap}
 .rowedit{
   display:inline-flex;align-items:center;min-height:34px;padding:0 13px;
@@ -420,16 +442,18 @@
   display:flex;align-items:center;gap:10px;
   font-size:15.5px;letter-spacing:-.01em;margin-bottom:4px;
 }
+/* the numeral rides in a pill, the one shape the whole product shares */
 .fsec > h2::before{
   content:counter(fsec,decimal-leading-zero);
-  font:700 10.5px/1 var(--mono);letter-spacing:.06em;
+  font:600 10.5px/1 var(--mono);letter-spacing:.08em;
   color:var(--accent);background:var(--accent-w);
-  padding:5px 7px;border-radius:6px;
+  border:1px solid var(--accent-r);
+  padding:5px 9px;border-radius:999px;
 }
 .fsechint{font-size:13px;color:var(--ink-3);margin-bottom:16px;max-width:62ch}
 
 .adm label{
-  display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);
+  display:block;font-size:12.5px;font-weight:500;color:var(--ink-2);
   margin:16px 0 6px;
 }
 .adm label .sub{display:inline;font-weight:400;color:var(--ink-3);margin-left:2px}
@@ -450,7 +474,7 @@
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236C8299' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center;background-size:15px;
 }
-.adm input::placeholder,.adm textarea::placeholder{color:#9AAABC}
+.adm input::placeholder,.adm textarea::placeholder{color:rgba(38,34,57,.36)}
 .adm input:focus,.adm select:focus,.adm textarea:focus{
   outline:none;border-color:var(--accent);box-shadow:0 0 0 3.5px var(--accent-w);
 }
@@ -470,6 +494,28 @@
   border-color:var(--bad)!important;box-shadow:0 0 0 3.5px var(--bad-w)!important;
 }
 .fielderr{color:var(--bad);font-size:12.5px;font-weight:600;margin-top:8px}
+
+/* ---- the field component ------------------------------------------------
+   Every control in the editor is one .field: label, control, optional hint,
+   in that order, with the spacing owned by the grid rather than by margins on
+   individual labels. That is what keeps the form on a grid — a field cannot
+   drift out of its column, and a hint can never push its neighbour out of
+   line, because hints sit inside the field and not between fields. */
+.fgrid{display:grid;gap:20px;align-items:start}
+/* the gap inside a grid does not apply BETWEEN grids, so consecutive blocks
+   need their own rhythm — without this a hint on the last field of one grid
+   sits almost against the first label of the next */
+.fsec > * + .fgrid{margin-top:20px}
+.fsec > .fgrid + .note,.fsec > .fgrid + .chk{margin-top:18px}
+@media(min-width:640px){
+  .fgrid.two{grid-template-columns:1fr 1fr}
+  .fgrid.two .span2{grid-column:1 / -1}
+}
+.field{display:flex;flex-direction:column;min-width:0}
+.adm .field > label{margin:0 0 7px}
+.adm .field input,.adm .field select,.adm .field textarea{margin:0;width:100%}
+.field .hint{margin-top:7px;font-size:12.5px;line-height:1.55;color:var(--ink-3)}
+.field .hint b{color:var(--ink-2);font-weight:600}
 
 .row2,.row3{display:grid;gap:0 16px}
 @media(min-width:640px){.row2{grid-template-columns:1fr 1fr}}
@@ -496,9 +542,14 @@
   border:0;background:var(--paper);font-family:var(--mono);font-size:13px;
 }
 .addr input:focus{box-shadow:none;border:0}
-.statein{position:relative;display:flex;align-items:center;gap:9px}
+/* The resolved state name sits UNDER the field, not beside it. Inline, it ate
+   part of the cell and left the State code input visibly narrower than the
+   Branch input next to it — two fields on one row at two different widths,
+   which is the thing the eye catches first. */
+.statein{position:relative;display:block}
 .statein input{text-transform:uppercase}
-.statename{font-size:13px;color:var(--ink-3);white-space:nowrap}
+.statename{display:block;margin-top:6px;font-size:12.5px;color:var(--ink-3);
+  min-height:1.2em}
 
 /* phone pair */
 .phonegrid{display:grid;gap:11px;grid-template-columns:1fr}
@@ -720,7 +771,7 @@
   display:flex;gap:11px;align-items:flex-start;
   color:rgba(255,255,255,.80);font-size:14px;line-height:1.5;
 }
-.brandlist svg{width:17px;height:17px;flex:none;margin-top:2px;color:#7FB2DC}
+.brandlist svg{width:17px;height:17px;flex:none;margin-top:2px;color:#79B4EA}
 .brandfoot{font-size:12px;color:rgba(255,255,255,.42);line-height:1.7}
 
 .signin-form{

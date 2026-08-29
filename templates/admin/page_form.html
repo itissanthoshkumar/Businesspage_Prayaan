@@ -6,7 +6,14 @@
 {# Every id, name and data-* attribute below is a contract with
    /static/admin.js — the live preview, the address composer, the chip editors,
    the phone pair and the uploader all bind to them by name. The layout around
-   them is free to change; these hooks are not. #}
+   them is free to change; these hooks are not.
+
+   LAYOUT: every control is a .field (label, control, hint) inside a .fgrid.
+   Spacing belongs to the grid, never to margins on individual labels, so a
+   field cannot drift out of its column and a long hint cannot push its
+   neighbour out of line. Advisory text sits inside its own field as a .hint;
+   only genuinely load-bearing warnings — the permanent address, the map pin,
+   what a tier must never mean — keep the raised .note treatment. #}
 <div class="editor">
   <div class="editcol">
 
@@ -111,72 +118,105 @@
 
     <div class="sheet">
 
+      <!-- 01 identity ---------------------------------------------------- -->
       <section class="fsec">
         <h2>Identity</h2>
         <p class="fsechint">Who the business is and where its page lives.</p>
+
         {% if not page %}
-        <label for="bn0">Business name *</label>
-        <input id="bn0" name="business_name" value="{{ f.get('business_name','') }}" required maxlength="120"
-               placeholder="Velan Steel Traders">
-        <div class="row2">
-          <div><label for="st">State code</label>
+        <div class="fgrid">
+          <div class="field">
+            <label for="bn0">Business name *</label>
+            <input id="bn0" name="business_name" value="{{ f.get('business_name','') }}" required maxlength="120"
+                   placeholder="Velan Steel Traders">
+          </div>
+        </div>
+
+        <div class="fgrid two">
+          <div class="field">
+            <label for="st">State code</label>
             <div class="statein">
               <input id="st" name="state_code" value="{{ f.get('state_code','TN') }}" maxlength="3" required placeholder="TN">
               <span class="statename" id="state-name-echo" aria-hidden="true"></span>
-            </div></div>
-          <div><label for="br">Branch</label>
-            <input id="br" name="branch_slug" value="{{ f.get('branch_slug','') }}" required placeholder="vellore"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="br">Branch</label>
+            <input id="br" name="branch_slug" value="{{ f.get('branch_slug','') }}" required placeholder="vellore">
+          </div>
         </div>
+
         {# The address COMPOSES ITSELF: state/branch echo live, and the last part
            auto-fills from the business name (editable). The hidden web_address is
            sent only when the last part was hand-edited, so an untouched auto slug
            keeps the server's collision-suffix behaviour (-2, -3 ...). #}
-        <label>Web address <span class="sub">fills itself — edit the last part if you want a different link</span></label>
-        <div class="addr">
-          <span class="addrbase">{{ base_url }}/</span>
-          <span class="addrseg" id="addr-state">TN</span><span class="addrsep">/</span>
-          <span class="addrseg" id="addr-branch">branch</span><span class="addrsep">/</span>
-          <input id="slug-input" spellcheck="false" autocomplete="off"
-                 placeholder="from business name" aria-label="Last part of the web address">
+        <div class="fgrid">
+          <div class="field">
+            <label for="slug-input">Web address</label>
+            <div class="addr">
+              <span class="addrbase">{{ base_url }}/</span>
+              <span class="addrseg" id="addr-state">TN</span><span class="addrsep">/</span>
+              <span class="addrseg" id="addr-branch">branch</span><span class="addrsep">/</span>
+              <input id="slug-input" spellcheck="false" autocomplete="off"
+                     placeholder="from business name" aria-label="Last part of the web address">
+            </div>
+            <p class="hint">Fills itself from the business name — edit the last
+              part if you want a different link.</p>
+          </div>
         </div>
         <input type="hidden" name="web_address" id="wa-hidden" value="{{ f.get('web_address','') }}">
         <p class="note"><b>The address is permanent once created</b> — a link shared
           on WhatsApp must keep opening this business, so it can never be edited or
           given to anyone else later.</p>
+
         {% else %}
-        <label for="wa">Web address <span class="sub">permanent — fixed when the page was created</span></label>
-        <input id="wa" value="{{ base_url }}{{ page.path }}" readonly aria-readonly="true" aria-describedby="wanote">
-        <p class="note" id="wanote">This cannot be changed. A link already printed on a
-          board or shared in a WhatsApp group must keep opening this business.</p>
-        {% endif %}
-        {% if page %}
-        <label for="bn">Business name *</label>
-        <input id="bn" name="business_name" value="{{ f.get('business_name','') }}" required maxlength="120">
-        {% endif %}
-        <div class="row2">
-          <div><label for="on">Owner name</label>
-            <input id="on" name="owner_name" value="{{ f.get('owner_name','') or '' }}" maxlength="80"></div>
-          <div><label for="cat">Category</label>
-            <input id="cat" name="category" value="{{ f.get('category','') or '' }}" maxlength="60"
-                   placeholder="Hardware &amp; Building Materials"></div>
+        <div class="fgrid">
+          <div class="field">
+            <label for="wa">Web address</label>
+            <input id="wa" value="{{ base_url }}{{ page.path }}" readonly aria-readonly="true" aria-describedby="wanote">
+            <p class="hint" id="wanote">Permanent — fixed when the page was created.
+              A link already printed on a board or shared in a WhatsApp group must
+              keep opening this business.</p>
+          </div>
+          <div class="field">
+            <label for="bn">Business name *</label>
+            <input id="bn" name="business_name" value="{{ f.get('business_name','') }}" required maxlength="120">
+          </div>
         </div>
-        <div class="row2">
-          <div><label for="loc">Locality</label>
-            <input id="loc" name="locality" value="{{ f.get('locality','') or '' }}" maxlength="60"></div>
-          <div><label for="dis">District</label>
-            <input id="dis" name="district" value="{{ f.get('district','') or '' }}" maxlength="60"></div>
+        {% endif %}
+
+        <div class="fgrid two">
+          <div class="field">
+            <label for="on">Owner name</label>
+            <input id="on" name="owner_name" value="{{ f.get('owner_name','') or '' }}" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="cat">Category</label>
+            <input id="cat" name="category" value="{{ f.get('category','') or '' }}" maxlength="60"
+                   placeholder="Hardware &amp; Building Materials">
+          </div>
+          <div class="field">
+            <label for="loc">Locality</label>
+            <input id="loc" name="locality" value="{{ f.get('locality','') or '' }}" maxlength="60">
+            <p class="hint">Never a street address — a precise address beside
+              published hours tells a stranger when the premises are empty.</p>
+          </div>
+          <div class="field">
+            <label for="dis">District</label>
+            <input id="dis" name="district" value="{{ f.get('district','') or '' }}" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="ey">Established year</label>
+            <input id="ey" name="established_year" value="{{ f.get('established_year','') or '' }}" maxlength="4">
+          </div>
         </div>
         {# State name is derived from the state code (TN -> Tamil Nadu) — one less
            box to fill. On edit the saved value is preserved as-is. #}
         <input type="hidden" name="state_name" id="state-name-hidden"
                value="{{ f.get('state_name','') or '' }}">
-        <p class="note">Never a street address. The page shows the locality only —
-          publishing a precise address alongside opening hours tells a stranger when
-          the premises are empty.</p>
-        <label for="ey">Established year</label>
-        <input id="ey" name="established_year" value="{{ f.get('established_year','') or '' }}" maxlength="4" class="narrow">
       </section>
 
+      <!-- 02 photo ------------------------------------------------------- -->
       <section class="fsec">
         <h2>Photo</h2>
         <p class="fsechint">One clear photograph of the shopfront or the work.</p>
@@ -196,11 +236,12 @@
               {% else %}JPEG, PNG or WebP, up to 6&nbsp;MB.{% endif %}</p>
           </div>
         </div>
-        <p class="note">The photo is stored in Prayaan's own image store and served
-          from there — the customer's file is never hot-linked from somewhere that
-          might vanish. Location data is stripped before it is saved.</p>
+        <p class="hint">Stored in Prayaan's own image store and served from there —
+          the customer's file is never hot-linked from somewhere that might vanish.
+          Location data is stripped before it is saved.</p>
       </section>
 
+      <!-- 03 contact ----------------------------------------------------- -->
       <section class="fsec">
         <h2>Contact</h2>
         <p class="fsechint">How a customer reaches the business itself.</p>
@@ -210,71 +251,103 @@
            server's contract, newline-separated) in sync from these two. #}
         {% set _ph = f.get('phones') or [] %}
         {% macro natdigits(v) %}{{ (v|string)|replace('+','')|replace(' ','')|replace('-','') }}{% endmacro %}
-        <label>Phone numbers <span class="sub">10-digit number, up to two</span></label>
-        <div class="phonegrid">
-          <div class="phonein">
-            <span class="cc">+91</span>
-            <input id="phone1" data-phone inputmode="numeric" maxlength="10" autocomplete="off"
-                   placeholder="98400 12345" aria-label="Phone number"
-                   value="{{ natdigits(_ph[0])[-10:] if _ph|length > 0 else '' }}">
-          </div>
-          <div class="phonein">
-            <span class="cc">+91</span>
-            <input id="phone2" data-phone inputmode="numeric" maxlength="10" autocomplete="off"
-                   placeholder="optional" aria-label="Second phone number"
-                   value="{{ natdigits(_ph[1])[-10:] if _ph|length > 1 else '' }}">
+
+        <div class="fgrid">
+          <div class="field">
+            <label for="phone1">Phone numbers</label>
+            <div class="phonegrid">
+              <div class="phonein">
+                <span class="cc">+91</span>
+                <input id="phone1" data-phone inputmode="numeric" maxlength="10" autocomplete="off"
+                       placeholder="98400 12345" aria-label="Phone number"
+                       value="{{ natdigits(_ph[0])[-10:] if _ph|length > 0 else '' }}">
+              </div>
+              <div class="phonein">
+                <span class="cc">+91</span>
+                <input id="phone2" data-phone inputmode="numeric" maxlength="10" autocomplete="off"
+                       placeholder="optional" aria-label="Second phone number"
+                       value="{{ natdigits(_ph[1])[-10:] if _ph|length > 1 else '' }}">
+              </div>
+            </div>
+            <p class="fielderr" id="phone-err" hidden></p>
+            <p class="hint">Ten digits, up to two numbers. One tap dials them on the page.</p>
           </div>
         </div>
-        <p class="fielderr" id="phone-err" hidden></p>
         <input type="hidden" name="phones" id="phones-hidden"
                value="{{ (f.get('phones') or [])|join('\n') }}">
-        <label for="mu">Google Maps link</label>
-        <input id="mu" name="map_url" value="{{ f.get('map_url','') or '' }}" maxlength="400">
+
+        <div class="fgrid">
+          <div class="field">
+            <label for="mu">Google Maps link</label>
+            <input id="mu" name="map_url" value="{{ f.get('map_url','') or '' }}" maxlength="400">
+          </div>
+        </div>
         <p class="note"><b>This pin must be the BUSINESS, not the owner's home.</b>
           For many customers the two are the same address; a precise pin beside
           published hours tells a stranger where someone is and when they are out.
           Only Google Maps links are accepted — anything else is discarded.</p>
       </section>
 
+      <!-- 04 content ----------------------------------------------------- -->
       <section class="fsec">
         <h2>Content</h2>
         <p class="fsechint">What the page says. Everything here is the owner's
           own description of their business.</p>
-        <label for="sum">Summary <span class="sub">one sentence, used for search results and the WhatsApp preview</span></label>
-        <textarea id="sum" name="summary" rows="2" maxlength="400">{{ f.get('summary','') or '' }}</textarea>
-        <label for="ab">About <span class="sub">one paragraph per line</span></label>
-        <textarea id="ab" name="about" rows="5">{{ (f.get('about') or [])|join('\n') }}</textarea>
-        {# Chip editors: type one item, press Add (or Enter). The hidden inputs
-           keep the server's existing newline contract, so a browser without JS
-           still saves whatever was already there. #}
-        <label for="off-in">What they do <span class="sub">one at a time — up to 8</span></label>
-        <div class="chipedit" data-chips="offerings" data-max="8">
-          <div class="chiprow" data-list></div>
-          <div class="chipadd">
-            <input id="off-in" type="text" maxlength="60" placeholder="e.g. PVC &amp; GI pipes" data-in>
-            <button type="button" class="addbtn" data-add>Add</button>
-          </div>
-        </div>
-        <input type="hidden" name="offerings" id="offerings-hidden"
-               value="{{ (f.get('offerings') or [])|join('\n') }}">
 
-        <label for="fig-label">In numbers <span class="sub">a label and its value — up to 4</span></label>
-        <div class="chipedit" data-figs data-max="4">
-          <div class="chiprow" data-list></div>
-          <div class="chipadd">
-            <input id="fig-label" type="text" maxlength="40" placeholder="Label — e.g. Years in business" data-fig-label>
-            <input type="text" class="figval" maxlength="20" placeholder="Value — 12" data-fig-value aria-label="Value">
-            <button type="button" class="addbtn" data-add>Add</button>
+        <div class="fgrid">
+          <div class="field">
+            <label for="sum">Summary</label>
+            <textarea id="sum" name="summary" rows="2" maxlength="400">{{ f.get('summary','') or '' }}</textarea>
+            <p class="hint">One sentence. Used for search results and the WhatsApp preview.</p>
           </div>
+          <div class="field">
+            <label for="ab">About</label>
+            <textarea id="ab" name="about" rows="5">{{ (f.get('about') or [])|join('\n') }}</textarea>
+            <p class="hint">One paragraph per line.</p>
+          </div>
+
+          {# Chip editors: type one item, press Add (or Enter). The hidden inputs
+             keep the server's existing newline contract, so a browser without JS
+             still saves whatever was already there. #}
+          <div class="field">
+            <label for="off-in">What they do</label>
+            <div class="chipedit" data-chips="offerings" data-max="8">
+              <div class="chiprow" data-list></div>
+              <div class="chipadd">
+                <input id="off-in" type="text" maxlength="60" placeholder="e.g. PVC &amp; GI pipes" data-in>
+                <button type="button" class="addbtn" data-add>Add</button>
+              </div>
+            </div>
+            <p class="hint">One at a time — up to 8.</p>
+          </div>
+          <input type="hidden" name="offerings" id="offerings-hidden"
+                 value="{{ (f.get('offerings') or [])|join('\n') }}">
+
+          <div class="field">
+            <label for="fig-label">In numbers</label>
+            <div class="chipedit" data-figs data-max="4">
+              <div class="chiprow" data-list></div>
+              <div class="chipadd">
+                <input id="fig-label" type="text" maxlength="40" placeholder="Label — e.g. Years in business" data-fig-label>
+                <input type="text" class="figval" maxlength="20" placeholder="Value — 12" data-fig-value aria-label="Value">
+                <button type="button" class="addbtn" data-add>Add</button>
+              </div>
+            </div>
+            <p class="hint">A label and its value — up to 4. Shown as the owner's own
+              claims: the page says “Figures shared by {{ f.get('owner_name') or 'the owner' }}”.
+              Prayaan publishes them, it does not certify them.</p>
+          </div>
+          <input type="hidden" name="figures" id="figures-hidden"
+                 value="{% for x in (f.get('figures') or []) %}{{ x.label }} | {{ x.value }}{{ '\n' if not loop.last else '' }}{% endfor %}">
         </div>
-        <input type="hidden" name="figures" id="figures-hidden"
-               value="{% for x in (f.get('figures') or []) %}{{ x.label }} | {{ x.value }}{{ '\n' if not loop.last else '' }}{% endfor %}">
-        <p class="note">Shown as the owner's own claims — the page says
-          "Figures shared by {{ f.get('owner_name') or 'the owner' }}". Prayaan publishes them, it does not certify them.</p>
-        <div class="row2">
-          <div><label for="hr">Hours</label>
-            <input id="hr" name="hours" value="{{ f.get('hours','') or '' }}" maxlength="80"></div>
-          <div><label for="lg-in">Languages <span class="sub">up to 4</span></label>
+
+        <div class="fgrid two">
+          <div class="field">
+            <label for="hr">Hours</label>
+            <input id="hr" name="hours" value="{{ f.get('hours','') or '' }}" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="lg-in">Languages</label>
             <div class="chipedit" data-chips="languages" data-max="4">
               <div class="chiprow" data-list></div>
               <div class="chipadd">
@@ -282,34 +355,42 @@
                 <button type="button" class="addbtn" data-add>Add</button>
               </div>
             </div>
+            <p class="hint">Up to 4.</p>
             <input type="hidden" name="languages" id="languages-hidden"
-                   value="{{ (f.get('languages') or [])|join('\n') }}"></div>
+                   value="{{ (f.get('languages') or [])|join('\n') }}">
+          </div>
         </div>
       </section>
 
+      <!-- 05 recognition ------------------------------------------------- -->
       <section class="fsec">
         <h2>Recognition &amp; visibility</h2>
         <p class="fsechint">The badge on the page, and whether search engines
           may list it.</p>
-        <div class="row2">
-          <div><label for="tr">Tier</label>
+        <div class="fgrid two">
+          <div class="field">
+            <label for="tr">Tier</label>
             <select id="tr" name="tier">
               <option value="">None</option>
               {% for t in ['gold','silver','bronze'] %}
               <option value="{{ t }}" {% if f.get('tier')==t %}selected{% endif %}>{{ t|capitalize }}</option>
               {% endfor %}
-            </select></div>
-          <div><label for="ts">Standing shown</label>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ts">Standing shown</label>
             <select id="ts" name="tier_status">
               <option value="">None</option>
               {% for st in ['Active','Inactive','Lapsed'] %}
               <option value="{{ st }}" {% if f.get('tier_status')==st %}selected{% endif %}>{{ st }}</option>
               {% endfor %}
-            </select></div>
+            </select>
+            <p class="hint">The badge will not render without a standing, so
+              leaving this blank hides the tier.</p>
+          </div>
         </div>
         <p class="note"><b>Tier is referrals and activity only.</b> Never repayment
-          history, bureau scores or risk grades. The badge will not render without a
-          standing, so leaving it blank hides the tier.</p>
+          history, bureau scores or risk grades.</p>
         <label class="chk"><input type="checkbox" name="indexed" {% if f.get('indexed', True) %}checked{% endif %}>
           Allow search engines to index this page</label>
       </section>

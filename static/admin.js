@@ -18,6 +18,7 @@
   var ready = false;         // the iframe has done its one full load
   var pending = null;        // latest html waiting for the iframe to be ready
   var followSel;             // preview-follows-field: section selector, "top", or undefined
+  var followUntil = 0;       // ms deadline: repaints follow only just after a focus change
 
   /* ---- form -> preview payload ------------------------------------------- */
   function serialize() {
@@ -84,10 +85,12 @@
     var y = scroller ? scroller.scrollTop : 0;
     doc.body.className = incoming.body.className;
     doc.body.innerHTML = incoming.body.innerHTML;   // same-origin, no re-fetch
-    // Follow the field being edited when one is active; otherwise hold the
-    // reader's place exactly as before.
-    if (followSel !== undefined) scrollPreview();
-    else if (scroller) scroller.scrollTop = y;
+    // Follow the field only for a moment AFTER the focus moved; once the
+    // typing starts, hold the reader's place. Re-scrolling on every repaint
+    // meant each keystroke yanked the preview back to the section's top,
+    // which reads as the preview scrolling away under you as you type.
+    if (followSel !== undefined && Date.now() < followUntil) scrollPreview();
+    else if (scroller) holdAt(y);
   }
 
   frame.addEventListener("load", function () {
@@ -114,7 +117,10 @@
       }).catch(function () { setBusy(false); });
   }
 
-  function debounced() { if (timer) clearTimeout(timer); timer = setTimeout(refresh, 220); }
+  /* 400ms, not 220: every repaint is a server round-trip plus a full innerHTML
+     swap, and at 220 a normal typing speed rebuilt the preview mid-word, which
+     is most of what made it feel unsteady. At 400 it settles between words. */
+  function debounced() { if (timer) clearTimeout(timer); timer = setTimeout(refresh, 400); }
 
   var busyDot = document.getElementById("preview-busy");
   function setBusy(on) { if (busyDot) busyDot.classList.toggle("on", !!on); }
@@ -381,14 +387,28 @@
         id === "photo-file" || (el.hasAttribute && el.hasAttribute("data-phone"))) return "top";
     return undefined;
   }
+  /* Put the preview back exactly where the reader left it, WITHOUT animating.
+     The preview document inherits scroll-behavior:smooth from site.css, so a
+     plain `scrollTop = y` does not jump — it starts a ~300ms glide. With a
+     repaint on every keystroke those glides kept restarting and never
+     settled, which is what made the preview appear to scroll away on its own
+     while typing. An explicit "instant" overrides the inherited behaviour. */
+  function holdAt(y) {
+    try { frame.contentWindow.scrollTo({ top: y, left: 0, behavior: "instant" }); }
+    catch (e) {
+      var d = frame.contentDocument;
+      var s = d && (d.scrollingElement || d.documentElement);
+      if (s) s.scrollTop = y;
+    }
+  }
+
   function scrollPreview(smooth) {
     var doc = frame.contentDocument;
     if (!doc || !doc.body) return;
-    // scrollIntoView, NOT scrollTop assignment: inside the scaled preview
-    // iframe this engine silently ignores root scrollTop writes, while
-    // scrollIntoView lands. "instant" (not "auto") so the per-keystroke
-    // repaint doesn't restart the page's own smooth-scroll animation; only a
-    // focus CHANGE glides.
+    // scrollIntoView rather than a scrollTop write: it resolves the target
+    // section's position for us. "instant" (not "auto") so a repaint never
+    // restarts the document's own smooth-scroll animation; only a focus
+    // CHANGE glides.
     var el = followSel === "top" ? doc.body : doc.querySelector(followSel);
     if (!el) return;
     try { el.scrollIntoView({ behavior: smooth ? "smooth" : "instant", block: "start" }); }
@@ -396,7 +416,13 @@
   }
   form.addEventListener("focusin", function (e) {
     var sel = sectionFor(e.target);
-    if (sel !== undefined) { followSel = sel; scrollPreview(true); }
+    // The window is what makes this "follow on arrival, then stay put": a
+    // repaint landing inside it keeps the glide, one after it holds position.
+    if (sel !== undefined) {
+      followSel = sel;
+      followUntil = Date.now() + 600;
+      scrollPreview(true);
+    }
   });
 
   /* ---- submit guard ------------------------------------------------------ */
