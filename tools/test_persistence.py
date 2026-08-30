@@ -121,13 +121,30 @@ pid = (re.search(r"/admin/pages/(\d+)", url) or [None, None])[1]
 check("page created", bool(pid), url)
 check("id continues past the four fixtures", pid and int(pid) == 5, pid)
 
-post("/admin/pages/%s/status" % pid, {"csrf": tok, "status": "live"})
-code, _ = get("/TN/ranipet/persisted-provisions")
+# A FIRST publish requires consent evidence — admin.py's page_status sends a
+# page that cannot say how the customer agreed back to the form (?err=consent)
+# instead of taking it live. Posting the status alone leaves it a silent draft,
+# and every downstream check here then fails against a 404.
+post("/admin/pages/%s/status" % pid,
+     {"csrf": tok, "status": "live", "consent_method": "written",
+      "consent_ref": "Signed form 3 Sep, kept at Ranipet branch"})
+code, live_html = get("/TN/ranipet/persisted-provisions")
 check("page is live before the restart", code == 200, code)
 
-post("/TN/ranipet/persisted-provisions",
-     {"name": "Persisted Person", "mobile": "9876500022", "pincode": "632401",
-      "age_ok": "on", "t": str(int(time.time()) - 120), "website": ""})
+# The enquiry form's anti-bot token is HMAC-signed at render time, so it must be
+# scraped from the page just fetched: a hand-built t reads as zero seconds on
+# page, and a lead that trips the bot floor is answered with a FAKE success and
+# never stored — which looks like a passing POST and a missing lead. The wait
+# clears MIN_FILL_SECONDS.
+m = re.search(r'name="t" value="([^"]+)"', live_html)
+check("enquiry form carries a signed timestamp", bool(m))
+time.sleep(3.2)
+# One affirmative tick (v2 consent) — the old age_ok field no longer exists, and
+# pincode is off the form.
+_, thanks, _ = post("/TN/ranipet/persisted-provisions",
+                    {"name": "Persisted Person", "mobile": "9876500022",
+                     "agree": "on", "t": m.group(1) if m else "", "website": ""})
+check("lead accepted before the restart", "Thank you" in thanks)
 _, leads = get("/admin/leads")
 check("lead captured before the restart", "Persisted Person" in leads)
 

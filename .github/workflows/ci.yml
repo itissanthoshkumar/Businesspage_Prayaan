@@ -25,6 +25,11 @@ jobs:
       - run: python tools/test_admin.py
       - run: python tools/test_p0.py
       - run: python tools/test_p1.py
+      # Boots and restarts its OWN server on 8799 against a scratch data dir, so
+      # it neither uses nor disturbs the preview above. It went un-run for long
+      # enough to drift out of date against the consent gate and the v2 enquiry
+      # form; running it here is what stops that happening again.
+      - run: python tools/test_persistence.py
 
   mongo-parity:
     runs-on: ubuntu-latest
