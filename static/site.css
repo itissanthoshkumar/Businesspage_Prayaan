@@ -851,6 +851,94 @@ body.lp a{text-underline-offset:.2em;text-decoration-thickness:from-font}
 .flownote{margin-top:clamp(28px,3.4vw,44px);font-size:15px;line-height:1.7;
   color:var(--i-mute);max-width:64ch}
 .flownote a{color:var(--i-accent)}
+body.lp .flownote b{color:var(--i-ink);font-weight:500}
+
+/* ---- the reward calculator (#earn) ---------------------------------------
+   EVERY selector here is scoped under body.lp, without exception. The last
+   unscoped landing block (rail/acts/figs/foot) collided with customer-page
+   class names and broke every live page in production; nothing in this file
+   is worth repeating that for.
+
+   The control is a native <input type=range>: keyboard, touch target, screen
+   reader and value semantics all arrive for free, and the only thing script
+   adds is the fill and the formatted output. --pct is written by calc.js
+   through the CSSOM (a style ATTRIBUTE would be dropped by style-src 'self').
+   =========================================================================== */
+body.lp .calc{
+  /* matches the template's default of ₹10,00,000 across 1L–50L, so the track
+     is already filled correctly in the frame before calc.js paints */
+  --pct:18.37%;
+  margin-top:clamp(38px,4.6vw,60px);display:grid;gap:0;
+  border:1px solid var(--i-line);border-radius:18px;overflow:hidden;
+  background:rgba(255,255,255,.55)}
+@media(min-width:900px){body.lp .calc{grid-template-columns:1.35fr 1fr}}
+
+body.lp .calcin{padding:clamp(26px,3.2vw,38px)}
+body.lp .calclab{display:block;font-size:11.5px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--i-mute)}
+/* tabular figures on every number that changes under the finger: proportional
+   digits make the amount jitter sideways as it counts, which reads as a bug */
+body.lp .calcamt{display:block;margin-top:14px;font-size:clamp(2.1rem,4vw,3rem);
+  font-weight:400;letter-spacing:-.038em;line-height:1;color:var(--i-ink);
+  font-variant-numeric:tabular-nums}
+body.lp .calcword{display:block;margin-top:9px;font-size:14.5px;color:var(--i-mute)}
+
+/* 44px tall for the thumb, not 26: the visible track stays a 6px hairline, but
+   the element itself is a comfortable touch target on a phone, which is where
+   this will actually be dragged. Both engines centre the track box vertically
+   inside the input, so the thumb's -10px still lands on it. */
+body.lp .calcrange{-webkit-appearance:none;appearance:none;display:block;width:100%;
+  height:44px;margin:18px 0 0;padding:0;background:transparent;cursor:pointer}
+/* the two vendor pseudo-elements must stay in SEPARATE rules — grouped, each
+   browser drops the whole selector list on the one it does not recognise */
+body.lp .calcrange::-webkit-slider-runnable-track{height:6px;border-radius:999px;
+  background:linear-gradient(90deg,var(--i-accent) 0,var(--i-accent) var(--pct),
+    rgba(38,34,57,.13) var(--pct),rgba(38,34,57,.13) 100%)}
+body.lp .calcrange::-moz-range-track{height:6px;border-radius:999px;
+  background:linear-gradient(90deg,var(--i-accent) 0,var(--i-accent) var(--pct),
+    rgba(38,34,57,.13) var(--pct),rgba(38,34,57,.13) 100%)}
+body.lp .calcrange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:26px;height:26px;margin-top:-10px;border-radius:50%;background:#fff;
+  border:2px solid var(--i-accent);
+  box-shadow:0 5px 16px -5px rgba(11,122,218,.85);
+  transition:transform .25s var(--out)}
+body.lp .calcrange::-moz-range-thumb{width:26px;height:26px;border-radius:50%;
+  background:#fff;border:2px solid var(--i-accent);
+  box-shadow:0 5px 16px -5px rgba(11,122,218,.85)}
+body.lp .calcrange:active::-webkit-slider-thumb{transform:scale(1.14)}
+body.lp .calcends{display:flex;justify-content:space-between;margin-top:11px;
+  font-size:12.5px;color:var(--i-mute)}
+
+body.lp .calcchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+body.lp .calcchip{appearance:none;-webkit-appearance:none;cursor:pointer;
+  min-height:38px;padding:0 17px;border-radius:999px;
+  border:1px solid var(--i-line);background:transparent;
+  font:500 13.5px/1 var(--i-font);color:var(--i-ink-2);
+  font-variant-numeric:tabular-nums;
+  transition:background .4s var(--out),border-color .4s var(--out),
+             color .4s var(--out)}
+body.lp .calcchip:hover{border-color:var(--i-accent);color:var(--i-accent)}
+body.lp .calcchip.on{background:var(--i-ink);border-color:var(--i-ink);color:#fff}
+/* on a 375px screen the four presets overflow the row by ~19px and the last
+   one drops to a line of its own; trimming the horizontal padding keeps them
+   as one rank of four, which is what makes them read as a scale */
+@media(max-width:420px){
+  body.lp .calcchips{gap:7px}
+  body.lp .calcchip{padding:0 13px}
+}
+
+/* the answer, on ink — the one dark surface in an otherwise pale section, so
+   the eye lands on the number without a single extra colour being introduced */
+body.lp .calcout{background:var(--i-deep);color:#fff;
+  padding:clamp(26px,3.2vw,38px);display:flex;flex-direction:column;
+  justify-content:center}
+body.lp .calcrlab{font-size:11.5px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:#6FB6F5}
+body.lp .calcrew{display:block;margin-top:16px;
+  font-size:clamp(2.6rem,5.2vw,3.9rem);font-weight:400;letter-spacing:-.04em;
+  line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+body.lp .calcrate{display:block;margin-top:16px;font-size:14px;line-height:1.6;
+  color:rgba(255,255,255,.66);max-width:32ch}
 
 /* The scroll-driven version: the section is tall, the stage inside it is
    sticky, and the reader advances the five steps themselves by scrolling —

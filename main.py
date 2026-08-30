@@ -62,6 +62,20 @@ BASE_URL = os.getenv("PBN_BASE_URL", "https://business.prayaancapital.com").rstr
 # affirmative statement — the version stamps WHICH wording the lead agreed to.
 CONSENT_VERSION = os.getenv("PBN_CONSENT_VERSION", "v2-2026-08")
 
+# The referral reward, as a percentage of the DISBURSED loan amount. This is the
+# only place the rate is written down: the landing calculator, its copy, and
+# /referral-terms all read it from here, so changing it after compliance signs
+# off is one edit, and pulling the number entirely is setting it to 0 (which
+# hides the calculator and restores the generic wording everywhere).
+#
+# CAUTION: publishing a rate turns a generic mention of "a referral reward" into
+# a quantified public offer. /referral-terms still carries the open items —
+# payment timing, TDS, exclusions, scheme duration, and compliance's view on
+# whether paying customers per disbursed referral makes them unregistered
+# sourcing agents. The rate below is the user's stated figure, not an invented
+# one, and the calculator states it as an illustration conditional on disbursal.
+REFERRAL_RATE_PCT = float(os.getenv("PBN_REFERRAL_RATE_PCT", "1"))
+
 # Anti-abuse. CGNAT means many genuine users share one IP on Indian mobile
 # networks, so the per-IP cap is deliberately generous — a tight one would
 # silently drop real leads, which is worse than admitting some spam.
@@ -87,6 +101,30 @@ from starlette.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+def _inr(n) -> str:
+    """Indian digit grouping: 1000000 -> '10,00,000'.
+
+    Not cosmetic. A reader who sees "1,000,000" has to count zeroes to learn
+    whether it says ten lakh or one crore; the lakh grouping is how the amount
+    is actually read here. Used for the calculator's server-rendered worked
+    example, which must be true for readers who never run its script."""
+    n = int(round(float(n)))
+    sign, s = ("-", str(-n)) if n < 0 else ("", str(n))
+    if len(s) <= 3:
+        return sign + s
+    head, tail = s[:-3], s[-3:]
+    groups = []
+    while len(head) > 2:
+        groups.insert(0, head[-2:])
+        head = head[:-2]
+    if head:
+        groups.insert(0, head)
+    return sign + ",".join(groups) + "," + tail
+
+
+templates.env.filters["inr"] = _inr
 admin.init(templates)
 app.include_router(admin.router)
 # Jinja2Templates autoescapes .html by default; every value below is
@@ -561,7 +599,10 @@ def grievance(request: Request):
 
 @app.api_route("/referral-terms", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def referral_terms(request: Request):
-    return _doc(request, "referral_terms.html")
+    # The rate travels from the same constant the landing calculator uses, so
+    # the two can never state different numbers.
+    return _doc(request, "referral_terms.html",
+                referral_rate_pct=REFERRAL_RATE_PCT)
 
 
 @app.api_route("/report", methods=["GET", "HEAD"], response_class=HTMLResponse)
@@ -853,4 +894,5 @@ def root(request: Request):
         # publish the customer directory this page deliberately withholds.
         "show_switcher": SHOW_SWITCHER,
         "sample": (store.live_pages(limit=1) or [{}])[0].get("path", ""),
+        "referral_rate_pct": REFERRAL_RATE_PCT,
     })

@@ -12,11 +12,14 @@
    case and belongs in a leadership deck, not in front of a shop owner, so it
    appears here only as the one honest line about why Prayaan built it.
 
-   The reward is stated GENERICALLY and linked to /referral-terms, which is
-   already published and says the same thing. No amount appears here: the
-   amount, the tax treatment, and compliance's confirmation that paying
-   customers per disbursed referral does not make them unregistered sourcing
-   agents are all still open on that page. Nothing about the reward is invented.
+   The reward RATE now appears here, in the calculator section (#earn), and it
+   comes from REFERRAL_RATE_PCT in main.py — never typed into this file. That
+   is the one number that is settled. Payment timing, tax and TDS, exclusions,
+   scheme duration, and compliance's confirmation that paying customers per
+   disbursed referral does not make them unregistered sourcing agents are all
+   still open, and stay on /referral-terms rather than being papered over here.
+   Nothing about the reward is invented: every claim is the rate, the disbursal
+   condition, or a link to the terms.
 
    Design reference: irisventure.com — one face at weight 400, a single accent
    used only on small labels, full-viewport sections, a dot rail, and a pale
@@ -40,6 +43,7 @@
 <link rel="stylesheet" href="/static/site.css">
 <script src="/static/reveal.js"></script>
 <script src="/static/particles.js" defer></script>
+{% if referral_rate_pct > 0 %}<script src="/static/calc.js" defer></script>{% endif %}
 </head>
 <body class="lp">
 <div class="scrollline" aria-hidden="true"></div>
@@ -56,6 +60,7 @@
     <nav class="navacts" aria-label="Site">
       <a class="nlink" href="#reward">The reward</a>
       <a class="nlink" href="#how">How it works</a>
+      {% if referral_rate_pct > 0 %}<a class="nlink" href="#earn">What it pays</a>{% endif %}
       <a class="nlink" href="#page">Your page</a>
       <a class="nlink" href="#rules">The rules</a>
       <a class="nbtn" href="/admin/login">Sign in</a>
@@ -67,6 +72,7 @@
   <a href="#top" data-dot aria-label="Opening"><i></i></a>
   <a href="#reward" data-dot aria-label="The reward"><i></i></a>
   <a href="#how" data-dot aria-label="How the referral works"><i></i></a>
+  {% if referral_rate_pct > 0 %}<a href="#earn" data-dot aria-label="What it pays"><i></i></a>{% endif %}
   <a href="#page" data-dot aria-label="Your page"><i></i></a>
   <a href="#tiers" data-dot aria-label="Standing"><i></i></a>
   <a href="#rules" data-dot aria-label="The rules"><i></i></a>
@@ -199,7 +205,82 @@
     </div>
   </section>
 
-  <!-- 04 — what the page itself carries -->
+  {# 04 — WHAT THE LAST STEP IS WORTH -------------------------------------
+       A JINJA comment, not an HTML one: this note reasons about what is and
+       is not signed off, and an HTML comment would ship that to the page
+       source of an RBI-registered lender's public site. A Jinja comment is
+       stripped before the response is written; an HTML comment is not.
+
+       The flow section above ends on "only the last one pays" and leaves the
+       obvious question unanswered, so this answers it.
+
+       The rate is NOT written in this file. It arrives as referral_rate_pct
+       from main.py, which is the only place the number exists — the copy, the
+       calculator, and /referral-terms all read the same constant, and setting
+       it to 0 removes this section and restores the generic wording sitewide.
+
+       The worked example is rendered SERVER-SIDE and is already correct before
+       calc.js runs: a reader with no JavaScript sees a true sentence, not an
+       empty control. The script only makes it draggable.
+
+       Note what this deliberately does not do: no "earn up to", no annual
+       projection, no multiplier for several referrals. Those turn an
+       illustration into a forecast, and the terms behind it are not signed
+       off yet.
+  #}
+  {% if referral_rate_pct > 0 %}
+  {% set rate_s = '%g'|format(referral_rate_pct) %}
+  {% set calc_amt = 1000000 %}
+  <section class="sc reveal" id="earn">
+    <div class="air" aria-hidden="true"></div>
+    <div class="dust" aria-hidden="true"></div>
+    <div class="lwrap" data-stagger>
+      <span class="lplab">What it pays</span>
+      <h2>You earn {{ rate_s }}% of what gets disbursed.</h2>
+      <p class="lead">Not of what is enquired, applied for or sanctioned — of
+        the amount that actually reaches the borrower. Move the slider to see
+        what an introduction would be worth.</p>
+
+      <div class="calc" data-calc data-rate="{{ referral_rate_pct }}">
+        <div class="calcin">
+          <label class="calclab" for="calc-amt">If a loan of this size is disbursed</label>
+          <span class="calcamt" data-calc-amount>&#8377;{{ calc_amt|inr }}</span>
+          <span class="calcword" data-calc-words>&#8377;{{ (calc_amt / 100000)|round|int }} lakh</span>
+          {# The control is a real range input: it arrives keyboard-operable,
+             screen-reader-labelled and touch-sized without a line of script.
+             calc.js only adds the spoken value text and the track fill. #}
+          <input class="calcrange" id="calc-amt" type="range"
+                 min="100000" max="5000000" step="50000" value="{{ calc_amt }}"
+                 data-calc-range>
+          <div class="calcends" aria-hidden="true">
+            <span>&#8377;1 lakh</span><span>&#8377;50 lakh</span>
+          </div>
+          <div class="calcchips">
+            <button type="button" class="calcchip" data-calc-preset="500000">&#8377;5L</button>
+            <button type="button" class="calcchip" data-calc-preset="1000000">&#8377;10L</button>
+            <button type="button" class="calcchip" data-calc-preset="2500000">&#8377;25L</button>
+            <button type="button" class="calcchip" data-calc-preset="5000000">&#8377;50L</button>
+          </div>
+        </div>
+        <div class="calcout">
+          <span class="calcrlab">Your referral reward</span>
+          <span class="calcrew" data-calc-reward>&#8377;{{ (calc_amt * referral_rate_pct / 100)|inr }}</span>
+          <span class="calcrate">{{ rate_s }}% of the disbursed loan amount, paid to
+            the business whose page introduced the borrower.</span>
+        </div>
+      </div>
+
+      <p class="flownote"><b>An illustration, not a quotation.</b> The reward is
+        earned only on disbursal, is never a fee you pay, and does not change
+        whether a loan is approved or on what terms. Payment timing, tax and
+        who is excluded are set out in the
+        <a href="/referral-terms">referral terms</a>. The borrower receives no
+        referral reward — their benefit is the loan itself.</p>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- 05 — what the page itself carries -->
   <section class="sc ondark reveal" id="page">
     <div class="air" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
@@ -234,7 +315,7 @@
     </div>
   </section>
 
-  <!-- 05 — standing -->
+  <!-- 06 — standing -->
   <section class="sc reveal" id="tiers">
     <div class="air" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
@@ -252,7 +333,7 @@
     </div>
   </section>
 
-  <!-- 06 — the rules -->
+  <!-- 07 — the rules -->
   <section class="sc reveal" id="rules">
     <div class="air" aria-hidden="true"></div>
     <div class="dust" aria-hidden="true"></div>
@@ -281,7 +362,7 @@
     </div>
   </section>
 
-  <!-- 07 — close -->
+  <!-- 08 — close -->
   <section class="sc fin reveal" id="close">
     <div class="air" aria-hidden="true"></div>
     <div class="ring" aria-hidden="true"></div>
@@ -330,6 +411,7 @@
         <ul>
           <li><a href="#reward">What you get</a></li>
           <li><a href="#how">How it works</a></li>
+          {% if referral_rate_pct > 0 %}<li><a href="#earn">What it pays</a></li>{% endif %}
           <li><a href="/referral-terms">Referral terms</a></li>
         </ul>
       </div>

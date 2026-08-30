@@ -6,6 +6,18 @@
   the business whose page introduced the borrower earns a referral reward.
   These are the terms behind that line.</p>
 
+{% if referral_rate_pct and referral_rate_pct > 0 %}
+{% set rate_s = '%g'|format(referral_rate_pct) %}
+<h2>What the reward is</h2>
+<p><b>{{ rate_s }}% of the disbursed loan amount</b>, paid to the business whose
+  page introduced the borrower. On a loan of &#8377;10,00,000 that is
+  &#8377;{{ (1000000 * referral_rate_pct / 100)|inr }}.</p>
+<p>The percentage applies to the amount actually disbursed, not to the amount
+  enquired about, applied for or sanctioned. The items under
+  <a href="#open">Still to be confirmed</a> below are not settled, and the rate
+  alone is not the whole offer.</p>
+{% endif %}
+
 <h2>When a reward is earned</h2>
 <ul>
   <li>Only when a loan is <b>disbursed</b>. Not on enquiry, not on application,
@@ -32,10 +44,10 @@
   <b>not</b> a rating of the business, and it says nothing about anyone's
   borrowing or repayment.</p>
 
-<h2>Still to be confirmed</h2>
-<p class="todo"><b>TO CONFIRM before launch.</b> The reward <b>amount</b>, when
-  and how it is paid, tax treatment and TDS, who is excluded (staff,
-  connectors, DSAs), how long the scheme runs, and confirmation from compliance
-  that paying customers per disbursed referral does not make them unregistered
-  sourcing agents. None of this is invented here.</p>
+<h2 id="open">Still to be confirmed</h2>
+<p class="todo"><b>TO CONFIRM before launch.</b> When and how the reward is
+  paid, tax treatment and TDS, who is excluded (staff, connectors, DSAs), how
+  long the scheme runs, whether any cap applies, and confirmation from
+  compliance that paying customers per disbursed referral does not make them
+  unregistered sourcing agents. None of this is invented here.</p>
 {% endblock %}
