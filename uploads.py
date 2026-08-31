@@ -176,14 +176,44 @@ def _git(args, cwd):
 
 
 def _ensure_repo():
+    """Guarantee UPLOAD_DIR is its OWN git repo, and say so only when it is.
+
+    The question that matters is not "does a .git path exist here" but "which
+    repository would git actually use". They differ: a PARTIAL .git — one an
+    interrupted copy or an rsync can leave behind, carrying objects/ and refs/
+    but no HEAD or config — satisfies the first and fails the second. Git
+    rejects it and walks UP to the nearest real repo, which is the
+    application's own. Every add and commit then lands customer photographs in
+    the app's history, and this repo is public.
+
+    That has not happened only because .gitignore excludes this directory, so
+    the misdirected add is refused instead of succeeding. That is an accident
+    of an unrelated line in another file, not a control — remove it, or point
+    PBN_UPLOAD_DIR somewhere unignored, and the same bug starts committing
+    photos rather than failing. So: ask git, and accept the answer only if it
+    names this directory's own repo."""
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    if (UPLOAD_DIR / ".git").exists():
+    own = (UPLOAD_DIR / ".git").resolve()
+
+    ok, out = _git(["rev-parse", "--absolute-git-dir"], UPLOAD_DIR)
+    if ok and Path(out).resolve() == own:
         return True, "existing repo"
+
+    # No repo, a broken one, or a parent answering on its behalf. `git init` is
+    # idempotent and repairs a partial .git in place, so this is the recovery
+    # path as much as it is first-run setup.
     ok, out = _git(["init", "-q"], UPLOAD_DIR)
     if not ok:
         return False, "git init failed: " + out
     _git(["config", "user.name", GIT_NAME], UPLOAD_DIR)
     _git(["config", "user.email", GIT_EMAIL], UPLOAD_DIR)
+
+    # Confirm the repair took. Only a git that ANSWERS and names somewhere else
+    # is a failure — a git too old for --absolute-git-dir (pre-2.13) cannot
+    # answer, and must not be treated as a fault in a setup that works.
+    ok, out = _git(["rev-parse", "--absolute-git-dir"], UPLOAD_DIR)
+    if ok and Path(out).resolve() != own:
+        return False, "uploads dir resolves to another repo: " + out
     return True, "initialised repo"
 
 
