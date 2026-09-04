@@ -800,7 +800,7 @@ def users_list(request: Request):
     _ub = _user_book()
     return _render(request, "users.html", session, nav="users",
                    users=_ub[0], counts=_ub[1], temp_pw=None, temp_user=None,
-                   error=None, roles=store.USER_ROLES)
+                   error=None, roles=store.USER_ROLES, confirm=None)
 
 
 @router.post("/users/new", response_class=HTMLResponse)
@@ -824,7 +824,7 @@ async def user_create(request: Request):
         _ub = _user_book()
         return _render(request, "users.html", session, nav="users",
                        users=_ub[0], counts=_ub[1], temp_pw=None, temp_user=None,
-                       error=error, roles=store.USER_ROLES)
+                       error=error, roles=store.USER_ROLES, confirm=None)
     temp = _temp_password()
     store.create_user(username, auth.hash_password(temp), role=role,
                       by=session["u"], must_change=True)
@@ -833,7 +833,7 @@ async def user_create(request: Request):
     _ub = _user_book()
     return _render(request, "users.html", session, nav="users",
                    users=_ub[0], counts=_ub[1], temp_pw=temp, temp_user=username,
-                   error=None, roles=store.USER_ROLES)
+                   error=None, roles=store.USER_ROLES, confirm=None)
 
 
 @router.post("/users/{user_id}", response_class=HTMLResponse)
@@ -851,10 +851,43 @@ async def user_action(request: Request, user_id: int):
         return Response("No such user", status_code=404)
     action = form.get("action")
     temp_pw = None
+    err = None
+
+    def _would_strand(uid):
+        """Does removing this account's admin access leave nobody who can get
+        back in? Self-protection alone was not enough: an admin could suspend
+        or demote the OTHER admin, and with two accounts that is one click away
+        from a back-office nobody can administer — no way to create a user, no
+        way to reinstate anyone."""
+        others = [u for u in store.list_users()
+                  if u.get("id") != uid and u.get("role") == "admin"
+                  and u.get("active")]
+        return not others
+
+    # An action against a PEER admin is not the same as one against staff, so it
+    # does not happen on a single unguarded click. The row asks first and posts
+    # again with confirm=yes. Server-side, because a browser dialog is advice
+    # and this is a rule.
+    peer_admin = (target.get("role") == "admin"
+                  and target["username"] != session["u"])
+    needs_ok = peer_admin and action in ("suspend", "reset", "role")
+    if needs_ok and form.get("confirm") != "yes":
+        _ub = _user_book()
+        return _render(request, "users.html", session, nav="users",
+                       users=_ub[0], counts=_ub[1], temp_pw=None, temp_user=None,
+                       error=None, roles=store.USER_ROLES,
+                       confirm={"id": user_id, "username": target["username"],
+                                "action": action, "role": form.get("role", "")})
+
     if action == "suspend":
         if target["username"] == session["u"]:
-            return Response("You cannot suspend your own account.", status_code=400)
-        store.update_user(user_id, by=session["u"], bump_sv=True, active=False)
+            err = "You cannot suspend your own account."
+        elif target.get("role") == "admin" and _would_strand(user_id):
+            err = ("{} is the last active admin. Make someone else an admin "
+                   "first, or nobody will be able to manage this back-office."
+                   ).format(target["username"])
+        else:
+            store.update_user(user_id, by=session["u"], bump_sv=True, active=False)
     elif action == "activate":
         store.update_user(user_id, by=session["u"], active=True)
     elif action == "reset":
@@ -866,10 +899,21 @@ async def user_action(request: Request, user_id: int):
         if role not in store.USER_ROLES:
             return Response("Bad role", status_code=400)
         if target["username"] == session["u"] and role != "admin":
-            return Response("You cannot demote your own account.", status_code=400)
-        store.update_user(user_id, by=session["u"], bump_sv=True, role=role)
+            err = "You cannot demote your own account."
+        elif (role != "admin" and target.get("role") == "admin"
+                and _would_strand(user_id)):
+            err = ("{} is the last active admin. Promote someone else before "
+                   "changing this role.").format(target["username"])
+        else:
+            store.update_user(user_id, by=session["u"], bump_sv=True, role=role)
     else:
         return Response("Bad action", status_code=400)
+
+    if err:
+        _ub = _user_book()
+        return _render(request, "users.html", session, nav="users",
+                       users=_ub[0], counts=_ub[1], temp_pw=None, temp_user=None,
+                       error=err, roles=store.USER_ROLES, confirm=None)
     _ub = _user_book()
     return _render(request, "users.html", session, nav="users",
                    users=_ub[0], counts=_ub[1], temp_pw=temp_pw,
@@ -920,8 +964,14 @@ async def password_change(request: Request):
                                 password=auth.hash_password(new), must_change=False)
     # bump_sv killed every session including THIS one — mint a fresh cookie so
     # the user changing their password is the one person not logged out by it.
+    #
+    # ?pw=changed carries the confirmation. Without it this redirect dropped the
+    # user on Business pages with no acknowledgement at all: the one action where
+    # silence is least acceptable, because a password change that quietly failed
+    # and one that quietly worked looked identical.
     return _signed_in(request, user["username"], user.get("role", "admin"),
-                      sv=int(updated.get("sv", 1)))
+                      sv=int(updated.get("sv", 1)),
+                      to="/admin/pages?pw=changed")
 
 
 # ---- page reports (takedown / correction intake) ----------------------------

@@ -19,6 +19,38 @@
 
   {% if error %}<p class="err">{{ error }}</p>{% endif %}
 
+  {% if confirm %}
+  {# An action against a PEER admin, asked before it is done. The server sent
+     us back here rather than acting, so this form carries confirm=yes and is
+     the only way through. #}
+  <div class="confirmbox" role="alertdialog" aria-labelledby="confirm-h">
+    <b id="confirm-h">{{ confirm.username }} is an admin.</b>
+    <p>
+      {%- if confirm.action == 'suspend' %}Suspending this account ends its
+        sessions immediately and it can no longer sign in or manage anything.
+      {%- elif confirm.action == 'reset' %}Resetting the password signs this
+        admin out everywhere, and they cannot get back in until you pass on the
+        temporary password.
+      {%- else %}Changing an admin's role removes what they can do, and takes
+        effect on their next request.{% endif %}
+      Admins can manage users and export the lead book, so this is a change to
+      who controls the back-office — not routine housekeeping.
+    </p>
+    <div class="confirmacts">
+      <form method="post" action="/admin/users/{{ confirm.id }}">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="action" value="{{ confirm.action }}">
+        <input type="hidden" name="role" value="{{ confirm.role }}">
+        <input type="hidden" name="confirm" value="yes">
+        <button type="submit" class="danger">Yes —
+          {{ {'suspend': 'suspend this admin', 'reset': 'reset their password'}
+             .get(confirm.action, 'change their role') }}</button>
+      </form>
+      <a class="btn" href="/admin/users">Cancel</a>
+    </div>
+  </div>
+  {% endif %}
+
   {% if temp_pw %}
   <div class="tmppw" role="status">
     <b>Temporary password for {{ temp_user }}:</b> <code>{{ temp_pw }}</code>

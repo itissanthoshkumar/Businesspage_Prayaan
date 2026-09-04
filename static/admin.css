@@ -441,6 +441,21 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
   padding:11px 14px;margin-top:12px;font-size:13px;
 }
 .note b{color:var(--ink)}
+/* The Unpublish-vs-Remove explainer. Longer than a normal note and read once
+   rather than scanned, so it gets prose measure and a little more leading. */
+.statenote{max-width:78ch;line-height:1.72}
+.statenote i{font-style:normal;font-weight:600;color:var(--ink)}
+
+/* Asked before an action against a peer admin. Carries the danger colour
+   because the consequence is somebody losing control of the back-office, and
+   sits above the table so it cannot be walked past. */
+.confirmbox{
+  background:var(--bad-w);border:1px solid rgba(179,38,30,.32);
+  border-radius:var(--r-lg);padding:16px 18px;margin-bottom:18px;max-width:74ch;
+}
+.confirmbox b{display:block;font-size:15.5px;color:var(--bad)}
+.confirmbox p{margin-top:7px;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
+.confirmacts{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px}
 
 .tmppw{
   background:var(--paper);border:1px dashed var(--accent-r);
@@ -659,6 +674,11 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 .pubform button{flex:none}
 
 /* -- 10 chips + upload ---------------------------------------------------- */
+/* Shown only when the list is full, in the amber that means "waiting on you"
+   everywhere else. Without it the Add button simply stopped responding. */
+.chipfull{
+  margin-top:8px;font-size:12.5px;font-weight:600;color:var(--warn);
+}
 .chipedit{
   border:1px solid var(--line-2);border-radius:var(--r);
   background:var(--sunken);padding:10px;

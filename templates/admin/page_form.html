@@ -81,16 +81,39 @@
           <button type="submit" class="primary">Publish</button>
         </form>
         {% endif %}
-        {% for label, target in [('Unpublish','draft'), ('Remove','removed')] %}
+        {# Both land on the same public response, and that is deliberate — see
+           the note below. The two buttons differ in INTENT, so each says what
+           it is for rather than leaving them to look interchangeable. #}
+        {% for label, target, why in [
+             ('Unpublish', 'draft',   'Take it off the web while you work on it'),
+             ('Remove',    'removed', 'Take it down for good')] %}
           {% if page.status != target %}
           <form method="post" action="/admin/pages/{{ page.id }}/status">
             <input type="hidden" name="csrf" value="{{ csrf }}">
             <input type="hidden" name="status" value="{{ target }}">
-            <button type="submit" class="{{ 'danger' if target=='removed' else '' }}">{{ label }}</button>
+            <button type="submit" title="{{ why }}"
+                    class="{{ 'danger' if target=='removed' else '' }}">{{ label }}</button>
           </form>
           {% endif %}
         {% endfor %}
       </div>
+
+      {# The question this answers is a real one: if a visitor sees the same
+         "page not available" either way, what is the difference? #}
+      {% if page.status == 'live' %}
+      <p class="note statenote"><b>Unpublish or Remove?</b> A visitor sees the
+        same thing either way — the identical "page not available" every unknown
+        address gets. That is on purpose: a distinct "removed" screen would
+        confirm to anyone asking that this business is a Prayaan customer, which
+        is exactly what a takedown is meant to undo.
+        <br><b>Unpublish</b> means <i>not right now</i> — you are editing, a
+        detail is wrong, the owner asked you to pause it. Publish puts it back.
+        <br><b>Remove</b> means <i>done</i> — a takedown, or the customer has
+        left. It is the status Reports expects you to use, and it is what the
+        page-removed count on Business pages is counting.
+        <br>Either way the web address stays reserved, the audit trail keeps who
+        did it and when, and nothing is deleted.</p>
+      {% endif %}
 
       {% if page.status != 'live' and not page.consent
             and not (maker_checker and session.r != 'admin') %}

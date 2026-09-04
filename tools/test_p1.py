@@ -135,7 +135,10 @@ check("everything else redirects until changed", url.endswith("/admin/password")
 code, html, url = post(staff, "/admin/password",
                        {"csrf": csrf_of(html), "current": temp_pw,
                         "new": "asha-strong-9", "confirm": "asha-strong-9"})
-check("password change signs back in", url.endswith("/admin/pages"), url)
+check("password change signs back in", "/admin/pages" in url, url)
+# The redirect now carries a confirmation, because landing silently on Business
+# pages left the one action where silence is least acceptable unacknowledged.
+check("the change is confirmed on screen", "Password changed" in html, url)
 code, html, _ = post(staff, "/admin/password",
                      {"csrf": csrf_of(html), "current": "wrong",
                       "new": "whatever-123", "confirm": "whatever-123"})

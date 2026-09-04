@@ -122,6 +122,15 @@
      is most of what made it feel unsteady. At 400 it settles between words. */
   function debounced() { if (timer) clearTimeout(timer); timer = setTimeout(refresh, 400); }
 
+  /* Chip and figure edits are CLICKS, not keystrokes, and they arrive in bursts
+   * — three languages go in one after another. Each one used to schedule its
+   * own repaint at the typing debounce, so a burst produced a queue of full
+   * server round-trips and whole-document innerHTML swaps, and the Add button
+   * felt like it was sticking: the chip itself is instant, but the main thread
+   * was busy replacing the preview document under it. A longer window lets a
+   * burst collapse into ONE repaint after the person stops adding. */
+  function debouncedSlow() { if (timer) clearTimeout(timer); timer = setTimeout(refresh, 900); }
+
   var busyDot = document.getElementById("preview-busy");
   function setBusy(on) { if (busyDot) busyDot.classList.toggle("on", !!on); }
 
@@ -306,8 +315,24 @@
       var full = items.length >= max;
       input.disabled = full;
       addBtn.disabled = full;
+      /* Say WHY the button stopped working. Hitting the cap used to disable the
+       * control silently: you typed a fourth language, clicked Add, and nothing
+       * happened — which reads as the button being broken rather than the list
+       * being full. */
+      var note = root.querySelector("[data-full]");
+      if (!note) {
+        note = document.createElement("p");
+        note.className = "chipfull";
+        note.setAttribute("data-full", "");
+        note.setAttribute("role", "status");
+        root.appendChild(note);
+      }
+      note.textContent = full
+        ? ("That is the maximum of " + max + " — remove one to add another.")
+        : "";
+      note.hidden = !full;
     }
-    function sync() { hidden.value = items.join("\n"); render(); debounced(); }
+    function sync() { hidden.value = items.join("\n"); render(); debouncedSlow(); }
     function add() {
       var v = (input.value || "").trim();
       if (!v || items.length >= max) return;
@@ -348,7 +373,7 @@
     }
     function sync() {
       hidden.value = items.map(function (f) { return f.label + " | " + f.value; }).join("\n");
-      render(); debounced();
+      render(); debouncedSlow();
     }
     function add() {
       var l = (labelIn.value || "").trim();
@@ -405,14 +430,38 @@
   function scrollPreview(smooth) {
     var doc = frame.contentDocument;
     if (!doc || !doc.body) return;
-    // scrollIntoView rather than a scrollTop write: it resolves the target
-    // section's position for us. "instant" (not "auto") so a repaint never
-    // restarts the document's own smooth-scroll animation; only a focus
-    // CHANGE glides.
     var el = followSel === "top" ? doc.body : doc.querySelector(followSel);
     if (!el) return;
-    try { el.scrollIntoView({ behavior: smooth ? "smooth" : "instant", block: "start" }); }
-    catch (e) { el.scrollIntoView(true); }
+
+    /* Compute the offset and scroll the IFRAME'S OWN WINDOW, rather than
+     * calling el.scrollIntoView().
+     *
+     * Two reasons, both of them the "scrolls further than it should" bug:
+     *
+     *  1. scrollIntoView scrolls every scrollable ancestor, and the iframe is
+     *     inside the editor column — so asking a section to come into view
+     *     inside the preview also dragged the ADMIN page down behind it.
+     *     scrollTo on contentWindow cannot leave the frame.
+     *  2. block:"start" aligns the section to the top of the viewport, but the
+     *     customer page has a sticky header sitting over that top edge, so the
+     *     heading the branch just clicked ended up underneath it and the
+     *     preview looked overscrolled. The header's real height is measured and
+     *     subtracted. */
+    var scroller = doc.scrollingElement || doc.documentElement;
+    var top = 0;
+    if (followSel !== "top") {
+      var bar = doc.querySelector(".topbar");
+      var barH = bar ? bar.getBoundingClientRect().height : 0;
+      top = el.getBoundingClientRect().top + (scroller ? scroller.scrollTop : 0)
+            - barH - 12;               // 12px so it clears the bar, not hugs it
+      if (top < 0) top = 0;
+    }
+    try {
+      frame.contentWindow.scrollTo({ top: top, left: 0,
+                                     behavior: smooth ? "smooth" : "instant" });
+    } catch (e) {
+      if (scroller) scroller.scrollTop = top;
+    }
   }
   form.addEventListener("focusin", function (e) {
     var sel = sectionFor(e.target);

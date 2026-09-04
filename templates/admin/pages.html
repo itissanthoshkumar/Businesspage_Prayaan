@@ -18,6 +18,14 @@
     </div>
   </div>
 
+  {# Confirmation for an action that finished on a DIFFERENT screen. A password
+     change signs the user back in and lands them here, so the acknowledgement
+     has to travel with them. #}
+  {% if request.query_params.get('pw') == 'changed' %}
+  <p class="ok" role="status"><b>Password changed.</b> Every other session signed
+    in as you has been ended — sign in again on your other devices.</p>
+  {% endif %}
+
   {# Upshots. Each one is a link that filters the table below to that status;
      the numbers always describe the whole book, not the current view. #}
   <nav class="upshots" aria-label="Filter pages by status">
