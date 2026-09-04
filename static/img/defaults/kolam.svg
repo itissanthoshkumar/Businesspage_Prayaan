@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Kolam pattern">
+  <!-- Default 2 — KOLAM. The dot-and-loop pattern drawn at Tamil Nadu
+       thresholds every morning; the closest thing to a shop's own doorstep
+       that is not a photograph of one. Gold on navy, centred for the square
+       avatar crop. -->
+  <defs>
+    <radialGradient id="k-g" cx="50%" cy="50%" r="70%">
+      <stop offset="0" stop-color="#33436e"/><stop offset="1" stop-color="#1c2743"/>
+    </radialGradient>
+    <g id="k-petal">
+      <path d="M0 -96C46 -70 70 -40 70 0C70 40 46 70 0 96C-46 70 -70 40 -70 0C-70 -40 -46 -70 0 -96Z"/>
+    </g>
+  </defs>
+  <rect width="1200" height="600" fill="url(#k-g)"/>
+  <g stroke="#e3b44f" fill="none" stroke-width="4" stroke-linecap="round" opacity=".95">
+    <g transform="translate(600 300)">
+      <use href="#k-petal"/>
+      <use href="#k-petal" transform="rotate(45)"/>
+      <use href="#k-petal" transform="rotate(90)"/>
+      <use href="#k-petal" transform="rotate(135)"/>
+      <circle r="34"/>
+      <circle r="150" stroke-dasharray="2 26" stroke-width="6"/>
+      <circle r="196" stroke-dasharray="2 34" stroke-width="6" opacity=".6"/>
+    </g>
+  </g>
+  <!-- the dots the loops are drawn around -->
+  <g fill="#e3b44f" opacity=".55">
+    <circle cx="600" cy="300" r="5"/>
+    <circle cx="530" cy="300" r="5"/><circle cx="670" cy="300" r="5"/>
+    <circle cx="600" cy="230" r="5"/><circle cx="600" cy="370" r="5"/>
+    <circle cx="551" cy="251" r="5"/><circle cx="649" cy="251" r="5"/>
+    <circle cx="551" cy="349" r="5"/><circle cx="649" cy="349" r="5"/>
+  </g>
+  <!-- corner dot field, fading out -->
+  <g fill="#8a6410" opacity=".5">
+    <circle cx="120" cy="120" r="4"/><circle cx="200" cy="120" r="4"/><circle cx="120" cy="200" r="4"/>
+    <circle cx="1080" cy="480" r="4"/><circle cx="1000" cy="480" r="4"/><circle cx="1080" cy="400" r="4"/>
+  </g>
+</svg>

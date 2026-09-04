@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Thread spools and bolts of cloth">
+  <!-- Default 11 — SPOOLS. Thread and cloth: made for the tailors, garment and
+       textile shops that are a large slice of the customer base, and still
+       reads as "stock on a shelf" for anyone else. -->
+  <defs>
+    <linearGradient id="sl-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBF6EE"/><stop offset="1" stop-color="#F0E7DA"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#sl-bg)"/>
+
+  <!-- bolts of cloth leaning at the back -->
+  <g>
+    <g transform="rotate(-8 190 320)">
+      <rect x="150" y="150" width="80" height="330" rx="12" fill="#6A5AE0"/>
+      <rect x="150" y="150" width="80" height="34" rx="12" fill="#4034A8"/>
+    </g>
+    <g transform="rotate(-4 268 320)">
+      <rect x="238" y="180" width="76" height="300" rx="12" fill="#12B8A6"/>
+      <rect x="238" y="180" width="76" height="32" rx="12" fill="#0A6B60"/>
+    </g>
+    <g transform="rotate(7 1010 320)">
+      <rect x="970" y="164" width="80" height="316" rx="12" fill="#F06AA8"/>
+      <rect x="970" y="164" width="80" height="34" rx="12" fill="#A63268"/>
+    </g>
+    <g transform="rotate(4 928 320)">
+      <rect x="890" y="196" width="76" height="284" rx="12" fill="#e3b44f"/>
+      <rect x="890" y="196" width="76" height="32" rx="12" fill="#8a6410"/>
+    </g>
+  </g>
+
+  <!-- loose thread arcs across the middle -->
+  <g fill="none" stroke-width="6" stroke-linecap="round" opacity=".85">
+    <path d="M356 300q120-70 240 0t240-40" stroke="#F4633A"/>
+    <path d="M356 336q120-70 240 0t240-40" stroke="#8CC63F" opacity=".7"/>
+  </g>
+
+  <!-- three spools, centred -->
+  <g>
+    <g transform="translate(470 400)">
+      <rect x="-52" y="-96" width="104" height="14" rx="7" fill="#7A4A22"/>
+      <rect x="-40" y="-82" width="80" height="140" fill="#3B9BF0"/>
+      <path d="M-40-82h80v140h-80z" fill="none" stroke="#1A5F9E" stroke-width="3"/>
+      <path d="M-40-52h80M-40-22h80M-40 8h80M-40 38h80" stroke="#1A5F9E" stroke-width="3" opacity=".55"/>
+      <rect x="-52" y="58" width="104" height="14" rx="7" fill="#7A4A22"/>
+    </g>
+    <g transform="translate(600 386)">
+      <rect x="-58" y="-110" width="116" height="16" rx="8" fill="#7A4A22"/>
+      <rect x="-44" y="-94" width="88" height="164" fill="#F4633A"/>
+      <path d="M-44-94h88v164h-88z" fill="none" stroke="#B23A16" stroke-width="3"/>
+      <path d="M-44-60h88M-44-26h88M-44 8h88M-44 42h88" stroke="#B23A16" stroke-width="3" opacity=".55"/>
+      <rect x="-58" y="70" width="116" height="16" rx="8" fill="#7A4A22"/>
+    </g>
+    <g transform="translate(730 400)">
+      <rect x="-52" y="-96" width="104" height="14" rx="7" fill="#7A4A22"/>
+      <rect x="-40" y="-82" width="80" height="140" fill="#8CC63F"/>
+      <path d="M-40-82h80v140h-80z" fill="none" stroke="#4F7317" stroke-width="3"/>
+      <path d="M-40-52h80M-40-22h80M-40 8h80M-40 38h80" stroke="#4F7317" stroke-width="3" opacity=".55"/>
+      <rect x="-52" y="58" width="104" height="14" rx="7" fill="#7A4A22"/>
+    </g>
+  </g>
+
+  <!-- needle, threaded -->
+  <g transform="translate(880 470) rotate(-18)">
+    <rect x="0" y="-3" width="150" height="6" rx="3" fill="#B9C2CC"/>
+    <ellipse cx="8" cy="0" rx="7" ry="11" fill="none" stroke="#B9C2CC" stroke-width="4"/>
+    <path d="M8 0q-70 26 -120 -10" fill="none" stroke="#F06AA8" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <rect x="0" y="486" width="1200" height="114" fill="#E3D6C3"/>
+  <path d="M0 486h1200" stroke="#7A4A22" stroke-width="5" opacity=".45"/>
+</svg>

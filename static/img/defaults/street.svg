@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="A row of shops on a street">
+  <!-- Default 3 — STREET. A row of shutters under a warm sky: the market row
+       a customer's shop actually stands in. Flat shapes, no outline, so it
+       reads well small. -->
+  <defs>
+    <linearGradient id="st-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6E7C8"/><stop offset="1" stop-color="#F7F8FA"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#st-sky)"/>
+  <circle cx="600" cy="196" r="72" fill="#e3b44f" opacity=".55"/>
+
+  <!-- back row, receded -->
+  <g fill="#C7D2DD" opacity=".7">
+    <rect x="120" y="250" width="150" height="170"/>
+    <rect x="930" y="238" width="160" height="182"/>
+    <rect x="300" y="268" width="120" height="152"/>
+  </g>
+
+  <!-- shop row -->
+  <g>
+    <rect x="180" y="300" width="200" height="180" fill="#33436e"/>
+    <rect x="196" y="352" width="168" height="128" fill="#EDF0F4"/>
+    <rect x="180" y="300" width="200" height="30" fill="#1c2743"/>
+    <rect x="212" y="310" width="80" height="10" rx="5" fill="#e3b44f"/>
+
+    <rect x="410" y="256" width="240" height="224" fill="#1c2743"/>
+    <rect x="430" y="318" width="200" height="162" fill="#fff"/>
+    <rect x="410" y="256" width="240" height="36" fill="#33436e"/>
+    <rect x="444" y="268" width="118" height="12" rx="6" fill="#e3b44f"/>
+    <path d="M430 318h200v14H430z" fill="#C7D2DD"/>
+    <path d="M430 356h200v10H430zM430 392h200v10H430z" fill="#DDE4EC"/>
+    <rect x="500" y="410" width="60" height="70" fill="#33436e"/>
+
+    <rect x="680" y="290" width="180" height="190" fill="#33436e"/>
+    <rect x="696" y="342" width="148" height="138" fill="#EDF0F4"/>
+    <rect x="680" y="290" width="180" height="30" fill="#1c2743"/>
+    <rect x="710" y="300" width="70" height="10" rx="5" fill="#e3b44f"/>
+  </g>
+
+  <!-- awnings -->
+  <g fill="#e3b44f" opacity=".9">
+    <path d="M180 330h200l22 26H158z"/>
+    <path d="M680 320h180l22 26H658z"/>
+  </g>
+
+  <!-- ground -->
+  <rect x="0" y="480" width="1200" height="120" fill="#EDF0F4"/>
+  <rect x="0" y="480" width="1200" height="6" fill="#C7D2DD"/>
+</svg>

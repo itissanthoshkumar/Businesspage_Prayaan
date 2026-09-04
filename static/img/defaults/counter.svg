@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Shop counter with weighing scales">
+  <!-- Default 6 — COUNTER. The scales, the ledger and the tin behind the
+       counter: the trade itself rather than the building. Navy ground so it
+       sits closest to the brand. -->
+  <defs>
+    <linearGradient id="c-g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#233156"/><stop offset="1" stop-color="#1c2743"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#c-g)"/>
+  <!-- shelf lines behind -->
+  <g stroke="#33436e" stroke-width="4">
+    <path d="M180 150h840M180 236h840"/>
+  </g>
+  <g fill="#33436e">
+    <rect x="250" y="96" width="46" height="54" rx="6"/>
+    <rect x="312" y="110" width="38" height="40" rx="6"/>
+    <rect x="880" y="88" width="52" height="62" rx="6"/>
+    <rect x="820" y="118" width="40" height="32" rx="6"/>
+  </g>
+  <g fill="#e3b44f" opacity=".8">
+    <rect x="368" y="104" width="34" height="46" rx="6"/>
+    <rect x="770" y="120" width="32" height="30" rx="6"/>
+  </g>
+
+  <!-- scales, centred -->
+  <g transform="translate(600 300)" stroke="#e3b44f" fill="none"
+     stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 -110v150M-150 -110h300"/>
+    <path d="M-150 -110l-46 66h92zM150 -110l-46 66h92z"/>
+    <path d="M-64 40h128l-16 46h-96z" fill="#e3b44f" opacity=".22"/>
+    <path d="M-64 40h128l-16 46h-96z"/>
+    <circle cy="-122" r="14" fill="#e3b44f" stroke="none"/>
+  </g>
+
+  <!-- counter -->
+  <rect x="150" y="470" width="900" height="26" rx="8" fill="#e3b44f"/>
+  <rect x="180" y="496" width="840" height="104" fill="#233156"/>
+  <g stroke="#33436e" stroke-width="4"><path d="M420 496v104M780 496v104"/></g>
+</svg>

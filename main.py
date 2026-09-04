@@ -124,7 +124,20 @@ def _inr(n) -> str:
     return sign + ",".join(groups) + "," + tail
 
 
+def _status_label(value) -> str:
+    """NOT_INTERESTED -> "Not interested".
+
+    Storage keeps its token; a person reads a phrase. Without this the
+    back-office showed raw enum values to branch staff — and inconsistently,
+    since page statuses are stored lowercase ("live" rendered as "Live") while
+    lead and report statuses are stored uppercase and rendered as SHOUTING. It
+    also stops the longest value being clipped by its own dropdown arrow."""
+    s = str(value or "").replace("_", " ").strip().lower()
+    return s[:1].upper() + s[1:] if s else ""
+
+
 templates.env.filters["inr"] = _inr
+templates.env.filters["statuslabel"] = _status_label
 admin.init(templates)
 app.include_router(admin.router)
 # Jinja2Templates autoescapes .html by default; every value below is
@@ -398,6 +411,65 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else ""
 
 
+DISK_PHOTO_PREFIX = "/static/img/uploads/"
+
+# The stand-in shown when a business has no usable photograph of its own. One
+# file, swapped here or by env, so changing the house default never means
+# editing a template. Set it to "" to go back to the no-photo layout.
+DEFAULT_PHOTO = os.getenv("PBN_DEFAULT_PHOTO", "/static/img/defaults/shopfront.svg")
+
+
+def disk_photos_persist() -> bool:
+    """Does a photo written to the container filesystem survive a deploy?
+
+    Only on the file-store backend, which runs locally against a real directory.
+    A database-backed deployment (Render) has an EPHEMERAL disk: every deploy
+    ships a new container and the uploads directory goes with the old one."""
+    return getattr(store.page_by_path, "__module__", "store") == "filestore"
+
+
+def real_photo(page: dict) -> str:
+    """The customer's OWN photograph, or "" — never the stand-in.
+
+    Photos used to be written to disk under /static/img/uploads/. On Render that
+    disk does not survive a deploy, so those references died the next time the
+    service shipped — the page kept rendering an <img> whose file had gone, and
+    a customer sharing their link showed their family a broken frame with alt
+    text in it. Uploads now go into the database (/photo/<sha>.<ext>), which
+    persists, but rows created before that change still carry the old path.
+
+    On a database-backed deployment such a path can NEVER resolve, so it counts
+    as no photo at all. The back-office flags exactly this so a branch knows to
+    re-upload rather than wondering what broke.
+
+    Kept separate from usable_photo() because two callers must not be fooled by
+    the stand-in: the back-office warning, and the structured data — telling
+    search engines a house illustration is a photograph OF this business would
+    be a false claim about a real trader."""
+    photo = (page.get("photo_url") or "").strip()
+    if photo.startswith(DISK_PHOTO_PREFIX) and not disk_photos_persist():
+        return ""
+    return photo
+
+
+def usable_photo(page: dict) -> str:
+    """What the page should actually SHOW: the customer's photograph if there is
+    one, otherwise the house default. A page with no photo still deserves a
+    considered image rather than an empty frame, and the link-preview card that
+    WhatsApp builds from it is the whole distribution mechanism."""
+    return real_photo(page) or DEFAULT_PHOTO
+
+
+def with_usable_photo(page: dict) -> dict:
+    """A shallow copy of the page whose photo_url is guaranteed renderable."""
+    photo = usable_photo(page)
+    if photo == (page.get("photo_url") or ""):
+        return page
+    out = dict(page)
+    out["photo_url"] = photo
+    return out
+
+
 def _local_business_jsonld(page: dict, canonical: str, abs_photo: str) -> dict:
     """schema.org/LocalBusiness for the page.
 
@@ -474,6 +546,13 @@ def _render_page(request: Request, page: dict, status_code: int = 200, error: st
             "src": "{}?v={}&w={}&frame=1".format(page["path"], variant, device),
         }, status_code=status_code)
 
+    # The structured data is computed from the customer's OWN photo, before the
+    # stand-in is substituted below: schema.org `image` on a LocalBusiness is a
+    # claim that the picture shows this business, and a house illustration does
+    # not. The page and its link-preview card do get the stand-in.
+    own = real_photo(page)
+    abs_own = own if own.startswith("http") else (BASE_URL + own if own else "")
+    page = with_usable_photo(page)
     photo = page.get("photo_url") or ""
     canonical = BASE_URL + page["path"]
     abs_photo = photo if photo.startswith("http") else (BASE_URL + photo if photo else "")
@@ -481,7 +560,7 @@ def _render_page(request: Request, page: dict, status_code: int = 200, error: st
     return templates.TemplateResponse(
         "variants/v{}.html".format(variant),
         {"request": request, "page": page, "base_url": BASE_URL,
-         "jsonld": _local_business_jsonld(page, canonical, abs_photo) if indexed else None,
+         "jsonld": _local_business_jsonld(page, canonical, abs_own) if indexed else None,
          "device": device, "devices": DEVICES, "framed": framed,
          # Keep the frame flag on submit so a form post inside the device view
          # comes back inside the frame rather than escaping to a full page —
@@ -516,6 +595,7 @@ def render_variant_html(page: dict, variant: int = None) -> str:
     Falls back to DEFAULT_VARIANT for an unknown id, exactly like a live URL."""
     ids = [i for i, _ in available_variants()] or [DEFAULT_VARIANT]
     v = variant if variant in ids else (DEFAULT_VARIANT if DEFAULT_VARIANT in ids else ids[0])
+    page = with_usable_photo(page)
     photo = page.get("photo_url") or ""
     path = page.get("path") or "/preview"
     canonical = BASE_URL + path

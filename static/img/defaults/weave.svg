@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Woven geometric pattern">
+  <!-- Default 4 — WEAVE. No literal object at all: a quiet geometric field, so
+       it suits any trade equally and never contradicts the business it stands
+       for. The safest of the six. -->
+  <defs>
+    <pattern id="w-p" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M0 40h80M40 0v80" stroke="#C7D2DD" stroke-width="2" fill="none"/>
+      <circle cx="40" cy="40" r="4" fill="#C7D2DD"/>
+      <circle cx="0" cy="0" r="4" fill="#C7D2DD"/>
+      <circle cx="80" cy="80" r="4" fill="#C7D2DD"/>
+    </pattern>
+    <linearGradient id="w-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7F8FA"/><stop offset="1" stop-color="#E7EBF1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#w-g)"/>
+  <rect width="1200" height="600" fill="url(#w-p)" opacity=".8"/>
+
+  <!-- centred medallion, so the square crop lands on something -->
+  <g transform="translate(600 300)">
+    <circle r="168" fill="#F7F8FA" opacity=".92"/>
+    <circle r="168" fill="none" stroke="#1c2743" stroke-width="3" opacity=".22"/>
+    <g fill="none" stroke="#1c2743" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-88 44V-24l88-52 88 52v68l-88 52z"/>
+      <path d="M-88-24l88 52 88-52M0 28v96"/>
+    </g>
+    <path d="M-88 44V-24l88-52 88 52v68l-88 52z" fill="#e3b44f" opacity=".18"/>
+    <circle r="10" cy="-4" fill="#e3b44f"/>
+  </g>
+</svg>

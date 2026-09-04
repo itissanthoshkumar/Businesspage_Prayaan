@@ -101,7 +101,7 @@
   <div class="tablewrap"><div class="tablescroll"><table class="grid">
     <thead><tr>
       <th>Business</th><th>Web address</th><th>Status</th><th>Updated</th>
-      <th class="col-act">Edit</th>
+      <th class="col-act">Actions</th>
     </tr></thead>
     <tbody>
     {% for p in pages %}
@@ -114,7 +114,23 @@
       <td><span class="pill s-{{ p.status }}">{{ p.status }}</span>
           {% if not p.indexed %}<span class="pill s-noindex">noindex</span>{% endif %}</td>
       <td class="sub mono">{{ p.updated_at }}</td>
-      <td class="col-act"><a class="rowedit" href="/admin/pages/{{ p.id }}">Edit</a></td>
+      {# Open is offered ONLY for a live page. A draft has never been published
+         and a removed one is withdrawn — both answer the public 404, exactly as
+         the status tiles above say ("not visible yet" / "link shows 'not
+         available'"). A button that opened those would hand a branch a link
+         that fails and look like a fault in the page rather than its status.
+         New tab, so the back-office list is not lost. #}
+      <td class="col-act">
+        {% if p.status == 'live' %}
+        <a class="rowopen" href="{{ p.path }}" target="_blank" rel="noopener"
+           title="Open {{ p.business_name }}'s page in a new tab">Open<svg
+           viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path
+           d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg></a>
+        {% else %}
+        <span class="rowna" title="{% if p.status == 'draft' %}Not published yet — the public link is not available until you publish it.{% else %}Removed — the public link shows &quot;not available&quot;.{% endif %}">Not public</span>
+        {% endif %}
+        <a class="rowedit" href="/admin/pages/{{ p.id }}">Edit</a>
+      </td>
     </tr>
     {% endfor %}
     </tbody>

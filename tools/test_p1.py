@@ -101,6 +101,19 @@ pid = re.search(r"/admin/pages/(\d+)", url).group(1)
 _, edit2, _ = get(admin, "/admin/pages/%s" % pid)
 check("external photo_url dropped", "evil.example.com" not in edit2)
 
+# A /photo/ reference is database-backed and survives a deploy, so it must be
+# stored on EVERY backend. This is the other half of the missing-photo guard:
+# the rule that drops un-keepable disk paths must not also throw away the
+# storage that replaced them.
+_, form_html, _ = get(admin, "/admin/pages/new")
+code, _, url = post(admin, "/admin/pages/new", {
+    "csrf": csrf_of(form_html), "business_name": "Db Photo Co",
+    "state_code": "TN", "branch_slug": "vellore",
+    "photo_url": "/photo/abc123def456abcd.jpg"})
+pid2 = re.search(r"/admin/pages/(\d+)", url).group(1)
+_, edit3, _ = get(admin, "/admin/pages/%s" % pid2)
+check("database photo_url kept", "/photo/abc123def456abcd.jpg" in edit3)
+
 print("\n-- user management --")
 code, users_html, _ = get(admin, "/admin/users")
 check("admin reaches /admin/users", code == 200, code)

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Kites over a bright sky">
+  <!-- Default 10 — KITES. Pongal sky. The most openly celebratory of the set,
+       and the only one with real sky in it, which gives a page without a
+       photograph some air rather than another object. Two kites sit centre so
+       the square crop still reads. -->
+  <defs>
+    <linearGradient id="kt-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3B9BF0"/>
+      <stop offset=".55" stop-color="#8FD0F5"/>
+      <stop offset="1" stop-color="#FFF0CF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#kt-sky)"/>
+
+  <!-- clouds -->
+  <g fill="#ffffff" opacity=".55">
+    <ellipse cx="220" cy="150" rx="86" ry="34"/><ellipse cx="272" cy="132" rx="56" ry="30"/>
+    <ellipse cx="980" cy="220" rx="96" ry="36"/><ellipse cx="1032" cy="200" rx="60" ry="30"/>
+  </g>
+
+  <!-- kite tails, drawn first so the kites sit on top -->
+  <g fill="none" stroke="#1c2743" stroke-width="3" opacity=".55">
+    <path d="M600 372q26 44 -8 76t 6 74"/>
+    <path d="M406 300q22 38 -6 66t 4 62"/>
+    <path d="M818 262q24 40 -6 70t 4 64"/>
+  </g>
+
+  <!-- CENTRE kite, largest -->
+  <g transform="translate(600 250)">
+    <path d="M0 -122L92 0 0 122 -92 0Z" fill="#F4633A"/>
+    <path d="M0 -122L92 0 0 0Z" fill="#e3b44f"/>
+    <path d="M-92 0L0 0 0 122Z" fill="#B23A16"/>
+    <path d="M0 -122L92 0 0 122 -92 0Z" fill="none" stroke="#1c2743" stroke-width="5"/>
+    <path d="M0 -122V122M-92 0H92" stroke="#1c2743" stroke-width="4" opacity=".7"/>
+    <g fill="#6A5AE0"><circle cx="0" cy="150" r="9"/><circle cx="-14" cy="182" r="8"/><circle cx="10" cy="212" r="7"/></g>
+  </g>
+
+  <!-- flanking kites -->
+  <g transform="translate(406 200) scale(.66)">
+    <path d="M0 -122L92 0 0 122 -92 0Z" fill="#12B8A6"/>
+    <path d="M0 -122L92 0 0 0Z" fill="#8CC63F"/>
+    <path d="M0 -122L92 0 0 122 -92 0Z" fill="none" stroke="#1c2743" stroke-width="7"/>
+  </g>
+  <g transform="translate(818 168) scale(.58)">
+    <path d="M0 -122L92 0 0 122 -92 0Z" fill="#F06AA8"/>
+    <path d="M-92 0L0 0 0 122Z" fill="#6A5AE0"/>
+    <path d="M0 -122L92 0 0 122 -92 0Z" fill="none" stroke="#1c2743" stroke-width="8"/>
+  </g>
+
+  <!-- rooftops along the bottom -->
+  <path fill="#1c2743" opacity=".9"
+        d="M0 600V520h120v-30h96v30h120v-52h110v52h150v-40h130v40h136v-64h108v64h230v100z"/>
+  <g fill="#e3b44f" opacity=".9">
+    <rect x="150" y="540" width="18" height="24"/><rect x="470" y="500" width="18" height="24"/>
+    <rect x="860" y="490" width="18" height="24"/>
+  </g>
+</svg>

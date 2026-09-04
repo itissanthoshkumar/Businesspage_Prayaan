@@ -1,32 +1,68 @@
 {% extends "admin/_shell.html" %}
 {% block title %}Leads{% endblock %}
 {% block body %}
-{% set new_n = leads|selectattr('status','equalto','NEW')|list|length %}
+{# Same shape as Business pages and Reports: tiles stating the book, a labelled
+   toolbar, then the table. The counts used to be derived from the FILTERED
+   list, so filtering to CONTACTED reported "0 not picked up yet" — the route
+   now counts the whole book. #}
 <div class="stagger">
 
   <div class="head">
     <div class="headtext">
       <span class="eyebrow">Enquiries</span>
       <h1>Leads</h1>
-      {% if leads %}
-      <p class="headsub">{{ leads|length }} enquir{{ 'y' if leads|length == 1 else 'ies' }}{% if new_n %},
-        <b>{{ new_n }}</b> not picked up yet{% endif %}. Each one came from a
-        customer's page — the referring business is credited on the row.</p>
-      {% endif %}
+      <p class="headsub">Every enquiry came from a customer's page, and the
+        referring business is credited on its row. Prayaan promises a call
+        within one working day — anything still NEW past that is flagged.</p>
     </div>
     <div class="headacts">
       <a class="btn" href="/admin/leads.csv{% if status %}?status={{ status }}{% endif %}">Export CSV</a>
     </div>
   </div>
 
-  <form class="filters" method="get" action="/admin/leads" role="search">
-    <input name="q" type="text" value="{{ q }}" placeholder="Search name, mobile or referring business"
-           aria-label="Search leads">
-    <select name="status" aria-label="Filter by status">
-      <option value="">All statuses</option>
-      {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
-    </select>
-    <button type="submit">Filter</button>
+  <nav class="upshots" aria-label="Filter leads by status">
+    <a class="upshot u-all" href="/admin/leads{% if q %}?q={{ q|urlencode }}{% endif %}"
+       {% if not status %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.total }}</span>
+      <span class="uplabel">All leads</span>
+      <span class="upsub">every enquiry received</span>
+    </a>
+    <a class="upshot u-warn" href="/admin/leads?status=NEW{% if q %}&amp;q={{ q|urlencode }}{% endif %}"
+       {% if status == 'NEW' %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.new }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Not picked up</span>
+      <span class="upsub">nobody has called yet</span>
+    </a>
+    <a class="upshot u-bad" href="/admin/leads?status=NEW{% if q %}&amp;q={{ q|urlencode }}{% endif %}">
+      <span class="upnum">{{ counts.overdue }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Past a day</span>
+      <span class="upsub">still NEW after 24 hours</span>
+    </a>
+    <a class="upshot u-good" href="/admin/leads?status=CONTACTED{% if q %}&amp;q={{ q|urlencode }}{% endif %}"
+       {% if status == 'CONTACTED' %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.working }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>In hand</span>
+      <span class="upsub">contacted or interested</span>
+    </a>
+  </nav>
+
+  <form class="toolbar" method="get" action="/admin/leads" role="search">
+    <div class="tfield tgrow">
+      <label for="f-lq">Search</label>
+      <input id="f-lq" name="q" type="text" value="{{ q }}"
+             placeholder="Name, mobile or referring business">
+    </div>
+    <div class="tfield">
+      <label for="f-lstatus">Status</label>
+      <select id="f-lstatus" name="status">
+        <option value="">All statuses</option>
+        {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s|statuslabel }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="tactions">
+      <button type="submit" class="primary">Apply</button>
+      {% if q or status %}<a class="btn" href="/admin/leads">Clear</a>{% endif %}
+    </div>
   </form>
 
   {% if not leads %}
@@ -41,9 +77,11 @@
     {% endif %}
   </div>
   {% else %}
+  <p class="resultline">Showing <b>{{ leads|length }}</b> of {{ counts.total }}{% if status %} &middot; {{ status|statuslabel }}{% endif %}{% if q %} &middot; matching “{{ q }}”{% endif %}</p>
   <div class="tablewrap"><div class="tablescroll"><table class="grid">
     <thead><tr>
-      <th>Received</th><th>Person</th><th>Referred by</th><th>Working it</th>
+      <th>Received</th><th>Person</th><th>Referred by</th>
+      <th class="col-act">Working it</th>
     </tr></thead>
     <tbody>
     {% for l in leads %}
@@ -59,12 +97,12 @@
       <td>{{ l.referrer_business_name or '—' }}
         {% if l.via %}<span class="viachip">{{ 'WhatsApp' if l.via == 'wa' else 'QR' }}</span>{% endif %}
         <span class="sub"><code>{{ l.source_path or '' }}</code></span></td>
-      <td>
+      <td class="col-act">
         <form method="post" action="/admin/leads/{{ l.id }}" class="leadform">
           <input type="hidden" name="csrf" value="{{ csrf }}">
           <input type="hidden" name="status_filter" value="{{ status }}">
           <select name="status" aria-label="Lead status">
-            {% for s in statuses %}<option value="{{ s }}" {% if l.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            {% for s in statuses %}<option value="{{ s }}" {% if l.status==s %}selected{% endif %}>{{ s|statuslabel }}</option>{% endfor %}
           </select>
           <input name="assigned_branch" value="{{ l.assigned_branch or '' }}" placeholder="Branch"
                  maxlength="40" aria-label="Assigned branch">

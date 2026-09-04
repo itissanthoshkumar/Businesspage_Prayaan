@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Spice tray seen from above">
+  <!-- Default 9 — SPICE. A masala dabba from above: turmeric, chilli, coriander,
+       cumin, rice. The most saturated of the set and the most unmistakably
+       local. Centred tray, so the square crop is the tray. -->
+  <defs>
+    <linearGradient id="sp-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B2118"/><stop offset="1" stop-color="#1A140F"/>
+    </linearGradient>
+    <radialGradient id="sp-sheen" cx="34%" cy="28%" r="72%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#sp-bg)"/>
+
+  <!-- loose spice scattered on the board -->
+  <g opacity=".55">
+    <circle cx="176" cy="150" r="6" fill="#E8B21F"/><circle cx="212" cy="188" r="4" fill="#C6412A"/>
+    <circle cx="140" cy="214" r="5" fill="#8CA33C"/><circle cx="252" cy="140" r="4" fill="#E8B21F"/>
+    <circle cx="1024" cy="430" r="6" fill="#C6412A"/><circle cx="1062" cy="392" r="4" fill="#E8B21F"/>
+    <circle cx="988" cy="392" r="5" fill="#8CA33C"/><circle cx="1046" cy="466" r="4" fill="#C6412A"/>
+  </g>
+
+  <g transform="translate(600 300)">
+    <!-- the tin -->
+    <circle r="258" fill="#6E6257"/>
+    <circle r="258" fill="url(#sp-sheen)"/>
+    <circle r="238" fill="#8A7C6D"/>
+    <circle r="228" fill="#5C5248"/>
+    <circle r="228" fill="url(#sp-sheen)"/>
+
+    <!-- six wells around one centre -->
+    <g>
+      <g transform="translate(0 -140)"><circle r="66" fill="#3E362E"/><circle r="60" fill="#E8B21F"/><circle r="60" fill="url(#sp-sheen)"/></g>
+      <g transform="translate(121 -70)"><circle r="66" fill="#3E362E"/><circle r="60" fill="#C6412A"/><circle r="60" fill="url(#sp-sheen)"/></g>
+      <g transform="translate(121 70)"><circle r="66" fill="#3E362E"/><circle r="60" fill="#8CA33C"/><circle r="60" fill="url(#sp-sheen)"/></g>
+      <g transform="translate(0 140)"><circle r="66" fill="#3E362E"/><circle r="60" fill="#F4EDDC"/><circle r="60" fill="url(#sp-sheen)"/></g>
+      <g transform="translate(-121 70)"><circle r="66" fill="#3E362E"/><circle r="60" fill="#7A4A22"/><circle r="60" fill="url(#sp-sheen)"/></g>
+      <g transform="translate(-121 -70)"><circle r="66" fill="#3E362E"/><circle r="60" fill="#D8792A"/><circle r="60" fill="url(#sp-sheen)"/></g>
+      <circle r="66" fill="#3E362E"/><circle r="60" fill="#B4472F"/><circle r="60" fill="url(#sp-sheen)"/>
+    </g>
+
+    <!-- the little spoon -->
+    <g transform="rotate(-24) translate(0 -196)">
+      <ellipse rx="26" ry="19" fill="#C9CFD6"/>
+      <rect x="-5" y="14" width="10" height="86" rx="5" fill="#C9CFD6"/>
+    </g>
+  </g>
+</svg>

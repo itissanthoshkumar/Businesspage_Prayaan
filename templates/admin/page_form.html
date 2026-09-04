@@ -17,32 +17,33 @@
 <div class="editor">
   <div class="editcol">
 
+    {# HERO. The identity and the state used to be two stacked blocks — a title
+       card, then a separate status card repeating the same subject. Read top to
+       bottom that asked the same question twice: what is this, and is it live.
+       They are one thing, so they are now one block: who the page is, what
+       state it is in, and every action that changes that state.
+
+       A new page has no state to show, so it keeps the plain header. #}
+    {% if not page %}
     <div class="head">
       <div class="headtext">
-        <span class="eyebrow">{{ 'Editing' if page else 'New' }}</span>
-        <h1>{{ page.business_name if page else 'New business page' }}</h1>
-        {% if page %}
-        <p class="headsub">Change any field and save. The web address stays fixed.</p>
-        {% else %}
+        <span class="eyebrow">New</span>
+        <h1>New business page</h1>
         <p class="headsub">Fill in what you know — it saves as a draft first, and
           nothing is public until you publish it.</p>
-        {% endif %}
       </div>
-      {% if page and page.status == 'live' %}
-      {# Only when actually live: for a draft this link lands on the public
-         404 ("page is not available"), which reads as an error, not a state. #}
-      <div class="headacts">
-        <a class="btn" href="{{ page.path }}" target="_blank" rel="noopener">Open live &nearr;</a>
-      </div>
-      {% endif %}
     </div>
+    {% endif %}
 
     {% if request.query_params.get('saved') %}<p class="ok">Saved.</p>{% endif %}
     {% if error %}<p class="err">{{ error }}</p>{% endif %}
 
     {% if page %}
-    <div class="card statusbar">
+    <div class="card statusbar pagehero">
       <div class="statusmeta">
+        <span class="eyebrow">Editing</span>
+        <h1 class="heroname">{{ page.business_name }}</h1>
+        <div class="herostate">
         <span class="pill s-{{ page.status }}">{{ page.status }}</span>
         <code>{{ page.path }}</code>
         {% if page.status == 'live' and views is defined %}
@@ -51,6 +52,7 @@
            .metric instead. #}
         <span class="metric">{{ views }} views in 14 days</span>
         {% endif %}
+        </div>
         {% if page.status != 'live' %}
         <span class="sub"><b>Not public yet</b> — the link shows “page not
           available” to visitors until you publish{{ ' it again' if page.status == 'removed' else '' }} here.</span>
@@ -65,6 +67,11 @@
       </div>
 
       <div class="statusacts">
+        {# Only when actually live: for a draft this link lands on the public
+           404 ("page is not available"), which reads as an error, not a state. #}
+        {% if page.status == 'live' %}
+        <a class="btn accent heroopen" href="{{ page.path }}" target="_blank" rel="noopener">Open live &nearr;</a>
+        {% endif %}
         {% if page.status != 'live' and maker_checker and session.r != 'admin' %}
         <span class="sub">Ready? An admin reviews and publishes this page.</span>
         {% elif page.status != 'live' and page.consent %}
@@ -220,6 +227,16 @@
       <section class="fsec">
         <h2>Photo</h2>
         <p class="fsechint">One clear photograph of the shopfront or the work.</p>
+        {% if photo_lost %}
+        {# The row still holds a photo, but it points at the old container
+           filesystem, which no deploy survives. The public page hides it rather
+           than showing a broken frame — so without this the photo would just be
+           gone, with nothing saying why or what to do. #}
+        <p class="note"><b>This photo needs uploading again.</b> It was
+          saved before photos moved into Prayaan's image store, so the file no
+          longer exists and the page is showing without it. Choose the photo
+          below and save — it will be kept properly this time.</p>
+        {% endif %}
         <div class="uploadwrap">
           <img id="photo-thumb" class="thumb" src="{{ f.get('photo_url','') or '' }}" alt=""
                {% if not f.get('photo_url') %}hidden{% endif %}>

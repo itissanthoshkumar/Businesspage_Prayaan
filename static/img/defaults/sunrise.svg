@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Sunrise over rooftops">
+  <!-- Default 5 — SUNRISE. Warmest of the six. Rooftops at first light, which
+       is when most of these shutters actually go up. -->
+  <defs>
+    <linearGradient id="sr-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c2743"/>
+      <stop offset=".52" stop-color="#5a5570"/>
+      <stop offset=".82" stop-color="#E0A15C"/>
+      <stop offset="1" stop-color="#F6D9A6"/>
+    </linearGradient>
+    <radialGradient id="sr-sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FFF0CF"/><stop offset="1" stop-color="#e3b44f"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#sr-sky)"/>
+  <circle cx="600" cy="352" r="104" fill="url(#sr-sun)"/>
+  <circle cx="600" cy="352" r="150" fill="none" stroke="#e3b44f" stroke-width="2" opacity=".45"/>
+  <circle cx="600" cy="352" r="196" fill="none" stroke="#e3b44f" stroke-width="2" opacity=".22"/>
+
+  <!-- a few stars still out, top corners only -->
+  <g fill="#F6D9A6" opacity=".55">
+    <circle cx="150" cy="90" r="3"/><circle cx="290" cy="140" r="2.5"/>
+    <circle cx="960" cy="100" r="3"/><circle cx="1080" cy="168" r="2.5"/>
+  </g>
+
+  <!-- rooftop silhouette -->
+  <path fill="#1c2743" d="M0 600V452h96v-44h84v44h72v-68h96v68h84v-36h140v36h96v-58h92v58h84v-40h96v40h96v148z"/>
+  <!-- a couple of lit windows -->
+  <g fill="#e3b44f" opacity=".85">
+    <rect x="128" y="476" width="16" height="22"/>
+    <rect x="352" y="410" width="16" height="22"/>
+    <rect x="800" y="418" width="16" height="22"/>
+    <rect x="1012" y="452" width="16" height="22"/>
+  </g>
+</svg>

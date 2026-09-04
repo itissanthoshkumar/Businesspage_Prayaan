@@ -1,7 +1,10 @@
 {% extends "admin/_shell.html" %}
 {% block title %}Reports{% endblock %}
 {% block body %}
-{% set open_n = reports|selectattr('status','equalto','OPEN')|list|length %}
+{# Same shape as Business pages: tiles that state the book and filter the table,
+   a labelled toolbar, then the table. This screen used to carry its count
+   inside a sentence and a bare unlabelled dropdown, so it read as a different
+   product from the one next to it in the nav. #}
 <div class="stagger">
 
   <div class="head">
@@ -9,47 +12,85 @@
       <span class="eyebrow">Takedowns &amp; corrections</span>
       <h1>Page reports</h1>
       <p class="headsub">Requests from the public “Report this page” link.
-        <b>A takedown is a clock</b> — the page comes off first, questions come
-        later: unpublish it from its edit screen, then mark the report done.{% if open_n %}
-        <b>{{ open_n }}</b> still open.{% endif %}</p>
+        <b>A takedown is a clock</b> — the page comes off first and questions
+        come later: unpublish it from its edit screen, then mark the report
+        done here.</p>
     </div>
   </div>
 
-  <form class="filters" method="get" action="/admin/reports">
-    <select name="status" aria-label="Filter by status">
-      <option value="">All</option>
-      {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
-    </select>
-    <button type="submit">Filter</button>
+  {# Counts describe the whole book, never the filtered view — the route
+     computes them unfiltered for exactly that reason. #}
+  <nav class="upshots upshots-3" aria-label="Filter reports by status">
+    <a class="upshot u-all" href="/admin/reports"
+       {% if not status %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.total }}</span>
+      <span class="uplabel">All reports</span>
+      <span class="upsub">everything ever received</span>
+    </a>
+    <a class="upshot u-warn" href="/admin/reports?status=OPEN"
+       {% if status == 'OPEN' %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.open }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Open</span>
+      <span class="upsub">waiting on someone here</span>
+    </a>
+    <a class="upshot u-good" href="/admin/reports?status=DONE"
+       {% if status == 'DONE' %}aria-current="page"{% endif %}>
+      <span class="upnum">{{ counts.done }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Done</span>
+      <span class="upsub">acted on and closed</span>
+    </a>
+  </nav>
+
+  <form class="toolbar" method="get" action="/admin/reports">
+    <div class="tfield tgrow">
+      <label for="f-rstatus">Status</label>
+      <select id="f-rstatus" name="status">
+        <option value="">All</option>
+        {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s|statuslabel }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="tactions">
+      <button type="submit" class="primary">Apply</button>
+      {% if status %}<a class="btn" href="/admin/reports">Clear</a>{% endif %}
+    </div>
   </form>
 
   {% if not reports %}
   <div class="empty e-reports">
+    {% if status %}
+    <b>No {{ status|statuslabel }} report</b>
+    <p><a href="/admin/reports">Show every report</a>.</p>
+    {% else %}
     <b>Nothing reported</b>
     <p>Reports arrive when someone uses the “Report this page” link in a page
       footer — a correction, or a request to take the page down.</p>
+    {% endif %}
   </div>
   {% else %}
+  <p class="resultline">Showing <b>{{ reports|length }}</b> of {{ counts.total }}{% if status %} &middot; {{ status|statuslabel }} only{% endif %}</p>
   <div class="tablewrap"><div class="tablescroll"><table class="grid">
     <thead><tr>
-      <th>Received</th><th>Request</th><th>Details</th><th>Working it</th>
+      <th>Received</th><th>Request</th><th>Details</th>
+      <th class="col-act">Working it</th>
     </tr></thead>
     <tbody>
     {% for r in reports %}
     <tr>
       <td class="sub mono">{{ r.at }}
-        <span class="sub"><span class="pill s-{{ 'live' if r.status=='OPEN' else 'draft' }}">{{ r.status }}</span></span></td>
+        {# Report statuses, not page statuses: OPEN is amber because it is
+           waiting on us, DONE is green because it is settled. #}
+        <span class="sub"><span class="pill s-{{ 'open' if r.status=='OPEN' else 'done' }}">{{ r.status|statuslabel }}</span></span></td>
       <td><span class="rowname">{{ r.request_type }}</span>
         {% if r.page_path %}<span class="sub"><code>{{ r.page_path }}</code></span>{% endif %}</td>
       <td>{{ r.details }}
         {% if r.contact %}<span class="sub">Contact: {{ r.contact }}</span>{% endif %}
         {% if r.handled_note %}<span class="sub">Note: {{ r.handled_note }} — {{ r.handled_by }} {{ r.handled_at }}</span>{% endif %}</td>
-      <td>
+      <td class="col-act">
         <form method="post" action="/admin/reports/{{ r.id }}" class="leadform">
           <input type="hidden" name="csrf" value="{{ csrf }}">
           <input type="hidden" name="status_filter" value="{{ status }}">
           <select name="status" aria-label="Report status">
-            {% for s in statuses %}<option value="{{ s }}" {% if r.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            {% for s in statuses %}<option value="{{ s }}" {% if r.status==s %}selected{% endif %}>{{ s|statuslabel }}</option>{% endfor %}
           </select>
           <input name="note" value="" placeholder="What was done" maxlength="300"
                  aria-label="What was done">

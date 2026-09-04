@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Coloured rangoli pattern">
+  <!-- Default 8 — RANGOLI. The kolam in festival colour: the same threshold
+       pattern, filled rather than drawn. Perfectly radial, so the square avatar
+       crop is as strong as the wide one. -->
+  <defs>
+    <radialGradient id="rg-bg" cx="50%" cy="50%" r="62%">
+      <stop offset="0" stop-color="#FFFDF7"/><stop offset="1" stop-color="#F6EFE2"/>
+    </radialGradient>
+    <g id="rg-petal">
+      <path d="M0 -168C58 -128 88 -74 88 0C88 74 58 128 0 168C-58 128 -88 74 -88 0C-88 -74 -58 -128 0 -168Z"/>
+    </g>
+  </defs>
+  <rect width="1200" height="600" fill="url(#rg-bg)"/>
+
+  <g transform="translate(600 300)">
+    <!-- outer petals -->
+    <g opacity=".92">
+      <use href="#rg-petal" fill="#F4633A" transform="rotate(0)"/>
+      <use href="#rg-petal" fill="#3B9BF0" transform="rotate(30)"/>
+      <use href="#rg-petal" fill="#8CC63F" transform="rotate(60)"/>
+      <use href="#rg-petal" fill="#6A5AE0" transform="rotate(90)"/>
+      <use href="#rg-petal" fill="#e3b44f" transform="rotate(120)"/>
+      <use href="#rg-petal" fill="#12B8A6" transform="rotate(150)"/>
+    </g>
+    <!-- inner ring, deeper tones -->
+    <g opacity=".95" transform="scale(.6)">
+      <use href="#rg-petal" fill="#F06AA8" transform="rotate(15)"/>
+      <use href="#rg-petal" fill="#B23A16" transform="rotate(75)"/>
+      <use href="#rg-petal" fill="#0A6B60" transform="rotate(135)"/>
+    </g>
+    <circle r="60" fill="#FFFDF7"/>
+    <circle r="60" fill="none" stroke="#1c2743" stroke-width="5"/>
+    <circle r="26" fill="#e3b44f"/>
+    <!-- the dot grid the pattern is built on -->
+    <g fill="#1c2743" opacity=".45">
+      <circle cx="0" cy="-232" r="7"/><circle cx="0" cy="232" r="7"/>
+      <circle cx="-232" cy="0" r="7"/><circle cx="232" cy="0" r="7"/>
+      <circle cx="-164" cy="-164" r="7"/><circle cx="164" cy="164" r="7"/>
+      <circle cx="164" cy="-164" r="7"/><circle cx="-164" cy="164" r="7"/>
+    </g>
+    <circle r="266" fill="none" stroke="#1c2743" stroke-width="3"
+            stroke-dasharray="3 22" opacity=".5"/>
+  </g>
+
+  <!-- lamps, in the wide crop only -->
+  <g>
+    <path d="M150 400q34-14 68 0v34q-34 14-68 0z" fill="#e3b44f"/>
+    <path d="M170 396c0-18 14-26 14-26s14 8 14 26" fill="#F4633A"/>
+    <path d="M982 400q34-14 68 0v34q-34 14-68 0z" fill="#e3b44f"/>
+    <path d="M1002 396c0-18 14-26 14-26s14 8 14 26" fill="#F4633A"/>
+  </g>
+</svg>

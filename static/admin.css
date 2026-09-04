@@ -207,8 +207,21 @@
   background:var(--accent-2);border-color:var(--accent-2);
   box-shadow:0 13px 24px -12px rgba(11,122,218,.92);
 }
-.adm button.danger{color:var(--bad);border-color:rgba(179,38,30,.30)}
-.adm button.danger:hover{background:var(--bad-w);border-color:var(--bad)}
+/* Affirmative, but deliberately NOT primary. "Open live" is the one action
+   that leaves the back-office and shows the customer's real page, so it needs
+   its own colour beside a neutral Unpublish and a red Remove — three actions,
+   three meanings, instead of three identical outlines. Tinted rather than
+   filled, because the filled treatment belongs to Save changes and there
+   should only ever be one of those on screen. */
+.adm button.accent,.adm .accent.btn{
+  color:var(--accent);border-color:rgba(11,122,218,.34);background:var(--accent-w);
+}
+.adm button.accent:hover,.adm .accent.btn:hover{
+  border-color:var(--accent);background:rgba(11,122,218,.16);
+}
+.adm button.danger{color:var(--bad);border-color:rgba(179,38,30,.30);
+  background:var(--bad-w)}
+.adm button.danger:hover{background:rgba(179,38,30,.16);border-color:var(--bad)}
 .adm button:disabled,.adm button[disabled]{opacity:.45;cursor:not-allowed;transform:none}
 
 .adm :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
@@ -220,7 +233,12 @@
 }
 .tablescroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
-.grid{width:100%;border-collapse:collapse;font-size:14px}
+/* min-width is what makes .tablescroll's overflow-x actually engage. Without
+   it, width:100% lets the table compress to the container instead of
+   overflowing, so a narrow viewport crushes columns rather than scrolling —
+   a page address ends up broken one character per line. Below this width the
+   table scrolls sideways, which is legible; a crushed column is not. */
+.grid{width:100%;min-width:720px;border-collapse:collapse;font-size:14px}
 .grid th{
   text-align:left;padding:13px 18px;
   font:700 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;
@@ -262,6 +280,29 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 }
 .rowedit:hover{border-color:var(--accent);color:var(--accent)!important;background:var(--accent-w);text-decoration:none!important}
 
+/* Open the customer's live page. Sits beside Edit and carries the accent,
+   because it is the one action in this row that leaves the back-office and
+   shows what the customer actually shares. */
+.rowopen{
+  display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 13px;
+  margin-right:6px;
+  border:1px solid var(--accent);border-radius:var(--r-sm);
+  font-size:13px;font-weight:600;color:var(--accent)!important;
+  background:var(--accent-w);text-decoration:none;
+  transition:all .18s var(--ease);
+}
+.rowopen:hover{background:var(--accent);color:#fff!important;text-decoration:none!important}
+.rowopen svg{width:13px;height:13px;flex:none;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* Draft and removed pages have no public link to open. Say so in the slot the
+   button would occupy, rather than leaving a gap that reads as a missing
+   control — the title attribute carries the reason. */
+.rowna{
+  display:inline-flex;align-items:center;min-height:34px;padding:0 11px;
+  margin-right:6px;font-size:12.5px;font-weight:600;color:var(--ink-3);
+  border:1px dashed var(--line-2);border-radius:var(--r-sm);cursor:help;
+}
+
 .adm code{
   font-family:var(--mono);font-size:12.5px;
   background:var(--sunken);color:var(--ink-2);
@@ -279,6 +320,9 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
   display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px;
 }
 @media(min-width:880px){.upshots{grid-template-columns:repeat(4,1fr)}}
+/* Not every book has four states. Reports has three (all / open / done), so
+   the row divides evenly instead of leaving a fourth column of air. */
+@media(min-width:880px){.upshots-3{grid-template-columns:repeat(3,1fr)}}
 .upshot{
   display:block;padding:16px 18px 15px;text-decoration:none;
   background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);
@@ -298,15 +342,26 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 .upsub{display:block;margin-top:4px;font-size:11.5px;color:var(--ink-3)}
 .updot{width:7px;height:7px;border-radius:50%;flex:none}
 
-.u-live{background:var(--good-w);border-color:rgba(11,107,63,.22)}
-.u-live .upnum{color:var(--good)}
-.u-live .updot{background:var(--good)}
-.u-draft{background:var(--warn-w);border-color:rgba(154,100,0,.28)}
-.u-draft .upnum{color:var(--warn)}
-.u-draft .updot{background:var(--warn)}
-.u-removed{background:var(--bad-w);border-color:rgba(179,38,30,.22)}
-.u-removed .upnum{color:var(--bad)}
-.u-removed .updot{background:var(--bad)}
+/* The tiles are three colour SLOTS, not three page statuses. Pages happened to
+   be the first screen to use them, so they were named after its vocabulary;
+   Leads, Reports and Users need the same three meanings under their own words.
+   Generic names added alongside so every screen reads the same:
+     good  settled, nothing owed        warn  waiting on us      bad  stopped */
+/* The neutral tile — "All pages", "All reports", "Accounts". It was relying on
+   .upshot's base look, so three of the four variants were declared and the
+   fourth was an accident of inheritance: change the base and "All" silently
+   changes with it. Stated explicitly, it is a decision. */
+.u-all{background:var(--paper);border-color:var(--line)}
+.u-all .upnum{color:var(--ink)}
+.u-live,.u-good{background:var(--good-w);border-color:rgba(11,107,63,.22)}
+.u-live .upnum,.u-good .upnum{color:var(--good)}
+.u-live .updot,.u-good .updot{background:var(--good)}
+.u-draft,.u-warn{background:var(--warn-w);border-color:rgba(154,100,0,.28)}
+.u-draft .upnum,.u-warn .upnum{color:var(--warn)}
+.u-draft .updot,.u-warn .updot{background:var(--warn)}
+.u-removed,.u-bad{background:var(--bad-w);border-color:rgba(179,38,30,.22)}
+.u-removed .upnum,.u-bad .upnum{color:var(--bad)}
+.u-removed .updot,.u-bad .updot{background:var(--bad)}
 
 .upshot[aria-current]{
   outline:2px solid var(--ink);outline-offset:-2px;box-shadow:var(--lift-2);
@@ -329,11 +384,6 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 .resultline{font-size:12.5px;color:var(--ink-3);margin-bottom:10px}
 .resultline b{color:var(--ink)}
 
-/* toolbar: search + filters, sitting above the table */
-.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
-.filters input{flex:1;min-width:220px;margin:0}
-.filters select{width:auto;min-width:158px;margin:0}
-.filters button{flex:none}
 
 /* -- 07 status pills + alerts --------------------------------------------- */
 .pill{
@@ -346,6 +396,15 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 .s-live{background:var(--good-w);color:var(--good)}
 .s-draft{background:var(--accent-w);color:var(--accent-2)}
 .s-removed{background:var(--bad-w);color:var(--bad)}
+/* Each screen names its own states rather than borrowing the page vocabulary.
+   Reports and Users used to reuse .s-live / .s-draft / .s-removed, which put
+   the GREEN "everything is fine" pill on an OPEN takedown request — the one
+   row on that screen that needs someone now. Colour has to mean the same thing
+   on every screen: amber waits on us, green is settled, red is stopped. */
+.s-open{background:var(--warn-w);color:var(--warn)}
+.s-done{background:var(--good-w);color:var(--good)}
+.s-active{background:var(--good-w);color:var(--good)}
+.s-suspended{background:var(--bad-w);color:var(--bad)}
 .s-noindex{background:var(--warn-w);color:var(--warn);margin-left:6px}
 .viachip{
   display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;
@@ -481,11 +540,8 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 /* Controls that sit in a row rather than a stacked form. Declared AFTER the
    base field rules above, which set width:100% — a toolbar defined earlier in
    the file would lose the cascade and each control would claim its own line. */
-.adm .filters input,.adm .filters select,
 .adm .pubform input,.adm .pubform select,
 .adm .leadform input,.adm .leadform select{width:auto}
-.adm .filters input{flex:1 1 240px;min-width:0}
-.adm .filters select{flex:0 1 190px}
 .adm .leadform input,.adm .leadform select{width:100%}
 
 .adm input[readonly]{background:var(--sunken);color:var(--ink-2);cursor:default}
@@ -572,11 +628,32 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 /* inline form rows (leads, reports, users) */
 /* Four stacked controls per row made a tablet lead list scroll forever, so the
    pair collapses to 2x2 first and only goes single-file on a phone. */
+/* The row editor lives INSIDE a table cell, so its breakpoints have to account
+   for what the cell actually gets: the viewport less the 252px rail and the
+   68px of stage padding. At a 1080px laptop that leaves ~760px for the whole
+   table, and a four-across form claims ~450px of it on its own — which pushed
+   the table past the viewport and clipped the Save button off the end.
+   Four-across is therefore held back until there is genuinely room for it. */
 .leadform{display:grid;gap:8px}
-@media(min-width:560px){.leadform{grid-template-columns:1fr 1fr;align-items:center}}
-@media(min-width:920px){.leadform{grid-template-columns:150px 130px 1fr auto}}
+/* The first column holds the status dropdown, whose longest value ("Sent to
+   branch") measures 93px of text plus padding and the dropdown arrow. An even
+   1fr/1fr split gave it 101px total, so the value was clipped by its own
+   chevron; the floor is that measurement, not a guess. */
+@media(min-width:560px){
+  .leadform{grid-template-columns:minmax(136px,1fr) minmax(0,1fr);align-items:center}
+}
+/* Backstop: should a longer status ever be added, it truncates with an
+   ellipsis rather than disappearing under the arrow. */
+.leadform select{text-overflow:ellipsis}
+@media(min-width:1280px){.leadform{grid-template-columns:150px 130px 1fr auto}}
 .leadform select,.leadform input{min-height:38px;padding:6px 11px;font-size:13.5px;margin:0}
 .leadform button{min-height:38px;padding:0 14px;font-size:13.5px}
+/* A two-control row (a value and the button that commits it) must not split
+   the cell down the middle: the button needs only its label, and giving it
+   half squeezed the select until its value was clipped by its own chevron. */
+.leadform.tight{grid-template-columns:minmax(84px,1fr) auto;align-items:center}
+@media(min-width:1280px){.leadform.tight{grid-template-columns:minmax(84px,1fr) auto}}
+.leadform.tight button{white-space:nowrap}
 .pubform{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
 .pubform input,.pubform select{margin:0;width:auto;min-width:190px;flex:1}
 .pubform button{flex:none}
@@ -656,6 +733,54 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
 .statusmeta .sub{display:block;width:100%;margin:0}
 .statusacts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .statusacts form{display:contents}
+/* Inside a table row the same group must not stretch the column: the buttons
+   size to their labels and wrap onto a second line rather than demanding one
+   very wide cell, which is what pushed "Reset password" off the edge. */
+.col-act .statusacts{justify-content:flex-end}
+.col-act .statusacts button{white-space:nowrap;min-height:36px;
+  padding:0 13px;font-size:13px}
+
+/* ---- the editor hero -----------------------------------------------------
+   Identity and state were two stacked cards asking the same question twice —
+   a title block, then a status block repeating the subject. Merged into one,
+   so the top of the editor answers "which page, what state, what can I do"
+   in a single read.
+
+   No coloured edge on this card. The status pill sits in the state row two
+   lines below, so a tinted border would encode the same fact a second time —
+   and a thick accent stripe down one side of a card is decoration dressed as
+   information. The pill is the state indicator here, as it is in the table. */
+.pagehero{
+  align-items:flex-start;
+  padding:26px 24px;
+  /* Colour comes from a soft brand wash across the whole surface, not a stripe
+     down one edge: the card reads as its own branded region while the state
+     stays the pill's job. Two stops so the tint is strongest under the name
+     and clears completely before the action row. */
+  background:
+    linear-gradient(134deg, rgba(11,122,218,.13) 0%,
+                            rgba(11,122,218,.045) 38%,
+                            rgba(242,236,231,.55) 72%,
+                            transparent 100%),
+    var(--paper);
+  border-color:rgba(11,122,218,.20);
+}
+.pagehero .statusmeta{flex-direction:column;align-items:flex-start;gap:0}
+.pagehero .heroname{
+  margin:6px 0 0;font-size:clamp(24px,3.2vw,33px);font-weight:600;
+  letter-spacing:-.022em;line-height:1.12;color:var(--ink);
+  overflow-wrap:anywhere;
+}
+/* the state row: pill, address and the view count on one line */
+.pagehero .herostate{
+  display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:14px;
+}
+.pagehero .sub{margin-top:10px!important}
+.pagehero .statusacts{margin-left:auto;padding-top:4px}
+.heroopen{white-space:nowrap}
+@media(max-width:720px){
+  .pagehero .statusacts{margin-left:0;width:100%;padding-top:16px}
+}
 .metric{
   display:inline-flex;align-items:baseline;gap:6px;
   background:var(--sunken);border-radius:999px;padding:4px 12px;
@@ -876,7 +1001,7 @@ td.sub{display:table-cell;margin:0;vertical-align:top}
   .frameholder::after{display:none}
 }
 @media print{
-  .rail,.savebar,.previewcol,.filters,.headacts{display:none!important}
+  .rail,.savebar,.previewcol,.toolbar,.upshots,.headacts{display:none!important}
   .adm{background:#fff}
   .shell{grid-template-columns:1fr}
 }

@@ -1,0 +1,235 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600"
+     role="img" aria-label="A colourful shopfront with bunting, an open sign and plants">
+<!-- THE HOUSE DEFAULT - shown when a business page has no photograph of its own.
+
+     Colour comes from the project's decorative palette in site.css
+     (c-coral, c-teal, c-violet, c-sky, c-pink, c-lime, plus gold), which that
+     file marks as sanctioned for shapes and fills.
+
+     WHY SMIL AND NOT CSS. The first version animated with a <style> block, and
+     it silently did nothing: this app stamps its CSP on EVERY response, static
+     files included, and style-src 'self' forbids an inline stylesheet - so the
+     sheet never attached (document.styleSheets.length was 0) and every element
+     computed animation-name: none. SMIL is markup rather than a stylesheet, so
+     style-src has no bearing on it, and it animates inside <img>, which runs no
+     script. The landing page's one-script budget and the CSP both stay as they
+     are.
+
+     The cost, stated plainly: SMIL cannot read prefers-reduced-motion, so this
+     one decorative image keeps moving for a reader who has asked the system for
+     less motion. Everything here is slow and small - nothing flashes, pulses
+     hard, or moves across the reader's focus - but it is a real trade, and the
+     alternative is exempting our own static SVGs from style-src.
+
+     Each animated part pivots about its own group origin: the outer <g> carries
+     the position, the inner <g> carries the animation, because animateTransform
+     REPLACES an element's own transform attribute rather than composing with it.
+
+     The shop sits inside x 300-900, so the square avatar crop - the centre
+     600x600 - still contains the whole building. -->
+<defs>
+  <linearGradient id="sf-sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#BFE6FA"/>
+    <stop offset=".62" stop-color="#E8F4FB"/>
+    <stop offset="1" stop-color="#FFF6E4"/>
+  </linearGradient>
+  <linearGradient id="sf-ground" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#EADFCB"/><stop offset="1" stop-color="#DED0B6"/>
+  </linearGradient>
+  <linearGradient id="sf-glass" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#EAF6FD"/><stop offset="1" stop-color="#C9E4F5"/>
+  </linearGradient>
+  <clipPath id="sf-board"><rect x="440" y="112" width="320" height="70" rx="10"/></clipPath>
+  <clipPath id="sf-pane"><rect x="452" y="300" width="140" height="120" rx="6"/></clipPath>
+</defs>
+
+<rect width="1200" height="600" fill="url(#sf-sky)"/>
+
+<!-- sun -->
+<circle cx="1010" cy="112" r="52" fill="#FFD98A"/>
+<circle cx="1010" cy="112" r="52" fill="none" stroke="#e3b44f" stroke-width="4" opacity=".55"/>
+
+<!-- two birds crossing the sky, wings beating -->
+<g opacity=".55">
+  <animateTransform attributeName="transform" type="translate"
+    values="-260 40; 1460 0" dur="19s" repeatCount="indefinite"/>
+  <g transform="translate(120 96)">
+    <g>
+      <animateTransform attributeName="transform" type="scale"
+        values="1 1; 1 .45; 1 1" dur=".9s" repeatCount="indefinite"/>
+      <path d="M0 0q14-13 26 0" fill="none" stroke="#1c2743" stroke-width="4" stroke-linecap="round"/>
+      <path d="M26 0q14-13 26 0" fill="none" stroke="#1c2743" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </g>
+</g>
+<g opacity=".4">
+  <animateTransform attributeName="transform" type="translate"
+    values="-260 120; 1460 70" dur="26s" begin="-9s" repeatCount="indefinite"/>
+  <g transform="translate(60 168) scale(.72)">
+    <g>
+      <animateTransform attributeName="transform" type="scale"
+        values="1 1; 1 .45; 1 1" dur="1.05s" repeatCount="indefinite"/>
+      <path d="M0 0q14-13 26 0" fill="none" stroke="#1c2743" stroke-width="5" stroke-linecap="round"/>
+      <path d="M26 0q14-13 26 0" fill="none" stroke="#1c2743" stroke-width="5" stroke-linecap="round"/>
+    </g>
+  </g>
+</g>
+
+<!-- bunting: each flag rocks on its own beat -->
+<path d="M150 58Q600 130 1050 58" fill="none" stroke="#1c2743" stroke-width="3" opacity=".4"/>
+<g transform="translate(244 78)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-.1s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-4-12 34z" fill="#F4633A"/></g></g>
+<g transform="translate(332 94)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-.5s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-4-12 34z" fill="#12B8A6"/></g></g>
+<g transform="translate(420 106)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-.9s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-3-13 34z" fill="#6A5AE0"/></g></g>
+<g transform="translate(508 114)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-1.3s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-3-13 34z" fill="#e3b44f"/></g></g>
+<g transform="translate(596 118)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-1.7s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-2-14 34z" fill="#F06AA8"/></g></g>
+<g transform="translate(684 114)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-2.1s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-3-13 34z" fill="#8CC63F"/></g></g>
+<g transform="translate(772 106)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-2.5s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-3-13 34z" fill="#3B9BF0"/></g></g>
+<g transform="translate(860 94)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-2.9s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-4-12 34z" fill="#F4633A"/></g></g>
+<g transform="translate(948 78)"><g>
+  <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="3.2s" begin="-3.3s" repeatCount="indefinite"/>
+  <path d="M-12 0l30-4-12 34z" fill="#12B8A6"/></g></g>
+
+<!-- ===================== the shop ===================== -->
+
+<!-- signboard, with a slow shine crossing it -->
+<rect x="440" y="112" width="320" height="70" rx="10" fill="#1c2743"/>
+<g clip-path="url(#sf-board)">
+  <path d="M474 147h58M550 147h42M610 147h76" stroke="#e3b44f" stroke-width="9" stroke-linecap="round"/>
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="-360 0; -360 0; 360 0; 360 0" keyTimes="0; .58; .92; 1"
+      dur="6.5s" repeatCount="indefinite"/>
+    <rect x="560" y="92" width="46" height="110" fill="#ffffff" opacity=".22" transform="skewX(-18)"/>
+  </g>
+</g>
+<rect x="440" y="112" width="320" height="70" rx="10" fill="none" stroke="#0F1830" stroke-width="4"/>
+
+<!-- striped awning -->
+<g>
+  <path d="M418 196h364l36 66H382z" fill="#FDF7EC"/>
+  <path d="M418 196h46l-38 66h-44z" fill="#F4633A"/>
+  <path d="M510 196h46l-30 66h-44z" fill="#12B8A6"/>
+  <path d="M602 196h46l-22 66h-44z" fill="#6A5AE0"/>
+  <path d="M694 196h46l-14 66h-44z" fill="#e3b44f"/>
+  <path d="M418 196h364l36 66H382z" fill="none" stroke="#1c2743" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M382 262h436v7H382z" fill="#1c2743" opacity=".85"/>
+</g>
+
+<!-- building face -->
+<rect x="418" y="268" width="364" height="240" rx="8" fill="#FFF9EF"/>
+<rect x="418" y="268" width="364" height="240" rx="8" fill="none" stroke="#1c2743" stroke-width="5"/>
+
+<!-- window, with an OPEN sign that glows on and off -->
+<rect x="452" y="300" width="140" height="120" rx="6" fill="url(#sf-glass)"/>
+<g clip-path="url(#sf-pane)">
+  <path d="M430 420L560 290M480 430L610 300" stroke="#ffffff" stroke-width="16" opacity=".5"/>
+</g>
+<rect x="452" y="300" width="140" height="120" rx="6" fill="none" stroke="#1c2743" stroke-width="5"/>
+<path d="M522 300v120M452 360h140" stroke="#1c2743" stroke-width="4" opacity=".55"/>
+<g>
+  <rect x="470" y="326" width="104" height="30" rx="8" fill="#F06AA8">
+    <animate attributeName="opacity" values=".32;.9;.32" dur="3.8s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="470" y="326" width="104" height="30" rx="8" fill="none" stroke="#1c2743" stroke-width="3.5"/>
+  <path d="M486 341h12M506 341h12M526 341h12M546 341h10" stroke="#FFF9EF" stroke-width="5" stroke-linecap="round"/>
+</g>
+
+<!-- crates of produce under the window -->
+<g>
+  <rect x="452" y="440" width="64" height="46" rx="5" fill="#8CC63F"/>
+  <rect x="452" y="440" width="64" height="46" rx="5" fill="none" stroke="#1c2743" stroke-width="4"/>
+  <g fill="#4F7317"><circle cx="470" cy="454" r="7"/><circle cx="490" cy="452" r="7"/><circle cx="506" cy="458" r="6"/></g>
+  <rect x="526" y="446" width="64" height="40" rx="5" fill="#F4633A"/>
+  <rect x="526" y="446" width="64" height="40" rx="5" fill="none" stroke="#1c2743" stroke-width="4"/>
+  <g fill="#B23A16"><circle cx="544" cy="458" r="7"/><circle cx="564" cy="456" r="7"/><circle cx="580" cy="462" r="6"/></g>
+</g>
+
+<!-- doorway -->
+<path d="M636 508V330a52 52 0 0 1 104 0v178z" fill="#3B9BF0"/>
+<path d="M636 508V330a52 52 0 0 1 104 0v178z" fill="none" stroke="#1c2743" stroke-width="5"/>
+<path d="M688 278v230" stroke="#1c2743" stroke-width="4" opacity=".45"/>
+<g fill="#e3b44f"><circle cx="676" cy="418" r="7"/><circle cx="700" cy="418" r="7"/></g>
+
+<!-- hanging OPEN sign, swinging from its bracket -->
+<g transform="translate(608 300)">
+  <path d="M0 0h-34" stroke="#1c2743" stroke-width="5" stroke-linecap="round"/>
+  <g>
+    <animateTransform attributeName="transform" type="rotate"
+      values="-5.5;5.5;-5.5" dur="3.4s" repeatCount="indefinite"/>
+    <path d="M-26 0v22M-8 0v22" stroke="#1c2743" stroke-width="4"/>
+    <rect x="-42" y="22" width="52" height="34" rx="6" fill="#e3b44f"/>
+    <rect x="-42" y="22" width="52" height="34" rx="6" fill="none" stroke="#1c2743" stroke-width="4"/>
+    <path d="M-32 39h10M-18 39h10M-4 39h6" stroke="#1c2743" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+  </g>
+</g>
+
+<!-- chai glass, with steam rising -->
+<g opacity=".85">
+  <ellipse cx="790" cy="470" rx="9" ry="13" fill="#ffffff" opacity="0">
+    <animate attributeName="opacity" values="0;.55;0" dur="4.2s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="translate"
+      values="0 0; 0 -54" dur="4.2s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="802" cy="470" rx="7" ry="11" fill="#ffffff" opacity="0">
+    <animate attributeName="opacity" values="0;.5;0" dur="4.2s" begin="-2.1s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="translate"
+      values="0 0; 0 -54" dur="4.2s" begin="-2.1s" repeatCount="indefinite"/>
+  </ellipse>
+</g>
+<g>
+  <rect x="770" y="474" width="46" height="34" rx="6" fill="#F06AA8"/>
+  <rect x="770" y="474" width="46" height="34" rx="6" fill="none" stroke="#1c2743" stroke-width="4"/>
+  <path d="M816 484q14 7 0 14" fill="none" stroke="#1c2743" stroke-width="4"/>
+</g>
+
+<!-- potted plants, swaying from the rim of each pot -->
+<g transform="translate(392 470)">
+  <g>
+    <animateTransform attributeName="transform" type="rotate"
+      values="-2.6;2.6;-2.6" dur="4.6s" repeatCount="indefinite"/>
+    <path d="M0 0q-30-34-12-64" fill="none" stroke="#4F7317" stroke-width="6" stroke-linecap="round"/>
+    <path d="M0 0q30-30 16-58" fill="none" stroke="#4F7317" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="-16" cy="-62" rx="17" ry="12" fill="#8CC63F" transform="rotate(-28 -16 -62)"/>
+    <ellipse cx="18" cy="-56" rx="17" ry="12" fill="#12B8A6" transform="rotate(26 18 -56)"/>
+    <ellipse cx="-2" cy="-84" rx="15" ry="11" fill="#8CC63F"/>
+  </g>
+  <path d="M-26 0h52l-7 38h-38z" fill="#F4633A"/>
+  <path d="M-26 0h52l-7 38h-38z" fill="none" stroke="#1c2743" stroke-width="4"/>
+</g>
+<g transform="translate(812 470)">
+  <g>
+    <animateTransform attributeName="transform" type="rotate"
+      values="-2.6;2.6;-2.6" dur="5.4s" begin="-1.7s" repeatCount="indefinite"/>
+    <path d="M0 0q-28-32-10-60" fill="none" stroke="#4F7317" stroke-width="6" stroke-linecap="round"/>
+    <path d="M0 0q28-28 14-54" fill="none" stroke="#4F7317" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="-14" cy="-58" rx="16" ry="11" fill="#12B8A6" transform="rotate(-26 -14 -58)"/>
+    <ellipse cx="16" cy="-52" rx="16" ry="11" fill="#8CC63F" transform="rotate(24 16 -52)"/>
+    <ellipse cx="0" cy="-78" rx="14" ry="10" fill="#12B8A6"/>
+  </g>
+  <path d="M-26 0h52l-7 38h-38z" fill="#6A5AE0"/>
+  <path d="M-26 0h52l-7 38h-38z" fill="none" stroke="#1c2743" stroke-width="4"/>
+</g>
+
+<!-- ground -->
+<rect x="0" y="508" width="1200" height="92" fill="url(#sf-ground)"/>
+<path d="M0 508h1200" stroke="#1c2743" stroke-width="5" opacity=".6"/>
+<g stroke="#BFAE8E" stroke-width="4" opacity=".7">
+  <path d="M300 540h120M470 556h90M640 540h150M840 558h90"/>
+</g>
+</svg>

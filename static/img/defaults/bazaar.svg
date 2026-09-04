@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="A row of market stalls with coloured awnings">
+  <!-- Default 7 — BAZAAR. Market stalls under striped awnings, in the project's
+       own decorative palette (site.css c-coral, c-teal, c-violet, c-sky). The
+       middle stall sits dead centre so the square avatar crop still gets a
+       whole shop. -->
+  <defs>
+    <linearGradient id="bz-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF3DA"/><stop offset="1" stop-color="#FDFBF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#bz-sky)"/>
+
+  <!-- bunting -->
+  <path d="M0 70Q300 130 600 96T1200 60" fill="none" stroke="#1c2743" stroke-width="3" opacity=".35"/>
+  <g>
+    <path d="M96 84l30-4 -12 34z" fill="#F4633A"/>
+    <path d="M216 100l30-4 -12 34z" fill="#12B8A6"/>
+    <path d="M336 110l30-4 -12 34z" fill="#6A5AE0"/>
+    <path d="M456 112l30-3 -13 34z" fill="#e3b44f"/>
+    <path d="M576 100l30-3 -13 34z" fill="#F06AA8"/>
+    <path d="M696 92l30-4 -12 34z" fill="#8CC63F"/>
+    <path d="M816 82l30-4 -12 34z" fill="#3B9BF0"/>
+    <path d="M936 72l30-4 -12 34z" fill="#F4633A"/>
+    <path d="M1056 64l30-4 -12 34z" fill="#12B8A6"/>
+  </g>
+
+  <!-- stalls: left, centre (hero), right -->
+  <g>
+    <!-- left stall -->
+    <rect x="120" y="330" width="200" height="150" fill="#fff" stroke="#1c2743" stroke-width="5"/>
+    <path d="M104 330h232l-18-58H122z" fill="#12B8A6"/>
+    <path d="M148 272l-9 58M188 272l-6 58M228 272v58M268 272l6 58M308 272l9 58" stroke="#0A6B60" stroke-width="6" opacity=".5"/>
+    <path d="M104 330h232l-18-58H122z" fill="none" stroke="#1c2743" stroke-width="5"/>
+    <g fill="#F4633A"><circle cx="168" cy="392" r="18"/><circle cx="216" cy="392" r="18"/><circle cx="264" cy="392" r="18"/></g>
+    <g fill="#8CC63F"><circle cx="192" cy="432" r="16"/><circle cx="240" cy="432" r="16"/></g>
+
+    <!-- CENTRE stall — the one the square crop lands on -->
+    <rect x="470" y="300" width="260" height="180" fill="#fff" stroke="#1c2743" stroke-width="6"/>
+    <path d="M450 300h300l-22-70H472z" fill="#F4633A"/>
+    <path d="M500 230l-11 70M552 230l-7 70M604 230v70M656 230l7 70M708 230l11 70" stroke="#B23A16" stroke-width="7" opacity=".55"/>
+    <path d="M450 300h300l-22-70H472z" fill="none" stroke="#1c2743" stroke-width="6"/>
+    <rect x="470" y="300" width="260" height="26" fill="#e3b44f"/>
+    <rect x="470" y="300" width="260" height="26" fill="none" stroke="#1c2743" stroke-width="6"/>
+    <!-- goods on the counter -->
+    <g stroke="#1c2743" stroke-width="4">
+      <rect x="502" y="356" width="66" height="52" rx="8" fill="#6A5AE0"/>
+      <rect x="580" y="342" width="52" height="66" rx="8" fill="#3B9BF0"/>
+      <rect x="644" y="360" width="60" height="48" rx="8" fill="#F06AA8"/>
+    </g>
+    <rect x="470" y="424" width="260" height="56" fill="#FFF3DA"/>
+    <rect x="470" y="424" width="260" height="56" fill="none" stroke="#1c2743" stroke-width="6"/>
+
+    <!-- right stall -->
+    <rect x="880" y="330" width="200" height="150" fill="#fff" stroke="#1c2743" stroke-width="5"/>
+    <path d="M864 330h232l-18-58H882z" fill="#6A5AE0"/>
+    <path d="M908 272l-9 58M948 272l-6 58M988 272v58M1028 272l6 58M1068 272l9 58" stroke="#4034A8" stroke-width="6" opacity=".5"/>
+    <path d="M864 330h232l-18-58H882z" fill="none" stroke="#1c2743" stroke-width="5"/>
+    <g fill="#e3b44f"><rect x="912" y="368" width="44" height="56" rx="6"/><rect x="972" y="380" width="44" height="44" rx="6"/></g>
+    <g fill="#12B8A6"><rect x="1024" y="372" width="34" height="52" rx="6"/></g>
+  </g>
+
+  <!-- ground -->
+  <rect x="0" y="480" width="1200" height="120" fill="#F1EBDF"/>
+  <path d="M0 480h1200" stroke="#1c2743" stroke-width="5" opacity=".55"/>
+</svg>

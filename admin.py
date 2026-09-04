@@ -261,6 +261,31 @@ def _this_year():
     return (_dt.datetime.utcnow() + _dt.timedelta(hours=5, minutes=30)).year
 
 
+def _accepted_photo(p):
+    """The photo_url worth STORING, or None.
+
+    Two rejections, for two different reasons:
+
+      not own-host        an external image on a lender-branded page can be
+                          swapped after review and leaks every visitor's IP to
+                          whoever serves it.
+      cannot survive here a /static/img/uploads/ path is a container-filesystem
+                          reference. On a database-backed deployment that disk
+                          is wiped by the next deploy, so storing one is storing
+                          a URL already known to be dead.
+
+    The second is the prevention half of the missing-photo fix: hiding a dead
+    reference at render time still leaves it in the row, and the editor posts it
+    straight back on the next save. Refusing it on write is what stops the fault
+    coming back."""
+    if not p.startswith(("/static/", "/photo/")):
+        return None
+    import main
+    if p.startswith(main.DISK_PHOTO_PREFIX) and not main.disk_photos_persist():
+        return None
+    return p
+
+
 def _page_payload(form):
     year = str(form.get("established_year", "")).strip()
     return {
@@ -271,8 +296,15 @@ def _page_payload(form):
         # external image on a lender-branded page can change after review and
         # leaks every visitor's IP to whoever hosts it; the upload flow exists
         # precisely so nothing needs hot-linking.
-        "photo_url": (lambda p: p if p.startswith(("/static/", "/photo/")) else None)(
-            form.get("photo_url", "").strip()[:400]),
+        #
+        # A reference the deployment cannot keep is also refused HERE, at the
+        # write boundary, not merely hidden at render time. Rendering around bad
+        # data leaves the bad data in place: the editor's hidden photo_url field
+        # carries the dead path back on every save, so an old page re-persists
+        # it forever and the fault survives every fix downstream. Dropping it on
+        # write means the next save of any affected page cleans it, and no page
+        # can acquire the state again.
+        "photo_url": _accepted_photo(form.get("photo_url", "").strip()[:400]),
         "locality": form.get("locality", "").strip()[:60] or None,
         "district": form.get("district", "").strip()[:60] or None,
         "state_name": form.get("state_name", "").strip()[:60] or None,
@@ -522,8 +554,15 @@ def page_edit(request: Request, page_id: int):
                  "the WhatsApp message date, or who took it verbally and when.")
     elif request.query_params.get("err") == "approval":
         error = "Publishing needs an admin: ask one to review this page and take it live."
+    # A photo saved before uploads moved into the database points at the old
+    # container filesystem, which no deploy survives. The public page now hides
+    # such a reference rather than rendering a broken frame, so without this the
+    # photo would simply vanish with no explanation of where it went.
+    import main
+    photo_lost = bool((page.get("photo_url") or "").strip()) and not main.real_photo(page)
     return _render(request, "page_form.html", session, nav="pages",
                    page=page, error=error, events=store.page_events(page_id),
+                   photo_lost=photo_lost,
                    views=store.views_for(page_id) if page.get("status") == "live" else 0)
 
 
@@ -689,8 +728,25 @@ def leads_list(request: Request):
             lead["age_hours"] = max(0, int((now - t0).total_seconds() // 3600))
         except ValueError:
             lead["age_hours"] = None
+    # Whole-book counts, not counts of the current view — see reports_list.
+    every = store.list_leads()
+    waiting = 0
+    for r in every:
+        if r.get("status") != "NEW":
+            continue
+        try:
+            t0 = _dt.strptime(r.get("at", ""), "%Y-%m-%d %H:%M:%S")
+            if (now - t0).total_seconds() >= 24 * 3600:
+                waiting += 1
+        except ValueError:
+            pass
+    counts = {"total": len(every),
+              "new": sum(1 for r in every if r.get("status") == "NEW"),
+              "working": sum(1 for r in every
+                             if r.get("status") in ("CONTACTED", "INTERESTED")),
+              "overdue": waiting}
     return _render(request, "leads.html", session, nav="leads",
-                   leads=leads,
+                   leads=leads, counts=counts,
                    status=status or "", q=q or "",
                    statuses=store.LEAD_STATUSES)
 
@@ -714,6 +770,19 @@ async def lead_update(request: Request, lead_id: int):
     return RedirectResponse(url=back, status_code=303)
 
 
+def _user_book():
+    """The user list plus whole-book counts for the tiles.
+
+    Four routes render users.html (list, create, the create-failed path, and
+    every row action), so the counting lives here rather than being repeated
+    and drifting between them."""
+    us = store.list_users()
+    return us, {"total": len(us),
+                "active": sum(1 for u in us if u.get("active")),
+                "suspended": sum(1 for u in us if not u.get("active")),
+                "admins": sum(1 for u in us if u.get("role") == "admin")}
+
+
 # ---- users (admin role only) -------------------------------------------------
 def _temp_password() -> str:
     """Readable enough to dictate over the phone, random enough to matter for
@@ -728,8 +797,9 @@ def users_list(request: Request):
         return _login_redirect()
     if not _is_admin(session):
         return Response("Managing users needs the admin role.", status_code=403)
+    _ub = _user_book()
     return _render(request, "users.html", session, nav="users",
-                   users=store.list_users(), temp_pw=None, temp_user=None,
+                   users=_ub[0], counts=_ub[1], temp_pw=None, temp_user=None,
                    error=None, roles=store.USER_ROLES)
 
 
@@ -751,16 +821,18 @@ async def user_create(request: Request):
     elif store.user_by_name(username):
         error = "That username already exists."
     if error:
+        _ub = _user_book()
         return _render(request, "users.html", session, nav="users",
-                       users=store.list_users(), temp_pw=None, temp_user=None,
+                       users=_ub[0], counts=_ub[1], temp_pw=None, temp_user=None,
                        error=error, roles=store.USER_ROLES)
     temp = _temp_password()
     store.create_user(username, auth.hash_password(temp), role=role,
                       by=session["u"], must_change=True)
     # The temp password is rendered ONCE, on this no-store response, and never
     # persisted anywhere in the clear.
+    _ub = _user_book()
     return _render(request, "users.html", session, nav="users",
-                   users=store.list_users(), temp_pw=temp, temp_user=username,
+                   users=_ub[0], counts=_ub[1], temp_pw=temp, temp_user=username,
                    error=None, roles=store.USER_ROLES)
 
 
@@ -798,8 +870,9 @@ async def user_action(request: Request, user_id: int):
         store.update_user(user_id, by=session["u"], bump_sv=True, role=role)
     else:
         return Response("Bad action", status_code=400)
+    _ub = _user_book()
     return _render(request, "users.html", session, nav="users",
-                   users=store.list_users(), temp_pw=temp_pw,
+                   users=_ub[0], counts=_ub[1], temp_pw=temp_pw,
                    temp_user=target["username"] if temp_pw else None,
                    error=None, roles=store.USER_ROLES)
 
@@ -858,8 +931,15 @@ def reports_list(request: Request):
     if not session:
         return _login_redirect()
     status = request.query_params.get("status") or None
+    # Counts come from the UNFILTERED book, like the page tiles: a count taken
+    # from the filtered list tells you "0 still open" the moment you filter to
+    # DONE, which is the opposite of what the number is for.
+    every = store.list_reports()
+    counts = {"total": len(every),
+              "open": sum(1 for r in every if r.get("status") == "OPEN"),
+              "done": sum(1 for r in every if r.get("status") == "DONE")}
     return _render(request, "reports.html", session, nav="reports",
-                   reports=store.list_reports(status=status),
+                   reports=store.list_reports(status=status), counts=counts,
                    status=status or "", statuses=store.REPORT_STATUSES)
 
 

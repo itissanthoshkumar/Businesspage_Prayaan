@@ -1,6 +1,9 @@
 {% extends "admin/_shell.html" %}
 {% block title %}Users{% endblock %}
 {% block body %}
+{# Same shape as Business pages and Reports: tiles stating the book, then the
+   table. This screen had neither, and reused the PAGE status pills for people
+   (.s-live / .s-removed), so an account read in the vocabulary of a web page. #}
 <div class="stagger">
 
   <div class="head">
@@ -23,6 +26,32 @@
       it at first sign-in.</span>
   </div>
   {% endif %}
+
+  {# Not links: there is no user filter to go to, and a tile that looks
+     clickable but is not is worse than a plain figure. Same shape, same
+     colours, stated as facts. #}
+  <div class="upshots" aria-label="Accounts at a glance">
+    <div class="upshot u-all">
+      <span class="upnum">{{ counts.total }}</span>
+      <span class="uplabel">Accounts</span>
+      <span class="upsub">everyone who can sign in</span>
+    </div>
+    <div class="upshot u-good">
+      <span class="upnum">{{ counts.active }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Active</span>
+      <span class="upsub">can sign in right now</span>
+    </div>
+    <div class="upshot u-bad">
+      <span class="upnum">{{ counts.suspended }}</span>
+      <span class="uplabel"><span class="updot" aria-hidden="true"></span>Suspended</span>
+      <span class="upsub">sessions ended immediately</span>
+    </div>
+    <div class="upshot u-all">
+      <span class="upnum">{{ counts.admins }}</span>
+      <span class="uplabel">Admins</span>
+      <span class="upsub">can export leads &amp; manage users</span>
+    </div>
+  </div>
 
   <div class="card">
     <div class="gutter">
@@ -47,8 +76,11 @@
     </div>
   </div>
 
+  <p class="resultline">Showing <b>{{ users|length }}</b> account{{ '' if users|length == 1 else 's' }}</p>
   <div class="tablewrap"><div class="tablescroll"><table class="grid">
-    <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+    <thead><tr>
+      <th>User</th><th>Role</th><th>Status</th><th class="col-act">Actions</th>
+    </tr></thead>
     <tbody>
     {% for u in users %}
     <tr>
@@ -57,7 +89,7 @@
         <span class="sub">since {{ u.created_at }}{% if u.must_change %} &middot; temporary password not yet changed{% endif %}</span>
       </td>
       <td>
-        <form method="post" action="/admin/users/{{ u.id }}" class="leadform">
+        <form method="post" action="/admin/users/{{ u.id }}" class="leadform tight">
           <input type="hidden" name="csrf" value="{{ csrf }}">
           <input type="hidden" name="action" value="role">
           <select name="role" aria-label="Role for {{ u.username }}">
@@ -66,13 +98,15 @@
           <button type="submit">Set</button>
         </form>
       </td>
-      <td><span class="pill s-{{ 'live' if u.active else 'removed' }}">{{ 'active' if u.active else 'suspended' }}</span></td>
-      <td>
+      {# An account's own vocabulary, not a page's: active is settled, suspended
+         is stopped. #}
+      <td><span class="pill s-{{ 'active' if u.active else 'suspended' }}">{{ 'active' if u.active else 'suspended' }}</span></td>
+      <td class="col-act">
         <div class="statusacts">
           <form method="post" action="/admin/users/{{ u.id }}">
             <input type="hidden" name="csrf" value="{{ csrf }}">
             <input type="hidden" name="action" value="{{ 'suspend' if u.active else 'activate' }}">
-            <button type="submit" class="{{ 'danger' if u.active else '' }}">{{ 'Suspend' if u.active else 'Activate' }}</button>
+            <button type="submit" class="{{ 'danger' if u.active else 'accent' }}">{{ 'Suspend' if u.active else 'Activate' }}</button>
           </form>
           <form method="post" action="/admin/users/{{ u.id }}">
             <input type="hidden" name="csrf" value="{{ csrf }}">
