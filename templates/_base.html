@@ -47,7 +47,7 @@
 
 <a class="skip" href="#enquire">Skip to loan enquiry</a>
 
-<header class="topbar">
+<header class="topbar" id="top">
   <div class="wrap">
     <div class="brandrow">
       {# Official lockup from the marketing site: the real mark + wordmark, then a
@@ -125,6 +125,20 @@
     <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
   </a>
 </div>
+
+{# Back to top — phones only. On a phone this page is long: photo, trade,
+   figures, then the enquiry form. Once a reader is at the bottom, the shop's
+   name, number and Maps link are a long swipe away, and the Apply bar is the
+   only fixed control. This is the way back.
+
+   Sits ABOVE the Apply bar and clear of it, so the thumb zone still belongs to
+   the one loan CTA. Revealed by scroll position in pure CSS (the same
+   scroll-timeline the progress line uses) — no script, nothing on the main
+   thread. Where scroll timelines are unsupported it simply stays visible,
+   which costs a small button and never a broken control. #}
+<a class="totop" href="#top" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+</a>
 
 </body>
 </html>

@@ -541,6 +541,56 @@ a,button,input,select,textarea,label{touch-action:manipulation}
   }
 }
 
+/* ---- back to top, phones only --------------------------------------------
+   Desktop has the whole page in reach and a header that stays put; a phone has
+   neither. Once a reader reaches the enquiry form, the shop's name, number and
+   Maps link are a long swipe back, and the Apply bar is the only fixed control
+   on screen. This is the way back up.
+
+   It clears the Apply bar rather than sharing its row: the thumb zone stays
+   the loan CTA's, and this sits above and to the side, deliberately smaller
+   and quieter so it never competes with it. */
+.totop{display:none}
+@media(max-width:767px){
+  .totop{
+    display:flex;align-items:center;justify-content:center;
+    position:fixed;right:14px;z-index:26;
+    /* the Apply bar is 16 + 50 + 10 + safe-area tall; clear it */
+    bottom:calc(88px + env(safe-area-inset-bottom));
+    width:42px;height:42px;border-radius:50%;
+    background:var(--card);color:var(--navy);
+    border:1px solid rgba(28,39,67,.14);
+    box-shadow:0 6px 20px -8px rgba(28,39,67,.45);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .totop svg{width:18px;height:18px;fill:none;stroke:currentColor;
+    stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .totop:active{background:var(--sec)}
+
+  /* Reveal on scroll, in pure CSS: the same scroll timeline the progress line
+     runs on, so nothing touches the main thread and there is no listener to
+     leak. Hidden over the first screen — at the top of the page a "back to
+     top" is noise — and faded in once the reader is past it.
+
+     Guarded by @supports: where scroll timelines are unsupported the button
+     simply stays visible, which costs a small control on screen and never a
+     dead one. Reduced motion keeps it visible too, for the same reason. */
+  @supports (animation-timeline:scroll()){
+    @media (prefers-reduced-motion:no-preference){
+      .totop{
+        opacity:0;visibility:hidden;
+        animation:totopIn linear both;
+        animation-timeline:scroll(root);
+        animation-range:80px 340px;
+      }
+    }
+  }
+}
+@keyframes totopIn{
+  from{opacity:0;visibility:hidden}
+  to{opacity:1;visibility:visible}
+}
+
 /* ---- landing page (/) and the 404 -----------------------------------------
    The root used to return the same "not available" screen as a mistyped URL, so
    anyone trimming a shared link back to the domain hit a dead end on a lender's
