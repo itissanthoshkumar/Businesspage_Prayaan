@@ -40,7 +40,11 @@
    failure-safety contract). Blocking on purpose — it must tag <html> before
    first paint or above-fold content would flash. ~½KB, cached. Framed review
    renders (gallery tiles, admin live preview) stay script-free. #}
-{% if not framed %}<script src="/static/reveal.js"></script>{% endif %}
+{% if not framed %}<script src="/static/reveal.js"></script>
+{# Answers the enquiry in place rather than reloading the page. Deferred, so it
+   never blocks first paint, and purely additive — with it absent or broken the
+   form posts normally and the server renders the same reply. #}
+<script src="/static/enquiry.js" defer></script>{% endif %}
 {% block head %}{% endblock %}
 </head>
 <body>

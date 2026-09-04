@@ -215,10 +215,26 @@ h1,h2,h3{line-height:1.15;font-weight:400}
 .foot strong{color:var(--navy-fg)}
 .foot .lnks{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px}
 .foot a{color:var(--navy-fg)}
+/* These four are not decoration: sharing is how the whole product travels, and
+   Grievance and Report are the routes a customer needs when something is wrong.
+   Measured at 20px tall on a 360px phone, which is half a comfortable thumb.
+   Padding lifts the hit area to the 44px floor without changing how they look
+   in the line — the gap absorbs it. */
+@media(max-width:767px){
+  .foot .lnks{gap:2px 18px}
+  .foot .lnks a{display:inline-flex;align-items:center;min-height:44px}
+}
 
 /* ---- enquiry form (shared by every variant) ---- */
-.enq{background:var(--enq-bg);border:1px solid var(--enq-bd);border-top:3px solid var(--enq-acc);border-radius:var(--r);padding:22px}
-.enq.round{border-radius:16px}
+/* No accent rule across the top. It was a 3px gold border-top on a rounded
+   card, which mitres awkwardly against the 1px sides at the corners — and it
+   never actually shipped: every design carries .ap, and aperture.css:507 sets
+   border-top:0 to undo it. A base declaration that every layer above has to
+   fight is worse than no declaration. Removing it changes nothing on screen
+   (verified: computed border-top was already 0px on the live page).
+   `.enq.round` went with it — .ap .enq sets the radius from --ap-r-card and,
+   loading later at equal specificity, won every time. */
+.enq{background:var(--enq-bg);border:1px solid var(--enq-bd);border-radius:var(--r);padding:22px}
 .enq h2{font-family:var(--serif);font-size:23px;color:var(--navy)}
 .enq .sub{font-size:13.5px;color:var(--muted);margin-top:7px}
 .enq label{display:block;font-size:12px;font-weight:600;margin:14px 0 5px;letter-spacing:.01em}
@@ -557,7 +573,9 @@ a,button,input,select,textarea,label{touch-action:manipulation}
     position:fixed;right:14px;z-index:26;
     /* the Apply bar is 16 + 50 + 10 + safe-area tall; clear it */
     bottom:calc(88px + env(safe-area-inset-bottom));
-    width:42px;height:42px;border-radius:50%;
+    /* 44, not 42: the tap-target floor, and this is the one control a reader
+       reaches for one-handed at the bottom of a long page. */
+    width:44px;height:44px;border-radius:50%;
     background:var(--card);color:var(--navy);
     border:1px solid rgba(28,39,67,.14);
     box-shadow:0 6px 20px -8px rgba(28,39,67,.45);
